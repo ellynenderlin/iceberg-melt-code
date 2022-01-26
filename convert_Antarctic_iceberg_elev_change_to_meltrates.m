@@ -289,19 +289,15 @@ iceberg_avgtemp = nanmean(squeeze(icetemp(RACMOx,RACMOy,:))); % air temp (Kelvin
 %describing these data), as supported by fairly constant AIS climate over the past ~40 years
 rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
 rho_i = 917; rho_i_err = 10; %kg m^-3 
-% cd_region_dir = ['cd ',dir_output,'/',region_name]; eval(cd_region_dir);
-% load_terminus_data = ['load ',region_name,'_calving_data.mat h term_mask iceberg_mask firnair density']; eval(load_terminus_data);
-% ib_cmap = colormap(jet(length(iceberg_mask))); close all; drawnow;
 
 % %load the saved data if restarting
 % cd iceberg_data
-% load_saved_data = ['load ',region_abbrev,'_iceberg_melt.mat']; eval(load_saved_data);
+% load_saved_data = ['load ',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']; eval(load_saved_data);
 
 % load ROI and elevation info for all icebergs
 cd(dir_iceberg);
 disp('Compiling iceberg polygon information...')
 for i = 1:size(berg_numbers,1)
-% for i = 3;
     % loop through DEM data & iceberg outlines
     berg_number = berg_numbers(i).name(1:end-7);
     load_file = ['load ',berg_numbers(i).name]; eval(load_file);
@@ -666,7 +662,7 @@ for i = 1:size(SL,2)
 
     %save the data
     disp('Saving data');
-    save([dir_output,DEM1.time,'-',DEM2.time,'/',region_abbrev,'_iceberg_melt.mat'],'SL','-v7.3');
+    save([dir_output,DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
     cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     
     if i<size(SL,2)
@@ -1004,7 +1000,7 @@ for i = 1:size(SL,2)
     
     %save the data
     disp('Saving data');
-    save([dir_output,region_abbrev,'_iceberg_melt.mat'],'SL','-v7.3');
+    save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
     cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     
     if i<size(SL,2)
@@ -1151,7 +1147,7 @@ end
 
 %save the compiled data
 disp('Saving melt rates');
-save([dir_iceberg,region_abbrev,'_iceberg_melt.mat'],'SL','-v7.3');
+save([dir_iceberg,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
 disp('Melt rates saved! Advance to the next dataset');
 
 close all; drawnow;

@@ -96,7 +96,7 @@ if step_no==1
     %save as a table in a text file
     clear dt xo yo zo po Vo xf yf zf pf Vf coreg_z* dz* dVdt* draft* Asurf* Asub*;
     for i = 1:length(SL)
-        berg_nostring(i,:) = SL(i).name(end-1:end);
+        berg_nostring(i) = SL(i).
         dt(i) = sum(SL(i).days);
         xo(i) = nanmean(SL(i).initial.x); yo(i) = nanmean(SL(i).initial.y); zo(i) = SL(i).initial.z_median; Vo(i) = SL(i).initial.V;
         xf(i) = nanmean(SL(i).final.x); yf(i) = nanmean(SL(i).final.y); zf(i) = SL(i).final.z_median; Vf(i) = SL(i).final.V;
@@ -125,12 +125,11 @@ if step_no==1
     writetable(T,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_meltinfo.csv']);
     
     %plot to figure-out which icebergs need to be re-run
-    dVdt = []; Asub = []; rho = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_ref =[];
+    dVdt = []; Asub = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_ref =[];
     for i = 1:length(SL)
         if SL(i).mean.dVdt > 0 && ~isempty(SL(i).mean.TA)
             dVdt = [dVdt SL(i).mean.dVdt];
             Asub = [Asub SL(i).mean.TA];
-            rho = [rho (SL(i).initial.density+SL(i).final.density)/2];
             H = [H SL(i).mean.H];
             m = [m SL(i).mean.dHdt];
             coreg_zo = [coreg_zo SL(i).initial.coreg_z]; coreg_zf = [coreg_zf SL(i).final.coreg_z];
@@ -166,17 +165,14 @@ if step_no==1
     rho_sw = 1026;  %kg m^-3
     for i = 1:length(coreg_zo)
         if (coreg_zo(i)-coreg_zf(i)) > (median_sldz + 1) || (coreg_zo(i)-coreg_zf(i)) < (median_sldz - 1)
-            %find the SL index
-            SLref = strmatch(berg_ref(i,:),berg_nostring);
-            
             %adjust the volume change estimate so that it is calculated
             %assuming the median sea level correction is accurate locally
-            rho_f = rho(i);
-            dZ_mean = (rho_sw/(rho_sw-rho_f))*(SL(SLref).mean.dz-((coreg_zo(i)-coreg_zf(i))-median_sldz));
-            dV_mean = SL(SLref).mean.SA*(dZ_mean+SL(SLref).SMB+SL(SLref).creep_dz);
+            rho_f = (po(i)+pf(i))/2;
+            dZ_mean = (rho_sw/(rho_sw-rho_f))*(SL(i).mean.dz-((coreg_zo(i)-coreg_zf(i))-median_sldz));
+            dV_mean = SL(i).mean.SA*(dZ_mean+SL(i).SMB+SL(i).creep_dz);
             
             %convert volume change to flux & melt rate
-            to = SL(SLref).initial.time; tf = SL(SLref).final.time;
+            to = SL(i).initial.time; tf = SL(i).final.time;
             if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
             if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
             doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
@@ -203,8 +199,8 @@ if step_no==1
             dHdt_mean = dVdt_mean/SL(i).mean.TA;
             
             %replace in structure
-            SL(SLref).mean.dVdt = dVdt_mean; SL(SLref).mean.dHdt = dHdt_mean;
-            SL(SLref).initial.coreg_z = median_slzo; SL(SLref).final.coreg_z = median_slzf;
+            SL(i).mean.dVdt = dVdt_mean; SL(i).mean.dHdt = dHdt_mean;
+            SL(i).initial.coreg_z = median_slzo; SL(i).final.coreg_z = median_slzf;
         end
     end
     
@@ -291,9 +287,10 @@ if step_no==1
     disp('Define a variable, berg_refs, that lists the #s of the icebergs that have bad melt rate estimates');
     disp('   "berg_refs = [#s in here];"');
     disp('Repeat STEP 1 for icebergs with negative melt rates (listed above) & outliers in plots by doing the following:');
-    disp('   a) When prompted, specify the icebergs to rerun using iceberg_refs = X:Y; dbcont');
-    disp('   b) Finish running the STEP 1 section');
-    disp('   c) Recheck the plots. If some icebergs are still bad, run step 2 and specify the bad icebergs to remove when prompted');
+    disp('   a) Insert a blank line above line 41 ("for j =1:size(icebergs,1);") in STEP 1 above');
+    disp('   b) Insert a percent sign before "for j =1:size(icebergs,1);"');
+    disp('   c) In the blank line, add "for j = berg_refs" so that only the icebergs you IDed will be redone when you run this section');
+    disp('   d) Now run the STEP 1 section');
     clear SL;
     
 end
