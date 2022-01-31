@@ -256,7 +256,8 @@ if step_no==1
             Asub(append_ref) = SL(i).mean.TA; Asub_uncert(append_ref) = SL(i).change.TA;
             append_ref = append_ref+1;
         else
-            disp(['Skipping over data for ',num2str(i)]);
+%             SLref = strmatch(berg_ref(i,:),berg_nostring);
+            disp(['Skipping over data for ',num2str(berg_ref(i,:))]);
         end
     end
     bad_refs = find(draft<0); %remove data with negative thicknesses (unrealistic = error-prone)
@@ -278,7 +279,7 @@ if step_no==1
     %call-out the clearly bad icebergs
     for i = 1:length(SL)
         if SL(i).mean.dVdt < 0
-            disp(['Recalculate elevation change for iceberg #',num2str(i)]);
+            disp(['Recalculate elevation change for iceberg #',num2str(berg_ref(i,:))]);
         end
     end
     
