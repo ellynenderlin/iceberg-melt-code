@@ -21,20 +21,20 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'Crane-LarsenB'; 
-region_abbrev = 'LB';
+region_name = 'Edgeworth-LarsenA'; 
+region_abbrev = 'LA';
 % path to Iceberg-melt-code in directory
 dir_code = '/Users/icebergs/iceberg-melt/'; 
 % path to TMD folder in directory
 dir_TMD = [dir_code,'general/TMD/'];
 % path to DEM files in directory
-dir_DEM = [dir_code,region_name,'/'];
+dir_DEM = [dir_code,region_name,'/DEMs/'];
 % path to outputs folder (where you would like all outputs saved)
 % dir_output = [dir_code,'../meltrate_outputs/'];
 dir_output = dir_DEM;
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names
 % (YYYYMMDDhhmmss)
-DEM1.time = '20191004132849'; DEM2.time = '20191119135827'; 
+DEM1.time = '20191012101214'; DEM2.time = '20200927092713'; 
 
 % ----------INITIAL SET-UP----------
 % General DEM filenames (no suffixes) - Ensure filenames match this format
