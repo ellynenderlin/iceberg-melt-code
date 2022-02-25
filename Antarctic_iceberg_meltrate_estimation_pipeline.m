@@ -31,7 +31,7 @@ dir_TMD = [dir_code,'general/TMD/'];
 dir_DEM = [dir_code,region_name,'/DEMs/'];
 % path to outputs folder (where you would like all outputs saved)
 % dir_output = [dir_code,'../meltrate_outputs/'];
-dir_output = dir_DEM;
+dir_output = [dir_code,region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names
 % (YYYYMMDDhhmmss)
 DEM1.time = '20191012101214'; DEM2.time = '20200927092713'; 
