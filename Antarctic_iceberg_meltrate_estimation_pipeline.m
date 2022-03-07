@@ -21,8 +21,8 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'Edgeworth-LarsenA'; 
-region_abbrev = 'LA';
+region_name = 'Cadman-Palmer'; 
+region_abbrev = 'CG';
 % path to Iceberg-melt-code in directory
 dir_code = '/Users/icebergs/iceberg-melt/'; 
 % path to TMD folder in directory
@@ -34,7 +34,7 @@ dir_DEM = [dir_code,region_name,'/DEMs/'];
 dir_output = [dir_code,region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names
 % (YYYYMMDDhhmmss)
-DEM1.time = '20191012101214'; DEM2.time = '20200927092713'; 
+DEM1.time = '20201013133346'; DEM2.time = '20210122170158'; 
 
 % ----------INITIAL SET-UP----------
 % General DEM filenames (no suffixes) - Ensure filenames match this format

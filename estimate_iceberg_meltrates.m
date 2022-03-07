@@ -1,7 +1,6 @@
 function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,step_no)
 % Function to estimate iceberg freshwater fluxes and melt rates
-% Ellyn Enderlin & Mariama Dryak
-% Slightly reformatted by Rainey Aberle, Fall 2021
+% Ellyn Enderlin and Rainey Aberle, Fall 2021
 %
 % INPUTS:   DEM1            structure variable containing earlier DEM info
 %           DEM2            structure variable containing later DEM info
@@ -45,7 +44,8 @@ if step_no==1
         if strmatch(str,'y')==1
             %specify the iceberg numbers to loop through
             disp('Specify range of iceberg numbers as "iceberg_refs = X:Y; dbcont" in the command window (w/o quotes) then hit enter to loop');
-            disp('   Ex: iceberg_refs = 4:size(icebergs,1); dbcont');
+            disp('   Ex of loop: iceberg_refs = 4:size(icebergs,1); dbcont');
+            disp('   Ex of select numbers: iceberg_refs = [5,15,16]; dbcont');
             keyboard
             
             %loop
@@ -159,6 +159,7 @@ if step_no==1
         text(double(coreg_zo(i)-coreg_zf(i)),double(dVdt(i)),berg_ref(i,:))
     end
     grid on;
+    saveas([dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.eps'],'epsc');
     
     %automatically "fix" melt rate estimates with bad local sea level adjustments
     disp('Automatically adjusting fluxes & melt rates for icebergs with clearly bad sea level estimates');
@@ -237,6 +238,7 @@ if step_no==1
     grid on;
     disp('Iceberg meltwater flux should increase linearly with submerged area');
     disp('Iceberg melt rates should increase with thickness');
+    saveas([dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
     
     %resave as a table in a text file
     cd(dir_iceberg);
