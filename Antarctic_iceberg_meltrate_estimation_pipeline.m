@@ -126,18 +126,33 @@ close all;
 % Select step to run in estimate_iceberg_meltrates function:
 %   1 = Estimate elevation change for each iceberg
 %   2 = UPDATE individual icebergs and/or remove icebergs with anomalous melt rate estimates
-step_no = 1; 
+answer = questdlg('Calculating melt rates the first time or updating/removing iceberg data?',...
+    'Melt Calculation Options','1) First time','2) Updating or Removing','1) First time');
+switch answer
+    case '1) First time'
+        option_no = 1;
+    case '2) Updating or Removing'
+        option_no = 2;
+end
+clear answer;
 
 % Option to reload MAT files from previous step if previously completed but
 % variables are not in workspace
-reload = input('Would you like to load DEM and IM variables from file (y/n)?','s');
-if strcmp(reload,'y')
-    DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
-    IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
-    DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
-    IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
-    disp('DEM and IM variables loaded');
+answer = questdlg('Would you like to load DEM and IM variables from file?',...
+    'DEM and Image Data Source','1) Yes: load them!','2) No: already in workspace','1) Yes: load them!');
+switch answer
+    case '1) Yes: load them!'
+        DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
+        IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
+        DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
+        IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
+        disp('DEM and IM variables loaded');
+    case '2) No: already in workspace'
+        disp('no need to load!')
 end
+clear answer;
 
 % estimate iceberg melt rates
-[DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,step_no);
+[DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,option_no);
+
+

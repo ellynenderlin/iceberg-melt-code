@@ -1,4 +1,4 @@
-function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,step_no)
+function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,option_no)
 % Function to estimate iceberg freshwater fluxes and melt rates
 % Ellyn Enderlin and Rainey Aberle, Fall 2021
 %
@@ -12,7 +12,7 @@ function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,d
 %           dir_code        directory to the Iceberg-melt-rate code folder
 %                               (including the name of the folder)
 %           region_abbrev   region abbreviation used in image files
-%           step_no         select which step to execute (1 or 2):
+%           option_no         select which step to execute (1 or 2):
 %                           (1) Estimate elevation change for each iceberg
 %                           (2) Update individual icebergs and/or remove 
 %                               icebergs with anomalous melt rate estimates
@@ -26,54 +26,54 @@ function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,d
 %   - extract_Antarctic_iceberg_elev_change.m
 %   - convert_Antarctic_iceberg_elev_change_to_meltrates.m
 
-% ----------STEP 1----------
 
-% Estimate elevation change for each iceberg
-if step_no==1
-    disp('Extract iceberg elevation change');
-    dir_iceberg = [dir_output,'/',DEM1.time,'-',DEM2.time,'/'];
-    cd(dir_iceberg);
-    icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
-    iceberg_dz = dir([dir_iceberg,'iceberg*dz.mat']);
-    
-    %select the iceberg number for which to start the elevation change estimates
-    if ~isempty(iceberg_dz)
-        disp(['Already calculated elevation change for ',num2str(length(iceberg_dz)),' of ',num2str(length(icebergs)),' icebergs']);
-        prompt = 'Do you want/need to calculate elevation changes for more icebergs (y/n)?';
-        str = input(prompt,'s');
-        if strmatch(str,'y')==1
-            %specify the iceberg numbers to loop through
-            disp('Specify range of iceberg numbers as "iceberg_refs = X:Y; dbcont" in the command window (w/o quotes) then hit enter to loop');
-            disp('   Ex of loop: iceberg_refs = 4:size(icebergs,1); dbcont');
-            disp('   Ex of select numbers: iceberg_refs = [5,15,16]; dbcont');
-            keyboard
-            
-            %loop
-            for j = iceberg_refs %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
-                iceberg_no = icebergs(j).name(8:9);
-                [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
-                clear IB dz;
-            end
-        else
-            disp('Moving on to melt rate estimation...');
-        end
-    else
-        for j = 1:size(icebergs,1) %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
-            %for j = berg_refs
-            %for j = 1:3 %example: pull elevation change info for icebers 01-03
-            %for j = 5:11 %example: pull elevation change info for icebergs 05-11
-            %for j = [4 11] %example: re-calculate elevation changes for two icebergs with non sequential numbers (4 and 11 in this case)
+% ----------STEP 1: Calculate Elevation Change----------
+disp('Extract iceberg elevation change');
+dir_iceberg = [dir_output,'/',DEM1.time,'-',DEM2.time,'/'];
+cd(dir_iceberg);
+icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
+iceberg_dz = dir([dir_iceberg,'iceberg*dz.mat']);
+
+%select the iceberg number for which to start the elevation change estimates
+if ~isempty(iceberg_dz)
+    disp(['Already calculated elevation change for ',num2str(length(iceberg_dz)),' of ',num2str(length(icebergs)),' icebergs']);
+    prompt = 'Do you want/need to calculate elevation changes for more icebergs (y/n)?';
+    str = input(prompt,'s');
+    if strmatch(str,'y')==1
+        %specify the iceberg numbers to loop through
+        disp('Specify range of iceberg numbers as "iceberg_refs = X:Y; dbcont" in the command window (w/o quotes) then hit enter to loop');
+        disp('   Ex of loop: iceberg_refs = 4:size(icebergs,1); dbcont');
+        disp('   Ex of select numbers: iceberg_refs = [5,15,16]; dbcont');
+        keyboard
+        
+        %loop
+        for j = iceberg_refs %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
             iceberg_no = icebergs(j).name(8:9);
-            
             [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
             clear IB dz;
         end
+    else
+        disp('Moving on to melt rate estimation...');
     end
-    close all;
+else
+    for j = 1:size(icebergs,1) %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
+        %for j = berg_refs
+        %for j = 1:3 %example: pull elevation change info for icebers 01-03
+        %for j = 5:11 %example: pull elevation change info for icebergs 05-11
+        %for j = [4 11] %example: re-calculate elevation changes for two icebergs with non sequential numbers (4 and 11 in this case)
+        iceberg_no = icebergs(j).name(8:9);
         
-    % ----------STEP 2----------
+        [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
+        clear IB dz;
+    end
+end
+close all;
+
+
+% ----------STEP 2: Estimate Melt Rates----------
+if option_no==1 %calculate melt rates for all icebergs
+
     % Calculate meltwater fluxes, melt rates, and uncertainties
-    
     disp('Convert elevation change to meltwater fluxes & melt rates');
     cd(dir_iceberg);
     berg_numbers = dir([dir_iceberg,'iceberg*dz.mat']);
@@ -159,7 +159,7 @@ if step_no==1
         text(double(coreg_zo(i)-coreg_zf(i)),double(dVdt(i)),berg_ref(i,:))
     end
     grid on;
-    saveas([dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.eps'],'epsc');
+    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.eps'],'epsc');
     
     %automatically "fix" melt rate estimates with bad local sea level adjustments
     disp('Automatically adjusting fluxes & melt rates for icebergs with clearly bad sea level estimates');
@@ -238,7 +238,7 @@ if step_no==1
     grid on;
     disp('Iceberg meltwater flux should increase linearly with submerged area');
     disp('Iceberg melt rates should increase with thickness');
-    saveas([dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
+    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
     
     %resave as a table in a text file
     cd(dir_iceberg);
@@ -293,30 +293,55 @@ if step_no==1
     disp('Save the figures');
     disp('Define a variable, berg_refs, that lists the #s of the icebergs that have bad melt rate estimates');
     disp('   "berg_refs = [#s in here];"');
-    disp('Repeat STEP 1 for icebergs with negative melt rates (listed above) & outliers in plots by doing the following:');
+    disp('Run option 2 in the last section of the wrapper:');
     disp('   a) When prompted, specify the icebergs to rerun using iceberg_refs = X:Y; dbcont');
-    disp('   b) Finish running the STEP 1 section');
-    disp('   c) Recheck the plots. If some icebergs are still bad, run step 2 and specify the bad icebergs to remove when prompted');
+    disp('   b) Update and/or remove icebergs as necessary');
     clear SL;
     
-end
-
-% ----------ALTERNATE STEP 2----------
-% Update individual icebergs and/or remove icebergs with anomalous melt rate estimates
-
-if step_no==2
+elseif option_no==2 %recalculate melt rates for select icebergs
     disp('Recalculate melt rates for select icebergs then remove icebergs that still have bad results');
     dir_iceberg = [dir_output,'/',DEM1.time,'-',DEM2.time,'/'];
     berg_numbers = dir([dir_iceberg,'iceberg*dz.mat']);
     dir_bedrock = [dir_output,'DEM_offset_data/'];
     
-    disp('If you already know some icebergs are bad, specify them now as "bad_bergs = []; dbcont"');
-    keyboard
-    [SL] = update_or_remove_Antarctic_iceberg_meltrates(root_dir,glacier_dir,dir_iceberg,dir_bedrock,berg_numbers,DEM1_time,DEM1_name,DEM2_time,DEM2_name,region_name,region_abbrev,berg_refs,bad_bergs);
+    %update and/or remove select icebergs
+    if exist('iceberg_refs') ~= 1
+        disp('Specify the bergs that need updating as "iceberg_refs = []; dbcont"');
+        keyboard
+    end
+    [SL] = update_or_remove_Antarctic_iceberg_meltrates(root_dir,glacier_dir,dir_iceberg,DEM1_time,DEM1_name,DEM2_time,DEM2_name,region_name,region_abbrev,berg_refs,iceberg_refs);
     
-    %resave to tab-delimited text file
-    disp('Saving final results to a tab-delimited text file');
-    cd_to_iceberg_data = ['cd ',dir_iceberg]; eval(cd_to_iceberg_data);
+    %plot
+    dVdt = []; Asub = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_ref =[];
+    for i = 1:length(SL)
+        if SL(i).mean.dVdt > 0 && ~isempty(SL(i).mean.TA)
+            dVdt = [dVdt SL(i).mean.dVdt];
+            Asub = [Asub SL(i).mean.TA];
+            H = [H SL(i).mean.H];
+            m = [m SL(i).mean.dHdt];
+            coreg_zo = [coreg_zo SL(i).initial.coreg_z]; coreg_zf = [coreg_zf SL(i).final.coreg_z];
+            berg_ref = [berg_ref; SL(i).name(end-1:end)];
+        end
+    end
+    figure; set(gcf,'position',[100 100 1200 600]);
+    subplot(1,2,1);
+    plot(Asub,dVdt,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    set(gca,'fontsize',20); xlabel('Submerged area (m^2)','fontsize',20); ylabel('Meltwater flux (m^3/d)','fontsize',20);
+    for i = 1:length(m)
+        text(double(Asub(i))-0.03e5,double(dVdt(i)),berg_ref(i,:))
+    end
+    grid on;
+    subplot(1,2,2);
+    plot(H,m,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    set(gca,'fontsize',20); xlabel('Average iceberg thickness (m)','fontsize',20); ylabel('Melt rate (m/d)','fontsize',20);
+    for i = 1:length(m)
+        text(double(H(i))-2,double(m(i)),berg_ref(i,:))
+    end
+    grid on;
+    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
+    
+    %resave as a table in a text file
+    cd(dir_iceberg);
     clear dt xo yo zo po Vo xf yf zf pf Vf coreg_z* dz* dVdt* draft* Asurf* Asub*;
     append_ref = 1;
     for i = 1:length(SL)
@@ -333,7 +358,8 @@ if step_no==2
             Asub(append_ref) = SL(i).mean.TA; Asub_uncert(append_ref) = SL(i).change.TA;
             append_ref = append_ref+1;
         else
-            disp(['Skipping over data for ',num2str(i)]);
+%             SLref = strmatch(berg_ref(i,:),berg_nostring);
+            disp(['Skipping over data for ',num2str(berg_ref(i,:))]);
         end
     end
     bad_refs = find(draft<0); %remove data with negative thicknesses (unrealistic = error-prone)

@@ -1,4 +1,4 @@
-function [SL] = update_or_remove_Antarctic_iceberg_meltrates(root_dir,glacier_dir,iceberg_dir,bedrock_dir,berg_numbers,DEM1_time,DEM1_name,DEM2_time,DEM2_name,region_name,region_abbrev,berg_refs,bad_bergs)
+function [SL] = update_or_remove_Antarctic_iceberg_meltrates(root_dir,glacier_dir,iceberg_dir,DEM1_time,DEM1_name,DEM2_time,DEM2_name,region_name,region_abbrev,berg_refs,bad_bergs)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Mariama Dryak
 % Slightly Modified by Rainey Aberle, Fall 2021
@@ -23,7 +23,7 @@ cd_region_dir = ['cd ',root_dir,'/',region_name]; eval(cd_region_dir);
 load_data = ['load ',region_name,'_density_data.mat']; eval(load_data);
 cd_to_iceberg_data = ['cd ',iceberg_dir]; eval(cd_to_iceberg_data);
 
-%don't repeat calculations for known bad icebergs
+%only repeat calculations for troublesome icebergs
 if ~isempty(bad_bergs)
     for j = 1:length(bad_bergs)
         bad_ref = find(berg_refs == bad_bergs(j));
