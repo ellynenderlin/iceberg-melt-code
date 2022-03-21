@@ -14,6 +14,11 @@ function [SL] = convert_Antarctic_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1
 %
 % OUTPUTS:  SL 
 
+%set densities: assume steady-state profiles (like the Ligtenberg et al. (2014) paper
+%describing these data), as supported by fairly constant AIS climate over the past ~40 years
+rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
+rho_i = 917; rho_i_err = 10; %kg m^-3 
+
 coord_files = dir([dir_iceberg,'*PScoords.txt']);
 for j = 1:length(coord_files)
     coords=readmatrix(coord_files(j).name);
@@ -201,7 +206,7 @@ density_levels = [700 750 800 830]; density_depths = [density.sevhun density.sev
 % ex_density = fnxtr(f.p); %extrapolate outside the data domain using a second order polynomial
 % density.nineseventeen = fnval(ex_density,917); %evaluate the extrapolation function at the bubble-free ice density
 ft = fittype('917-(917-a)*exp(-x/b)');
-[f,gof] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
+[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
 density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
 % density_levels = [density_levels 917]; density_depths = [density_depths density.nineseventeen];
 
@@ -285,10 +290,6 @@ surfmelt = nansum(days'.*melt)/1000; %surface meltwater that runs off (mm w.e. p
 iceberg_avgtemp = nanmean(squeeze(icetemp(RACMOx,RACMOy,:))); % air temp (Kelvin)
 % iceberg_stdtemp = nanstd(squeeze(icetemp(RACMOx,RACMOy,:))); % air temp variability (Kelvin)
 
-%set densities: assume steady-state profiles (like the Ligtenberg et al. (2014) paper
-%describing these data), as supported by fairly constant AIS climate over the past ~40 years
-rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
-rho_i = 917; rho_i_err = 10; %kg m^-3 
 
 % %load the saved data if restarting
 % cd iceberg_data
@@ -372,7 +373,6 @@ if mean(A.z(~isnan(A.z)),'omitnan') < (1/3)*255 %image is dark
     z_adjust = imadjust(A.z./255,[],[],0.25);
     A.z = z_adjust; clear z_adjust;
 end
-clear IM;
 
 %plot the early image
 disp('Plotting the early image-DEM pair for the fjord');
@@ -536,15 +536,7 @@ for i = 1:size(SL,2)
                 rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
                 rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]),[],'omitnan');
                 clear rho_prof*;
-                %old approach
-%                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).initial.z_median;
-%                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2);
-%                 Hice = Hberg(j+1)-FAC(k); %equivalent bubble-free ice thickness
-%                 Hice_err = sqrt(Hberg_err(j+1)^2 + firnair.uncert^2);
-%                 Vice = Hice.*rho_i;
-%                 Vice_err = abs(Vice)*sqrt((Hice_err/Hice)^2 + (rho_i_err/rho_i)^2);
-%                 rho_f(j+1) = (((FAC(k).*rho_sw)+Vice)./SL(i).initial.z_median)./(1+(((FAC(k).*rho_sw)+Vice)./(rho_sw*SL(i).initial.z_median)));
-%                 rho_f_err(j+1) = abs(rho_f(j+1))*sqrt(((Vice_err^2+(rho_sw*FAC(k))^2*((rho_sw_err/rho_sw)^2))/((Vice+rho_sw*FAC(k))^2)) + ((((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2 + (Vice/rho_sw)^2*((Vice_err/Vice)^2 + (rho_sw_err/rho_sw)^2))/((SL(i).initial.z_median+FAC(k)+(Vice/rho_sw))^2)));
+                
                 if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
                     if k == 1
                         SL(i).density_type = 'wet';
@@ -581,8 +573,7 @@ for i = 1:size(SL,2)
             rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
             rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]),[],'omitnan');
             clear rho_prof*;
-%             rho_f(j) = rho_i*((Hberg(j)-FAC(k))./Hberg(j)); %assume firn air content is the same as on the glacier
-%             rho_f_err(j) = sqrt(rho_i_err^2 + (rho_i*FAC(k)/Hberg(j))^2*((rho_i_err/rho_i)^2 + ((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2)); %excludes FAC uncertainty b/c I am solving for that directly
+
             while j
                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).initial.z_median;
                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2);
@@ -598,13 +589,7 @@ for i = 1:size(SL,2)
                 rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
                 rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]),[],'omitnan');
                 clear rho_prof*;
-                %old approach
-%                 Hice = Hberg(j+1)-FAC(k); %equivalent bubble-free ice thickness
-%                 Hice_err = sqrt(Hberg_err(j+1)^2 + firnair.uncert^2);
-%                 Vice = Hice.*rho_i;
-%                 Vice_err = abs(Vice)*sqrt((Hice_err/Hice)^2 + (rho_i_err/rho_i)^2);
-%                 rho_f(j+1) = ((Vice)./SL(i).initial.z_median)./(1+((Vice)./(rho_sw*SL(i).initial.z_median)));
-%                 rho_f_err(j+1) = abs(rho_f(j+1))*sqrt(((Vice_err^2+(rho_sw*SL(i).initial.z_median)^2*((rho_sw_err/rho_sw)^2 + ((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2))/((Vice+rho_sw*SL(i).initial.z_median)^2)) + (Vice_err/Vice)^2 + (rho_sw_err/rho_sw)^2);
+                
                 if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
                     if k == 1
                         SL(i).density_type = 'dry';
@@ -712,7 +697,6 @@ if mean(A.z(~isnan(A.z)),'omitnan') < (1/3)*255 %image is dark
     z_adjust = imadjust(A.z./255,[],[],0.25);
     A.z = z_adjust; clear z_adjust;
 end
-clear IM;
 
 %plot the early image
 disp('Plotting the later image-DEM pair for the fjord');
@@ -756,7 +740,6 @@ for i = 1:size(SL,2)
     %zoom in
     disp(['...zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
     figure(figure1);
-%     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
     colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
     vxf = nearestneighbour(SL(i).final.x,A.x); vyf = nearestneighbour(SL(i).final.y,A.y);
     set(gca,'xlim',[min(A.x(vxf))-150 max(A.x(vxf))+150],'ylim',[min(A.y(vyf))-150 max(A.y(vyf))+150]);
@@ -767,7 +750,6 @@ for i = 1:size(SL,2)
     end
     plot(A.x(vxf),A.y(vyf),'--r','linewidth',2);
     figure(figure2);
-%     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
     set(gca,'ydir','normal','clim',[0 50]); hold on;
     if strmatch(zstr,'y')==1
         set(gca,'xlim',[min(SL(i).final.x)-250 max(SL(i).final.x)+250],'ylim',[min(SL(i).final.y)-250 max(SL(i).final.y)+250]);
@@ -802,10 +784,6 @@ for i = 1:size(SL,2)
     SL(i).final.x_perim = x; SL(i).final.y_perim = y;
     DEM_z_masked = iceberg_DEMmask.*DEM_z;
     DEM_z_masked(iceberg_DEMmask == 0) = 0;
-%     clf(figure2); drawnow;
-%     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
-%     set(gca,'ydir','normal','clim',[0 50]); hold on;
-%     set(gca,'xlim',[min(SL(i).final.x)-200 max(SL(i).final.x)+200],'ylim',[min(SL(i).final.y)-200 max(SL(i).final.y)+200]);
     plot(SL(i).final.x,SL(i).final.y,'-k','linewidth',2); hold on; plot(SL(i).final.x,SL(i).final.y,'--w','linewidth',2); hold on;
     plot(SL(i).final.x_perim,SL(i).final.y_perim,'-w','linewidth',2); hold on; plot(SL(i).final.x_perim,SL(i).final.y_perim,'--m','linewidth',2); hold on;
     
@@ -847,8 +825,7 @@ for i = 1:size(SL,2)
             rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
             rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
             clear rho_prof*;
-%             rho_f(j) = rho_i*((Hberg(j)-FAC(k)+((rho_sw/rho_i)*FAC(k)))./Hberg(j)); %assume firn is water-saturated
-%             rho_f_err(j) = sqrt(rho_i_err^2 + ((rho_sw-rho_i)*FAC(k)/Hberg(j))^2*(((rho_sw_err^2+rho_i_err^2)/((rho_sw-rho_i)^2)) + ((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2)); %excludes FAC uncertainty b/c I am solving for that directly
+            
             while j
                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).final.z_median;
                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2);
@@ -864,15 +841,7 @@ for i = 1:size(SL,2)
                 rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
                 rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
                 clear rho_prof*;
-                %old approach
-%                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).final.z_median;
-%                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2);
-%                 Hice = Hberg(j+1)-FAC(k); %equivalent bubble-free ice thickness
-%                 Hice_err = sqrt(Hberg_err(j+1)^2 + firnair.uncert^2);
-%                 Vice = Hice.*rho_i;
-%                 Vice_err = abs(Vice)*sqrt((Hice_err/Hice)^2 + (rho_i_err/rho_i)^2);
-%                 rho_f(j+1) = (((FAC(k).*rho_sw)+Vice)./SL(i).final.z_median)./(1+(((FAC(k).*rho_sw)+Vice)./(rho_sw*SL(i).final.z_median)));
-%                 rho_f_err(j+1) = abs(rho_f(j+1))*sqrt(((Vice_err^2+(rho_sw*FAC(k))^2*((rho_sw_err/rho_sw)^2))/((Vice+rho_sw*FAC(k))^2)) + ((((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2 + (Vice/rho_sw)^2*((Vice_err/Vice)^2 + (rho_sw_err/rho_sw)^2))/((SL(i).final.z_median+FAC(k)+(Vice/rho_sw))^2)));
+                
                 if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
                     if k == 1
                         SL(i).density_type = 'wet';
@@ -909,8 +878,7 @@ for i = 1:size(SL,2)
             rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
             rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
             clear rho_prof*;
-%             rho_f(j) = rho_i*((Hberg(j)-FAC(k))./Hberg(j)); %assume firn air content is the same as on the glacier
-%             rho_f_err(j) = sqrt(rho_i_err^2 + (rho_i*FAC(k)/Hberg(j))^2*((rho_i_err/rho_i)^2 + ((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2)); %excludes FAC uncertainty b/c I am solving for that directly
+            
             while j
                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).final.z_median;
                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2);
@@ -926,13 +894,7 @@ for i = 1:size(SL,2)
                 rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
                 rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
                 clear rho_prof*;
-                %old approach
-%                 Hice = Hberg(j+1)-FAC(k); %equivalent bubble-free ice thickness
-%                 Hice_err = sqrt(Hberg_err(j+1)^2 + firnair.uncert^2);
-%                 Vice = Hice.*rho_i;
-%                 Vice_err = abs(Vice)*sqrt((Hice_err/Hice)^2 + (rho_i_err/rho_i)^2);
-%                 rho_f(j+1) = ((Vice)./SL(i).final.z_median)./(1+((Vice)./(rho_sw*SL(i).final.z_median)));
-%                 rho_f_err(j+1) = abs(rho_f(j+1))*sqrt(((Vice_err^2+(rho_sw*SL(i).final.z_median)^2*((rho_sw_err/rho_sw)^2 + ((1.4826*SL(i).final.z_mad)/SL(i).final.z_median)^2))/((Vice+rho_sw*SL(i).final.z_median)^2)) + (Vice_err/Vice)^2 + (rho_sw_err/rho_sw)^2);
+                
                 if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
                     if k == 1
                         SL(i).density_type = 'dry';

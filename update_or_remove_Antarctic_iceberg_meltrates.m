@@ -1,4 +1,4 @@
-function [SL] = update_or_remove_Antarctic_iceberg_meltrates(root_dir,glacier_dir,iceberg_dir,DEM1_time,DEM1_name,DEM2_time,DEM2_name,region_name,region_abbrev,berg_refs,bad_bergs)
+function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,bad_bergs,dir_output,dir_iceberg,dir_code)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Mariama Dryak
 % Slightly Modified by Rainey Aberle, Fall 2021
@@ -13,29 +13,46 @@ function [SL] = update_or_remove_Antarctic_iceberg_meltrates(root_dir,glacier_di
 %           dir_output      directory where all output files will be placed
 %           region_abbrev   abbrevation of region used in file names
 %
-% OUTPUTS:  SL 
+% OUTPUTS:  SL structure containing iceberg melt volume & melt rate data
+close all; drawnow;
 
+%specify densities
 rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
 rho_i = 917; rho_i_err = 10; %kg m^-3
 
+%load the saved iceberg data
+DEM1_date = DEM1.time(1:8); DEM2_date = DEM2.time(1:8);
+load([dir_iceberg,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
+berg_no = [];
+for i = 1:length(SL)
+    berg_name(i,:) = SL(i).name;
+    berg_no = [berg_no; SL(i).name(end-1:end)];
+end
+
 %load the firn density info
-cd_region_dir = ['cd ',root_dir,'/',region_name]; eval(cd_region_dir);
-load_data = ['load ',region_name,'_density_data.mat']; eval(load_data);
-cd_to_iceberg_data = ['cd ',iceberg_dir]; eval(cd_to_iceberg_data);
+cd(dir_output);
+load(['firn_data/',region_name,'_density_data.mat']);
+density_levels = [700 750 800 830]; density_depths = [density.sevhun density.sevfif density.eighthun density.eightthir];
+density_levels = [density_levels 917]; density_depths = [density_depths density.nineseventeen];
+cd(dir_iceberg);
 
 %only repeat calculations for troublesome icebergs
+berg_refs = [];
 if ~isempty(bad_bergs)
     for j = 1:length(bad_bergs)
-        bad_ref = find(berg_refs == bad_bergs(j));
-        berg_refs(bad_ref) = [];
+        if length(num2str(bad_bergs(j)))
+            bad_ref = matches(string(berg_no),['0',num2str(bad_bergs(j))]);
+        else
+            bad_ref = matches(string(berg_no),num2str(bad_bergs(j)));
+        end
+        berg_refs = [berg_refs; bad_ref];
         clear bad_ref;
     end
 end
-DEM1_date = DEM1_time(1:8); DEM2_date = DEM2_time(1:8);
 
 %calculate the time separation between DEMs in terms of 
 %decimal years (ddays) & decimal days (days)
-to = DEM1_time; tf = DEM2_time;
+to = DEM1.time; tf = DEM2.time;
 if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
 if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
 doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
@@ -66,109 +83,91 @@ hrs_f = ((str2num(tf(13:14))/(60*60*24))+(str2num(tf(11:12))/(60*24))+(str2num(t
 dhrs = hrs_f - hrs_o;
 dt = ddays + dhrs;
 
-%load the saved data
-% cd iceberg_data
-load_saved_data = ['load ',region_abbrev,'_iceberg_melt.mat']; eval(load_saved_data);
-cd_region_dir = ['cd ',root_dir,'/',region_name]; eval(cd_region_dir);
-load_data = ['load ',region_name,'_density_data.mat']; eval(load_data);
-density_levels = [700 750 800 830]; density_depths = [density.sevhun density.sevfif density.eighthun density.eightthir];
-density_levels = [density_levels 917]; density_depths = [density_depths density.nineseventeen];
-close all; drawnow;
-
-%load the DEMs & images
-cd_glacier_dir = ['cd ',glacier_dir]; eval(cd_glacier_dir);
-load_DEM1 = ['load ',DEM1_name]; eval(load_DEM1);
-load_DEM2 = ['load ',DEM2_name]; eval(load_DEM2);
-disp('Loading & cropping the WV image for the first DEM date');
-cd_glacier_dir = ['cd ',glacier_dir]; eval(cd_glacier_dir);
-image1 = dir([[glacier_dir,'/'],['*',num2str(DEM1_date),'*image.mat']]);
-image1_name = image1(1).name;
-load_image = ['load ',image1_name]; eval(load_image);
-
 %extract DEM pixel areas
-DEM1_pixel_area = abs(Z.x(1)-Z.x(2)).*abs(Z.y(1)-Z.y(2)); DEM2_pixel_area = abs(Y.x(1)-Y.x(2)).*abs(Y.y(1)-Y.y(2)); %square meters
+DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel_area = abs(DEM2.x(1)-DEM2.x(2)).*abs(DEM2.y(1)-DEM2.y(2)); %square meters
 
 %set image bounds & crop
+%EARLIER DATE
 xo = []; yo = [];
 for i = 1:length(SL)
     xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
 end
-dy = IM.y(1)-IM.y(2);
+dy = IM1.y(1)-IM1.y(2);
 if dy < 0
-    x1 = find(IM.x >= min(xo)-1500,1,'first'); x2 = find(IM.x <= max(xo)+1500,1,'last');
-    y1 = find(IM.y >= max(yo)+1500,1,'first'); y2 = find(IM.y <= min(yo)-1500,1,'last');
+    x1 = find(IM1.x >= min(xo)-1500,1,'first'); x2 = find(IM1.x <= max(xo)+1500,1,'last');
+    y1 = find(IM1.y >= max(yo)+1500,1,'first'); y2 = find(IM1.y <= min(yo)-1500,1,'last');
     xlims = sort([x1, x2]); ylims = sort([y1, y2]);
     xmin=xlims(1); xmax=xlims(2);
-    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM.x);
+    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM1.x);
     if length(ylims) ==1
-        y2(isempty(y2)) = 1; y1(isempty(y1)) = length(IM.y);
+        y2(isempty(y2)) = 1; y1(isempty(y1)) = length(IM1.y);
     end
     ylims = sort([y1, y2]);
     ymin=ylims(1); ymax=ylims(2);
 else
-    x1 = find(IM.x >= min(xo)-1500,1,'first'); x2 = find(IM.x <= max(xo)+1500,1,'last');
-    y1 = find(IM.y >= max(yo)+1500,1,'last'); y2 = find(IM.y <= min(yo)-1500,1,'first');
+    x1 = find(IM1.x >= min(xo)-1500,1,'first'); x2 = find(IM1.x <= max(xo)+1500,1,'last');
+    y1 = find(IM1.y >= max(yo)+1500,1,'last'); y2 = find(IM1.y <= min(yo)-1500,1,'first');
     xlims = sort([x1, x2]); ylims = sort([y1, y2]);
     xmin=xlims(1); xmax=xlims(2);
-    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM.x);
-    if length(ylims)==1
-        y1(isempty(y1)) = 1; y2(isempty(y2)) = length(IM.y);
+    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM1.x);
+    if length(ylims)==1 
+        y1(isempty(y1)) = 1; y2(isempty(y2)) = length(IM1.y);
     end
     ylims = sort([y1, y2]);
     ymin=ylims(1); ymax=ylims(2);
 end
-A.x = IM.x(1,[xlims(1):xlims(2)]); A.y = IM.y(1,[ylims(1):ylims(2)]);
-A.z = double(IM.z(ylims(1):ylims(2),xlims(1):xlims(2)));
-clear IM;
-image2 = dir([[glacier_dir,'/'],['*',num2str(DEM2_date),'*image.mat']]);
-image2_name = image2(1).name;
-load_image = ['load ',image2_name]; eval(load_image);
+A.x = IM1.x(1,[xlims(1):xlims(2)]); A.y = IM1.y(1,ylims(1):ylims(2));
+A.z = double(IM1.z(ylims(1):ylims(2),xlims(1):xlims(2)));
+if mean(A.z(~isnan(A.z)),'omitnan') < (1/3)*255 %image is dark
+    z_adjust = imadjust(A.z./255,[],[],0.25);
+    A.z = z_adjust; clear z_adjust;
+end
 clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax;
+%LATER DATE
 xf = []; yf = [];
 for i = 1:length(SL)
     xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
 end
-dy = IM.y(1)-IM.y(2);
+dy = IM2.y(1)-IM2.y(2);
 if dy < 0
-    x1 = find(IM.x >= min(xf)-1500,1,'first'); x2 = find(IM.x <= max(xf)+1500,1,'last');
-    y1 = find(IM.y >= max(yf)+1500,1,'first'); y2 = find(IM.y <= min(yf)-1500,1,'last');
+    x1 = find(IM2.x >= min(xf)-1500,1,'first'); x2 = find(IM2.x <= max(xf)+1500,1,'last');
+    y1 = find(IM2.y >= max(yf)+1500,1,'first'); y2 = find(IM2.y <= min(yf)-1500,1,'last');
     xlims = sort([x1, x2]); ylims = sort([y1, y2]);
     xmin=xlims(1); xmax=xlims(2);
-    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM.x);
+    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM2.x);
     if length(ylims) ==1
-        y2(isempty(y2)) = 1; y1(isempty(y1)) = length(IM.y);
+        y2(isempty(y2)) = 1; y1(isempty(y1)) = length(IM2.y);
     end
     ylims = sort([y1, y2]);
     ymin=ylims(1); ymax=ylims(2);
 else
-    x1 = find(IM.x >= min(xf)-1500,1,'first'); x2 = find(IM.x <= max(xf)+1500,1,'last');
-    y1 = find(IM.y >= max(yf)+1500,1,'last'); y2 = find(IM.y <= min(yf)-1500,1,'first');
+    x1 = find(IM2.x >= min(xf)-1500,1,'first'); x2 = find(IM2.x <= max(xf)+1500,1,'last');
+    y1 = find(IM2.y >= max(yf)+1500,1,'last'); y2 = find(IM2.y <= min(yf)-1500,1,'first');
     xlims = sort([x1, x2]); ylims = sort([y1, y2]);
     xmin=xlims(1); xmax=xlims(2);
-    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM.x);
-    if length(ylims)==1
-        y1(isempty(y1)) = 1; y2(isempty(y2)) = length(IM.y);
+    xmin(isempty(xmin)) = 1; xmax(isempty(xmax)) = length(IM2.x);
+    if length(ylims)==1 
+        y1(isempty(y1)) = 1; y2(isempty(y2)) = length(IM2.y);
     end
     ylims = sort([y1, y2]);
     ymin=ylims(1); ymax=ylims(2);
 end
-B.x = IM.x(1,[xlims(1):xlims(2)]); B.y = IM.y(1,[ylims(1):ylims(2)]);
-B.z = double(IM.z(ylims(1):ylims(2),xlims(1):xlims(2)));
-clear IM;
+B.x = IM2.x(1,[xlims(1):xlims(2)]); B.y = IM2.y(1,[ylims(1):ylims(2)]);
+B.z = double(IM2.z(ylims(1):ylims(2),xlims(1):xlims(2)));
+if mean(B.z(~isnan(B.z)),'omitnan') < (1/3)*255 %image is dark
+    z_adjust = imadjust(B.z./255,[],[],0.25);
+    B.z = z_adjust; clear z_adjust;
+end
 
 %extract image pixel areas
 im1_pixel_area = abs(A.x(1)-A.x(2)).*abs(A.y(1)-A.y(2)); im2_pixel_area = abs(B.x(1)-B.x(2)).*abs(B.y(1)-B.y(2)); %square meters
-
-%export the berg names
-for j = 1:length(SL)
-    berg_name(j,:) = SL(j).name;
-end
+clear IM*;
 
 %density data
 %create density profiles
 clear FAC;
 FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-ft = fittype('rho_i-(rho_i-a)*exp(-x/b)');[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); ci = confint(f); %create density profile
+ft = fittype('917-(917-a)*exp(-x/b)');[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); ci = confint(f); %create density profile
 density_z = [0:1:1000];
 density_profile = rho_i-(rho_i-f.a)*exp(-density_z/f.b); mindensity_profile = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); maxdensity_profile = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2));
 %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (rho_sw-830)
@@ -177,20 +176,17 @@ minwetdensity_profile = 830+((830-mindensity_profile)./830).*(rho_sw-830); minwe
 maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwetdensity_profile(ceil(density.eightthir)+1:end) = maxdensity_profile(ceil(density.eightthir)+1:end);
 
 
-%update iceberg data for the icebergs for which you re-ran volume change
-%calculations
-cd_to_berg_dir = ['cd ', iceberg_dir]; eval(cd_to_berg_dir);
+%update iceberg data for the icebergs for which you re-ran volume change calculations
+cd(iceberg_dir);
 for i = berg_refs
     if i < 10
         berg_number = [num2str(0),num2str(i)];
-        load_file = ['load iceberg',num2str(0),num2str(i),'_dz.mat']; eval(load_file);
+        load([iceberg',num2str(0),num2str(i),'_dz.mat']);
     else
         berg_number = num2str(i);
-        load_file = ['load iceberg',num2str(i),'_dz.mat']; eval(load_file);
+        load([iceberg',num2str(i),'_dz.mat']);
     end
     berg_no = strmatch([region_name,'iceberg',berg_number],berg_name);
-%     berg_number = berg_numbers(i).name(1:end-7);
-%     load_file = ['load ',berg_numbers(i).name]; eval(load_file);
     
     %incorporate data into a structure
     SL(berg_no).name = [region_name,'iceberg',num2str(berg_number)];
@@ -201,12 +197,12 @@ for i = berg_refs
     end
     SL(berg_no).initial.x = nanmean(xo,1); SL(berg_no).initial.y = nanmean(yo,1);
     SL(berg_no).final.x = nanmean(xf,1); SL(berg_no).final.y = nanmean(yf,1);
-    poly1 = roipoly(Z.x,Z.y,Z.z_elpsd_adjust,SL(berg_no).initial.x,SL(berg_no).initial.y);
+    poly1 = roipoly(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust,SL(berg_no).initial.x,SL(berg_no).initial.y);
     mask1 = logical(poly1);
-    SL(berg_no).initial.z = single(mask1.*Z.z_elpsd_adjust); SL(berg_no).initial.z(SL(berg_no).initial.z == 0) = NaN; SL(berg_no).initial.z(SL(berg_no).initial.z<0) = NaN;
-    poly2 = roipoly(Y.x,Y.y,Y.z_elpsd_adjust,SL(berg_no).final.x,SL(berg_no).final.y);
+    SL(berg_no).initial.z = single(mask1.*DEM1.z_elpsd_adjust); SL(berg_no).initial.z(SL(berg_no).initial.z == 0) = NaN; SL(berg_no).initial.z(SL(berg_no).initial.z<0) = NaN;
+    poly2 = roipoly(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust,SL(berg_no).final.x,SL(berg_no).final.y);
     mask2 = logical(poly2);
-    SL(berg_no).final.z = single(mask2.*Y.z_elpsd_adjust); SL(berg_no).final.z(SL(berg_no).final.z == 0) = NaN; SL(berg_no).final.z(SL(berg_no).final.z<0) = NaN;
+    SL(berg_no).final.z = single(mask2.*DEM2.z_elpsd_adjust); SL(berg_no).final.z(SL(berg_no).final.z == 0) = NaN; SL(berg_no).final.z(SL(berg_no).final.z<0) = NaN;
     SL(berg_no).initial.coreg_z = IB(1).local_adjust_o; SL(berg_no).final.coreg_z = IB(1).local_adjust_f;
     if isfield(IB,'flag')
         SL(berg_no).flag = IB(1).flag;
@@ -223,9 +219,9 @@ for i = berg_refs
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
     set(gcf,'position',[650 100 600 600]);
-    z = Z.z_elpsd_adjust+SL(berg_no).initial.coreg_z*ones(size(Z.z_elpsd_adjust));
-    idx = nearestneighbour([A.x(1) A.x(end)],Z.x); idy = nearestneighbour([A.y(1) A.y(end)],Z.y);
-    DEM_x = Z.x(idx(1):idx(2)); DEM_y = Z.y(idy(1):idy(2));
+    z = DEM1.z_elpsd_adjust+SL(berg_no).initial.coreg_z*ones(size(DEM1.z_elpsd_adjust));
+    idx = nearestneighbour([A.x(1) A.x(end)],DEM1.x); idy = nearestneighbour([A.y(1) A.y(end)],DEM1.y);
+    DEM_x = DEM1.x(idx(1):idx(2)); DEM_y = DEM1.y(idy(1):idy(2));
     DEM_z = z(idy(1):idy(2),idx(1):idx(2));
     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
     set(gca,'ydir','normal','clim',[0 50]); hold on;
@@ -317,6 +313,7 @@ for i = berg_refs
             rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
             rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
             clear rho_prof*;
+            
             while j
                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).initial.z_median;
                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2);
@@ -369,6 +366,7 @@ for i = berg_refs
             rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
             rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
             clear rho_prof*;
+            
             while j
                 Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(i).initial.z_median;
                 Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(i).initial.z_mad)/SL(i).initial.z_median)^2);
@@ -384,6 +382,7 @@ for i = berg_refs
                 rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
                 rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
                 clear rho_prof*;
+                
                 if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
                     if k == 1
                         SL(i).density_type = 'dry';
@@ -434,17 +433,16 @@ for i = berg_refs
     S.X = double(x'); S.Y = double(y');
     S.Name = ['iceberg',num2str(berg_number)];
     shapefile_name = ['WV_',num2str(to),'_icebergshape',num2str(berg_number)];
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     shapewrite(S,shapefile_name);
-    cd_to_root_data = ['cd ',root_dir]; eval(cd_to_root_data);
-    cd iceberg_support;
-    copyfile('antarctic_PSprojection.prj',[glacier_dir,'iceberg_data/iceberg_shapes/',shapefile_name,'.prj']);
-    cd_glacier_dir = ['cd ',glacier_dir]; eval(cd_glacier_dir); cd iceberg_data
+    copyfile([dir_code,'general/antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
     
     %save the data
     disp('Saving data');
-    save_file = ['save(''',region_abbrev,'_iceberg_melt.mat''',',','''SL''',',','''-v7.3''',')']; eval(save_file);
-    cd iceberg_shapes
+    save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     clear DEM_z_masked z idx idy x y iceberg_IMmask iceberg_DEMmask rho_f draft Hberg lat_area base_area dist area_mask masked_pixels image_xgrid image_ygrid shapes lmin* lmax* perimeter;
     clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax DEM_x DEM_y DEM_z;
     disp('Advancing to the later date');
@@ -459,9 +457,9 @@ for i = berg_refs
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
     set(gcf,'position',[650 100 600 600]);
-    z = Y.z_elpsd_adjust+SL(berg_no).final.coreg_z*ones(size(Y.z_elpsd_adjust));
-    idx = nearestneighbour([B.x(1) B.x(end)],Y.x); idy = nearestneighbour([B.y(1) B.y(end)],Y.y);
-    DEM_x = Y.x(idx(1):idx(2)); DEM_y = Y.y(idy(1):idy(2));
+    z = DEM2.z_elpsd_adjust+SL(berg_no).final.coreg_z*ones(size(DEM2.z_elpsd_adjust));
+    idx = nearestneighbour([B.x(1) B.x(end)],DEM2.x); idy = nearestneighbour([B.y(1) B.y(end)],DEM2.y);
+    DEM_x = DEM2.x(idx(1):idx(2)); DEM_y = DEM2.y(idy(1):idy(2));
     DEM_z = z(idy(1):idy(2),idx(1):idx(2));
     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
     set(gca,'ydir','normal','clim',[0 50]); hold on;
@@ -471,14 +469,11 @@ for i = berg_refs
     cd iceberg_data/iceberg_shapes
     disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
     figure(figure1);
-    %     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
     colormap gray; set(gca,'clim',[1.05*min(B.z(~isnan(B.z))) (0.95)*max(max(B.z))]);
     vxf = nearestneighbour(SL(berg_no).final.x,B.x); vyf = nearestneighbour(SL(berg_no).final.y,B.y);
-%     set(gca,'xlim',[min(A.x(vxf))-150 max(A.x(vxf))+150],'ylim',[min(A.y(vyf))-150 max(A.y(vyf))+150]);
     set(gca,'xlim',[min(SL(berg_no).final.x)-150 max(SL(berg_no).final.x)+150],'ylim',[min(SL(berg_no).final.y)-150 max(SL(berg_no).final.y)+150]);
     plot(B.x(vxf),B.y(vyf),'--r','linewidth',2);
     figure(figure2);
-    %     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
     set(gca,'ydir','normal','clim',[0 50]); hold on;
     set(gca,'xlim',[min(SL(berg_no).final.x)-150 max(SL(berg_no).final.x)+150],'ylim',[min(SL(berg_no).final.y)-150 max(SL(berg_no).final.y)+150]);
     plot(SL(berg_no).final.x,SL(berg_no).final.y,'-k','linewidth',2); hold on; plot(SL(berg_no).final.x,SL(berg_no).final.y,'--w','linewidth',2); hold on;
@@ -671,11 +666,10 @@ for i = berg_refs
     S.X = double(x'); S.Y = double(y');
     S.Name = ['iceberg',num2str(berg_number)];
     shapefile_name = ['WV_',num2str(tf),'_icebergshape',num2str(berg_number)];
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     shapewrite(S,shapefile_name);
-    cd_to_root_data = ['cd ',root_dir]; eval(cd_to_root_data);
-    cd iceberg_support;
-    copyfile('antarctic_PSprojection.prj',[glacier_dir,'iceberg_data/iceberg_shapes/',shapefile_name,'.prj']);
-    cd_glacier_dir = ['cd ',glacier_dir]; eval(cd_glacier_dir); cd iceberg_data
+    copyfile([dir_code,'general/antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
     
     %calculate mean surface area for the exposed face (SA) &
@@ -692,15 +686,14 @@ for i = berg_refs
     
     %save the data
     disp('Saving data');
-    save_file = ['save(''',region_abbrev,'_iceberg_melt.mat''',',','''SL''',',','''-v7.3''',')']; eval(save_file);
-    cd iceberg_shapes
+    save([dir_iceberg,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
     clear DEM_z_masked z idx idy x y iceberg_IMmask iceberg_DEMmask rho_f draft Hberg lat_area base_area dist area_mask masked_pixels image_xgrid image_ygrid shapes lmin* lmax* perimeter;
     clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax DEM_x DEM_y DEM_z;
     close all; drawnow;
     
     
     %cd to the melt rate file & load each file sequentially
-    cd_to_berg_dir = ['cd ', iceberg_dir]; eval(cd_to_berg_dir);
+    cd(dir_iceberg);
     if i < 10
         load_file = ['load iceberg',num2str(0),num2str(i),'_dz.mat']; eval(load_file);
     else
@@ -827,9 +820,9 @@ for i = berg_refs
 end
 
 %save the compiled data
-cd_to_berg_dir = ['cd ', iceberg_dir]; eval(cd_to_berg_dir);
+cd(dir_iceberg);
 disp('Saving melt rates');
-save_file = ['save(''',region_abbrev,'_iceberg_melt.mat''',',','''SL''',',','''-v7.3''',')']; eval(save_file);
+save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
 disp('Melt rates resaved!');
 close all; drawnow;
 clear A B Y Z;
