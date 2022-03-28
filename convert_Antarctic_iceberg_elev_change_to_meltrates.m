@@ -473,12 +473,13 @@ for i = 1:size(SL,2)
     plot(SL(i).initial.x_perim,SL(i).initial.y_perim,'-w','linewidth',2); hold on; plot(SL(i).initial.x_perim,SL(i).initial.y_perim,'--m','linewidth',2); hold on;
     
     %flag the iceberg as upright or overturned
-    prompt = 'Is the iceberg upright (i.e., does it look like the glacier surface) (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        SL(i).orientation = 1; %upright
-    else
-        SL(i).orientation = 0; %overturned or a fragment of the full thickness
+    answer = questdlg('Is the iceberg upright (i.e., does it look like the glacier surface)?',...
+    'Iceberg Upright or Flipped','1) Yes','2) No','1) Yes');
+    switch answer
+        case '1) Yes'
+            SL(i).orientation = 1; %upright
+        case '2) No'
+            SL(i).orientation = 0; %overturned or a fragment of the full thickness
     end
     
     %use the mask to extract size & shape info
