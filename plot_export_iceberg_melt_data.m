@@ -173,7 +173,7 @@ if table_flag == 1
         'MedianDraft_mean (m)' 'MedianDraft_range (m)' 'SurfaceArea_mean (m^2)' 'SurfaceArea_range (m^2)'...
         'SubmergedArea_mean (m^3)','SubmergedArea_uncert (m^3)'};
     T=table(dt',xo',yo',zo',po',Vo',xf',yf',zf',pf',Vf',coreg_zo',coreg_zf',dz',dz_sigma',dVdt',dVdt_uncert',draft',draft_uncert',Asurf',Asurf_uncert',Asub',Asub_uncert'); T.Properties.VariableNames = column_names;
-    writetable(T,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_meltinfo.csv']);
+    writetable(T,[dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_meltinfo.csv']);
     disp('Text file written');
 end
 
