@@ -1,7 +1,6 @@
 function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,bad_bergs,dir_output,dir_iceberg,dir_code)
 % Function to convert iceberg elevation change to melt rates in Antarctica
-% Ellyn Enderlin & Mariama Dryak
-% Slightly Modified by Rainey Aberle, Fall 2021
+% Ellyn Enderlin & Rainey Aberle, Spring 2022
 %
 % INPUTS:   DEM1            structure variable containing earlier DEM info
 %           DEM2            structure variable containing later DEM info
@@ -167,7 +166,7 @@ clear IM*;
 %create density profiles
 clear FAC;
 FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-ft = fittype('917-(917-a)*exp(-x/b)');[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); ci = confint(f); %create density profile
+[f,~] = firndensity_curvefit(density_depths,density_levels,firnair.median); ci = confint(f); %create density profile
 density_z = [0:1:1000];
 density_profile = rho_i-(rho_i-f.a)*exp(-density_z/f.b); mindensity_profile = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); maxdensity_profile = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2));
 %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (rho_sw-830)

@@ -202,13 +202,17 @@ density.eighthun = eighthundred(density.yref,density.xref);
 density.eightthir = eightthirty(density.yref,density.xref);
 density_levels = [700 750 800 830]; density_depths = [density.sevhun density.sevfif density.eighthun density.eightthir];
 %fit a curve to the density-depth profile to estimate the depth of the base of the firn column
-% [f,gof] = fit(density_levels',density_depths','smoothingspline');
-% ex_density = fnxtr(f.p); %extrapolate outside the data domain using a second order polynomial
-% density.nineseventeen = fnval(ex_density,917); %evaluate the extrapolation function at the bubble-free ice density
-ft = fittype('917-(917-a)*exp(-x/b)');
-[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
+[f,~] = firndensity_curvefit(density_depths,density_levels,firnair.median); ci = confint(f); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
 density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
-% density_levels = [density_levels 917]; density_depths = [density_depths density.nineseventeen];
+%create density profiles
+clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
+density_z = [0:1:1000];
+density_profile = rho_i-(rho_i-f.a)*exp(-density_z/f.b); mindensity_profile = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); maxdensity_profile = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2));
+%calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
+wetdensity_profile = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(ceil(density.eightthir)+1:end) = density_profile(ceil(density.eightthir)+1:end);
+minwetdensity_profile = 830+((830-mindensity_profile)./830).*(rho_sw-830); minwetdensity_profile(ceil(density.eightthir)+1:end) = mindensity_profile(ceil(density.eightthir)+1:end);
+maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwetdensity_profile(ceil(density.eightthir)+1:end) = maxdensity_profile(ceil(density.eightthir)+1:end);
+
 
 %save the FAC & density data
 if ~exist([dir_output,'firn_data/'],'dir')
@@ -400,17 +404,6 @@ if ~exist([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/'],'dir')
     mkdir([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
 end
 cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
-
-%create density profiles
-clear FAC;
-FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-ft = fittype('917-(917-a)*exp(-x/b)');[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); ci = confint(f); %create density profile
-density_z = [0:1:1000];
-density_profile = rho_i-(rho_i-f.a)*exp(-density_z/f.b); mindensity_profile = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); maxdensity_profile = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2));
-%calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
-wetdensity_profile = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(ceil(density.eightthir)+1:end) = density_profile(ceil(density.eightthir)+1:end);
-minwetdensity_profile = 830+((830-mindensity_profile)./830).*(rho_sw-830); minwetdensity_profile(ceil(density.eightthir)+1:end) = mindensity_profile(ceil(density.eightthir)+1:end);
-maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwetdensity_profile(ceil(density.eightthir)+1:end) = maxdensity_profile(ceil(density.eightthir)+1:end);
 
 %loop
 for i = 1:size(SL,2)
@@ -722,17 +715,6 @@ im_pixel_area = abs(A.x(1)-A.x(2)).*abs(A.y(1)-A.y(2)); %square meters
 % ----------extract final area & size info----------
 disp('For each iceberg, measure the iceberg aerial extent by drawing a polygon around the iceberg edge');
 cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
-
-%create density profiles
-clear FAC;
-FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-ft = fittype('917-(917-a)*exp(-x/b)');[f,~] = fit(density_depths',density_levels',ft,'StartPoint',[350 firnair.median]); ci = confint(f); %create density profile
-density_z = [0:1:1000];
-density_profile = rho_i-(rho_i-f.a)*exp(-density_z/f.b); mindensity_profile = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); maxdensity_profile = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2));
-%calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
-wetdensity_profile = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(ceil(density.eightthir)+1:end) = density_profile(ceil(density.eightthir)+1:end);
-minwetdensity_profile = 830+((830-mindensity_profile)./830).*(rho_sw-830); minwetdensity_profile(ceil(density.eightthir)+1:end) = mindensity_profile(ceil(density.eightthir)+1:end);
-maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwetdensity_profile(ceil(density.eightthir)+1:end) = maxdensity_profile(ceil(density.eightthir)+1:end);
 
 %loop
 for i = 1:size(SL,2) 
