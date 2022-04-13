@@ -650,7 +650,7 @@ for i = 1:size(SL,2)
 %     clf(figure1); clf(figure2); drawnow;
     clear DEM_z_masked z idx idy x y iceberg_IMmask iceberg_DEMmask rho_f draft Hberg lat_area base_area dist area_mask masked_pixels image_xgrid image_ygrid shapes lmin* lmax* perimeter;
 end
-clear Z x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax DEM_x DEM_y DEM_z ft f ci density_z *density_profile;
+clear Z x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax DEM_x DEM_y DEM_z ft f ci;
 disp('Advancing to the later date');
 close(figure1); close(figure2); clear A;
 
