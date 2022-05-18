@@ -29,7 +29,7 @@ berg_x = nanmean([PSx_early PSx_late]); berg_y = nanmean([PSy_early PSy_late]);
 [berg_lon,berg_lat] = ps2wgs(berg_x,berg_y,'StandardParallel',-71,'StandardMeridian',0);
 
 %read the RACMO files & find nearest pixel
-cd([dir_code,'general/RACMO2.3_Antarctica/']);
+cd([dir_code,'RACMO2.3_Antarctica/']);
 prompt = 'Are you looking at icebergs along the Antarctic Peninsula (y/n)?';
 str = input(prompt,'s');
 if strmatch(str,'y')==1
@@ -91,7 +91,7 @@ end
 close all; drawnow;
 
 %extract FAC data from the Ligtenberg model output
-cd([dir_code,'general/FDM_Antarctica/']);
+cd([dir_code,'FDM_Antarctica/']);
 %FAC = firn air content (H_observed-FAC = H_i)
 if AP==1
     firn_lat = ncread('FDM_FirnAir_XPEN055_1979-2016.nc','lat');
@@ -635,7 +635,7 @@ for i = 1:size(SL,2)
     shapefile_name = ['WV_',num2str(to),'_icebergshape',num2str(berg_numbers(i).name(8:9))];
     shapewrite(S,shapefile_name);
     cd_to_site_data = ['cd ',dir_output]; eval(cd_to_site_data);
-    copyfile([dir_code,'general/antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd_output_dir = ['cd ',dir_output,'/',DEM1.time,'-',DEM2.time,'/']; eval(cd_output_dir);
     clear S;
 
@@ -927,7 +927,7 @@ for i = 1:size(SL,2)
     S.Name = ['iceberg',num2str(berg_numbers(i).name(8:9))];
     shapefile_name = ['WV_',num2str(tf),'_icebergshape',num2str(berg_numbers(i).name(8:9))];
     shapewrite(S,shapefile_name);
-    copyfile([dir_code,'general/antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
 

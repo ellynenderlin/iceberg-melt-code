@@ -432,7 +432,7 @@ for i = 1:length(berg_refs)
     shapefile_name = ['WV_',num2str(to),'_icebergshape',num2str(berg_number)];
     cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     shapewrite(S,shapefile_name);
-    copyfile([dir_code,'general/antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
     
@@ -664,7 +664,7 @@ for i = 1:length(berg_refs)
     shapefile_name = ['WV_',num2str(tf),'_icebergshape',num2str(berg_number)];
     cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     shapewrite(S,shapefile_name);
-    copyfile([dir_code,'general/antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
     
