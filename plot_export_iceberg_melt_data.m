@@ -4,7 +4,7 @@ function [T] = plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_ab
 if plot_flag == 1
     %3-panel subplot: volume flux vs submerged area, melt rate vs draft,
     %melt rate vs sea level correction 
-    dVdt = []; Asub = []; rho = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_no =[];
+    dVdt = []; Asub = []; rho = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_no =[]; SLref = [];
     for i = 1:length(SL)
         if SL(i).mean.dVdt > 0 && ~isempty(SL(i).mean.TA)
             dVdt = [dVdt SL(i).mean.dVdt];
@@ -14,6 +14,7 @@ if plot_flag == 1
             m = [m SL(i).mean.dHdt];
             coreg_zo = [coreg_zo SL(i).initial.coreg_z]; coreg_zf = [coreg_zf SL(i).final.coreg_z];
             berg_no = [berg_no; SL(i).name(end-1:end)];
+            SLref = [SLref; i];
         end
     end
     figure; set(gcf,'position',[100 500 1500 600]);
@@ -56,17 +57,14 @@ if plot_flag == 1
                     'Sea level adjustment','1) Yes!','2) No!','1) Yes!');
                 switch answer
                     case '1) Yes!'
-                        %find the SL index
-                        SLref = strmatch(berg_no(i,:),berg_nostring);
-                        
                         %adjust the volume change estimate so that it is calculated
                         %assuming the median sea level correction is accurate locally
                         rho_f = rho(i);
-                        dZ_mean = (rho_sw/(rho_sw-rho_f))*(SL(SLref).mean.dz-((coreg_zo(i)-coreg_zf(i))-median_sldz));
-                        dV_mean = SL(SLref).mean.SA*(dZ_mean+SL(SLref).SMB+SL(SLref).creep_dz);
+                        dZ_mean = (rho_sw/(rho_sw-rho_f))*(SL(i).mean.dz-((coreg_zo(i)-coreg_zf(i))-median_sldz));
+                        dV_mean = SL(SLref(i)).mean.SA*(dZ_mean+SL(SLref(i)).SMB+SL(SLref(i)).creep_dz);
                         
                         %convert volume change to flux & melt rate
-                        to = SL(SLref).initial.time; tf = SL(SLref).final.time;
+                        to = SL(SLref(i)).initial.time; tf = SL(SLref(i)).final.time;
                         if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
                         if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
                         doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
@@ -90,11 +88,11 @@ if plot_flag == 1
                         dhrs = hrs_f - hrs_o;
                         dt = ddays + dhrs;
                         dVdt_mean = dV_mean/dt;
-                        dHdt_mean = dVdt_mean/SL(i).mean.TA;
+                        dHdt_mean = dVdt_mean/SL(SLref(i)).mean.TA;
                         
                         %replace sea level adjustments & corrected volume flux (dVdt_mean) and melt rate (dHdt_mean) in structure
-                        SL(SLref).mean.dVdt = dVdt_mean; SL(SLref).mean.dHdt = dHdt_mean;
-                        SL(SLref).initial.coreg_z = median_slzo; SL(SLref).final.coreg_z = median_slzf;
+                        SL(SLref(i)).mean.dVdt = dVdt_mean; SL(SLref(i)).mean.dHdt = dHdt_mean;
+                        SL(SLref(i)).initial.coreg_z = median_slzo; SL(SLref(i)).final.coreg_z = median_slzf;
                         
                 end
                 
@@ -105,7 +103,7 @@ if plot_flag == 1
     clear sldz*;
     
     %2-panel subplot: volume flux vs submerged area, melt rate vs draft
-    dVdt = []; Asub = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_no =[];
+    dVdt = []; Asub = []; H = []; m = []; coreg_zo = []; coreg_zf = []; berg_no =[]; SLref = [];
     for i = 1:length(SL)
         if SL(i).mean.dVdt > 0 && ~isempty(SL(i).mean.TA)
             dVdt = [dVdt SL(i).mean.dVdt];
@@ -114,6 +112,7 @@ if plot_flag == 1
             m = [m SL(i).mean.dHdt];
             coreg_zo = [coreg_zo SL(i).initial.coreg_z]; coreg_zf = [coreg_zf SL(i).final.coreg_z];
             berg_no = [berg_no; SL(i).name(end-1:end)];
+            SLref = [SLref; i]; 
         end
     end
     figure; set(gcf,'position',[100 100 1200 600]);
@@ -155,8 +154,7 @@ if table_flag == 1
             Asub(append_ref) = SL(i).mean.TA; Asub_uncert(append_ref) = SL(i).change.TA;
             append_ref = append_ref+1;
         else
-            %             SLref = strmatch(berg_no(i,:),berg_nostring);
-            disp(['Skipping over data for ',num2str(berg_no(i,:))]);
+            disp(['Skipping over data for ',num2str(berg_no(i,:)),' (',num2str(i),' in SL structure)']);
         end
     end
     bad_refs = find(draft<0); %remove data with negative thicknesses (unrealistic = error-prone)
