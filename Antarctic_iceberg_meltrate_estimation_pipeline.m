@@ -21,20 +21,19 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'Cadman-Palmer'; 
-region_abbrev = 'CG';
-% path to Iceberg-melt-code in directory
-dir_code = '/Users/icebergs/iceberg-melt/'; 
+region_name = 'Seller-Bugge'; 
+region_abbrev = 'BI';
+% path to codes
+dir_repo = '/Users/adamdickson/Desktop/iceberg-melt-code/'; %Github repo containing custom iceberg melt code
+dir_code = '/Users/Shared/general-code/'; %directory containing miscellaneous codes
 % path to TMD folder in directory
-dir_TMD = [dir_code,'general/TMD/'];
+dir_TMD = [dir_code,'TMD/'];
 % path to DEM files in directory
-dir_DEM = [dir_code,region_name,'/DEMs/'];
+dir_DEM = ['/Users/Shared/Antarctica/iceberg-melt/',region_name,'/DEMs/'];
 % path to outputs folder (where you would like all outputs saved)
-% dir_output = [dir_code,'../meltrate_outputs/'];
-dir_output = [dir_code,region_name,'/'];
-% DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names
-% (YYYYMMDDhhmmss)
-DEM1.time = '20201013133346'; DEM2.time = '20210122170158'; 
+dir_output = ['/Users/Shared/Antarctica/iceberg-melt/',region_name,'/'];
+% DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
+DEM1.time = '20190914161731'; DEM2.time = '20191103164046'; 
 
 % ----------INITIAL SET-UP----------
 % General DEM filenames (no suffixes) - Ensure filenames match this format
@@ -42,12 +41,11 @@ DEM1.filename = [region_abbrev,'_',DEM1.time];
 DEM2.filename = [region_abbrev,'_',DEM2.time];
 
 % add paths to necessary functions and datasets
+addpath(dir_repo);
 addpath(dir_code);
-addpath([dir_code,'functions/']);
-addpath([dir_code,'general/']);
-addpath([dir_code,'general/TMD/']);
-addpath([dir_code,'general/TMD/FUNCTIONS/']);
-addpath([dir_code,'general/RACMO2.3_Antarctica/']);
+addpath(dir_TMD);
+addpath([dir_TMD,'FUNCTIONS/']);
+addpath([dir_code,'RACMO2.3_Antarctica/']);
 
 %% 1. Convert DEMs & accompanying images to mat-files
 cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
