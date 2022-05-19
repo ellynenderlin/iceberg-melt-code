@@ -43,8 +43,7 @@ if plot_flag == 1
     
     %"fix" melt rate estimates with bad local sea level adjustments
     sldz = coreg_zo-coreg_zf;  %sea level adjustment
-    %     median_sldz = nanmedian(coreg_zo-coreg_zf);
-    sldz_outlier = isoutlier(sldz);
+    median_sldz = nanmedian(sldz); sldz_outlier = isoutlier(sldz);
     if sum(sldz_outlier) > 0
         disp('Automatically adjusting fluxes & melt rates for icebergs with clearly bad sea level estimates');
         median_slzo = nanmedian(coreg_zo); median_slzf = nanmedian(coreg_zf);
