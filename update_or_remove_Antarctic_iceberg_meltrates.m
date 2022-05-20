@@ -1,4 +1,4 @@
-function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,bad_bergs,dir_output,dir_iceberg,dir_code)
+function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Spring 2022
 %
@@ -22,10 +22,14 @@ rho_i = 917; rho_i_err = 10; %kg m^-3
 %load the saved iceberg data
 DEM1_date = DEM1.time(1:8); DEM2_date = DEM2.time(1:8);
 load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
-berg_no = [];
 for i = 1:length(SL)
-    berg_name(i,:) = SL(berg_ref).name;
-    berg_no = [berg_no; SL(berg_ref).name(end-1:end)];
+    for k = 1:length(iceberg_refs)
+        if strmatch(num2str(iceberg_refs(k)),SL(i).name(end-1:end))
+            berg_refs(k) = k;
+        end
+    end
+    berg_name(i,:) = SL(i).name;
+    berg_no(i) = SL(i).name(end-1:end);
 end
 
 %load the firn density info
@@ -34,20 +38,6 @@ load(['firn_data/',region_name,'_density_data.mat']);
 density_levels = [700 750 800 830]; density_depths = [density.sevhun density.sevfif density.eighthun density.eightthir];
 density_levels = [density_levels 917]; density_depths = [density_depths density.nineseventeen];
 cd(dir_iceberg);
-
-%only repeat calculations for troublesome icebergs
-berg_refs = [];
-if ~isempty(bad_bergs)
-    for j = 1:length(bad_bergs)
-        if length(num2str(bad_bergs(j))) == 1
-            bad_ref = matches(string(berg_no),['0',num2str(bad_bergs(j))]);
-        else
-            bad_ref = matches(string(berg_no),num2str(bad_bergs(j)));
-        end
-        berg_refs = [berg_refs; find(bad_ref==1)];
-        clear bad_ref;
-    end
-end
 
 %calculate the time separation between DEMs in terms of 
 %decimal years (ddays) & decimal days (days)
@@ -68,7 +58,6 @@ else
             doys(k) = 365;
         end
     end
-    
         
     %calculate the sum of days differently if during a leap year
     if doyo > sum(modayso(1:2))
@@ -174,7 +163,6 @@ wetdensity_profile = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_
 minwetdensity_profile = 830+((830-mindensity_profile)./830).*(rho_sw-830); minwetdensity_profile(ceil(density.eightthir)+1:end) = mindensity_profile(ceil(density.eightthir)+1:end);
 maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwetdensity_profile(ceil(density.eightthir)+1:end) = maxdensity_profile(ceil(density.eightthir)+1:end);
 
-
 %update iceberg data for the icebergs for which you re-ran volume change calculations
 cd(dir_iceberg);
 for i = 1:length(berg_refs)
@@ -184,7 +172,7 @@ for i = 1:length(berg_refs)
         berg_number = num2str(berg_refs(i));
     end
     load(['iceberg',berg_number,'_dz.mat']);
-    berg_ref = strmatch([region_name,'iceberg',berg_number],berg_name);
+    berg_ref = berg_refs(i);
     
     %incorporate data into a structure
     SL(berg_ref).name = [region_name,'iceberg',num2str(berg_number)];

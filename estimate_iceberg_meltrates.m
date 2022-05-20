@@ -124,7 +124,7 @@ elseif option_no==2 %recalculate melt rates for select icebergs
     
     %update and/or remove select icebergs
     if exist('iceberg_refs') ~= 1
-        disp('Specify the bergs that need updating as "iceberg_refs = []; dbcont"');
+        disp('Specify the berg numbers (from melt plots) that need updating as "iceberg_refs = []; dbcont"');
         keyboard
     end
     SL = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code);
