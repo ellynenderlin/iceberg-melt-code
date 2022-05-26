@@ -28,48 +28,49 @@ function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,d
 
 
 % ----------STEP 1: Calculate Elevation Change----------
-disp('Extract iceberg elevation change');
 dir_iceberg = [dir_output,DEM1.time,'-',DEM2.time,'/'];
 cd(dir_iceberg);
 icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
 iceberg_dz = dir([dir_iceberg,'iceberg*dz.mat']);
 
 %select the iceberg number for which to start the elevation change estimates
-if ~isempty(iceberg_dz)
-    disp(['Already calculated elevation change for ',num2str(length(iceberg_dz)),' of ',num2str(length(icebergs)),' icebergs']);
-    answer = questdlg('Do you want/need to calculate elevation changes for more icebergs?',...
-        'Elevation Change Estimation','1) Yes!','2) No','1) Yes!');
-    switch answer
-        case '1) Yes!'
-            %specify the iceberg numbers to loop through
-            disp('Specify range of iceberg numbers as "iceberg_refs = X:Y; dbcont" in the command window (w/o quotes) then hit enter to loop');
-            disp('   Ex of loop: iceberg_refs = 4:size(icebergs,1); dbcont');
-            disp('   Ex of select numbers: iceberg_refs = [5,15,16]; dbcont');
-            keyboard
-            
-            %loop
-            for j = iceberg_refs %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
-                iceberg_no = icebergs(j).name(8:9);
-                [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
-                clear IB dz;
-            end
-        case '2) No'
-            disp('Moving on to melt rate estimation...');
-    end
-else
-    for j = 1:size(icebergs,1) %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
-        %for j = berg_refs
-        %for j = 1:3 %example: pull elevation change info for icebers 01-03
-        %for j = 5:11 %example: pull elevation change info for icebergs 05-11
-        %for j = [4 11] %example: re-calculate elevation changes for two icebergs with non sequential numbers (4 and 11 in this case)
-        iceberg_no = icebergs(j).name(8:9);
-        
-        [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
-        clear IB dz;
-    end
-end
-close all;
+if option_no ~= 3
+    disp('Extract iceberg elevation change');
+    if ~isempty(iceberg_dz)
+        disp(['Already calculated elevation change for ',num2str(length(iceberg_dz)),' of ',num2str(length(icebergs)),' icebergs']);
+        answer = questdlg('Do you want/need to calculate elevation changes for more icebergs?',...
+            'Elevation Change Estimation','1) Yes!','2) No','1) Yes!');
+        switch answer
+            case '1) Yes!'
+                %specify the iceberg numbers to loop through
+                disp('Specify range of iceberg numbers as "iceberg_refs = X:Y; dbcont" in the command window (w/o quotes) then hit enter to loop');
+                disp('   Ex of loop: iceberg_refs = 4:size(icebergs,1); dbcont');
+                disp('   Ex of select numbers: iceberg_refs = [5,15,16]; dbcont');
+                keyboard
 
+                %loop
+                for j = iceberg_refs %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
+                    iceberg_no = icebergs(j).name(8:9);
+                    [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
+                    clear IB dz;
+                end
+            case '2) No'
+                disp('Moving on to melt rate estimation...');
+        end
+    else
+        for j = 1:size(icebergs,1) %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
+            %for j = berg_refs
+            %for j = 1:3 %example: pull elevation change info for icebers 01-03
+            %for j = 5:11 %example: pull elevation change info for icebergs 05-11
+            %for j = [4 11] %example: re-calculate elevation changes for two icebergs with non sequential numbers (4 and 11 in this case)
+            iceberg_no = icebergs(j).name(8:9);
+
+            [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
+            clear IB dz;
+        end
+    end
+    close all;
+end
 
 % ----------STEP 2: Estimate Melt Rates----------
 if option_no==1 %calculate melt rates for all icebergs
@@ -108,7 +109,7 @@ if option_no==1 %calculate melt rates for all icebergs
     
     %resave to the mat-file
     disp('Saving melt rates');
-    save([dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
+    save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
     
     disp(' ');
     disp('Run option 2 in the last section of the wrapper:');
@@ -119,8 +120,6 @@ if option_no==1 %calculate melt rates for all icebergs
 elseif option_no==2 %recalculate melt rates for select icebergs
     disp('Recalculate melt rates for select icebergs then remove icebergs that still have bad results');
     dir_iceberg = [dir_output,DEM1.time,'-',DEM2.time,'/'];
-    %     berg_numbers = dir([dir_iceberg,'iceberg*dz.mat']);
-    %     dir_bedrock = [dir_output,'DEM_offset_data/'];
     
     %update and/or remove select icebergs
     if exist('iceberg_refs') ~= 1
@@ -129,6 +128,12 @@ elseif option_no==2 %recalculate melt rates for select icebergs
     end
     SL = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code);
     disp('Resaved iceberg melt structure, plots, & data table!');
+
+elseif option_no==3 %only plot
+    load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
+    cd(dir_iceberg);
+    plot_flag = 1; table_flag = 0; %plot data
+    plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
 end
 
 end

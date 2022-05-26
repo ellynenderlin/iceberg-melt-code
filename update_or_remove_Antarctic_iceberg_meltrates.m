@@ -12,7 +12,8 @@ function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,r
 %           dir_output      directory where all output files will be placed
 %           region_abbrev   abbrevation of region used in file names
 %
-% OUTPUTS:  SL structure containing iceberg melt volume & melt rate data
+% OUTPUTS:  Rewrites individual iceberg elevation change files (iceberg##_dz.mat) &
+% updates the SL structure containing iceberg melt volume & melt rate data
 close all; drawnow;
 
 %specify densities
@@ -25,11 +26,11 @@ load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'])
 for i = 1:length(SL)
     for k = 1:length(iceberg_refs)
         if strmatch(num2str(iceberg_refs(k)),SL(i).name(end-1:end))
-            berg_refs(k) = k;
+            berg_refs(k) = i;
         end
     end
     berg_name(i,:) = SL(i).name;
-    berg_no(i) = SL(i).name(end-1:end);
+    berg_no(i) = str2num(SL(i).name(end-1:end));
 end
 
 %load the firn density info
@@ -78,7 +79,7 @@ DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel
 %EARLIER DATE
 xo = []; yo = [];
 for i = 1:length(SL)
-    xo = [xo SL(berg_ref).initial.x]; yo = [yo SL(berg_ref).initial.y];
+    xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
 end
 dy = IM1.y(1)-IM1.y(2);
 if dy < 0
@@ -114,7 +115,7 @@ clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax;
 %LATER DATE
 xf = []; yf = [];
 for i = 1:length(SL)
-    xf = [xf SL(berg_ref).final.x]; yf = [yf SL(berg_ref).final.y];
+    xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
 end
 dy = IM2.y(1)-IM2.y(2);
 if dy < 0
@@ -149,9 +150,7 @@ end
 
 %extract image pixel areas
 im1_pixel_area = abs(A.x(1)-A.x(2)).*abs(A.y(1)-A.y(2)); im2_pixel_area = abs(B.x(1)-B.x(2)).*abs(B.y(1)-B.y(2)); %square meters
-clear IM*;
 
-%density data
 %create density profiles
 clear FAC;
 FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
@@ -171,10 +170,14 @@ for i = 1:length(berg_refs)
     else
         berg_number = num2str(berg_refs(i));
     end
-    load(['iceberg',berg_number,'_dz.mat']);
     berg_ref = berg_refs(i);
-    
-    %incorporate data into a structure
+
+    %step 1: Re-extract elevation change
+    extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,berg_ref,dir_output,dir_code,region_abbrev);
+    clear IM*; %clear full-extent images to speed up computation time
+
+    %step 2: Load the re-extracted elevation change data & recalculate volume flux
+    load(['iceberg',berg_number,'_dz.mat']);
     SL(berg_ref).name = [region_name,'iceberg',num2str(berg_number)];
     xo = []; yo = []; xf = []; yf = [];
     for j = 1:10
@@ -215,7 +218,7 @@ for i = 1:length(berg_refs)
     %measure the iceberg in the early image & DEM
     disp('Measure the iceberg aerial extent by drawing a polygon around the iceberg edge');
     cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
-    disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
+    disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(berg_ref)]);
     figure(figure1);
     %     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
     colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
@@ -451,7 +454,7 @@ for i = 1:length(berg_refs)
     
     %measure the iceberg in the later image & DEM
     cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
-    disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
+    disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(berg_ref)]);
     figure(figure1);
     colormap gray; set(gca,'clim',[1.05*min(B.z(~isnan(B.z))) (0.95)*max(max(B.z))]);
     vxf = nearestneighbour(SL(berg_ref).final.x,B.x); vyf = nearestneighbour(SL(berg_ref).final.y,B.y);
@@ -811,28 +814,24 @@ plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,
 prompt = 'Do you want to remove any icebergs from the analysis  (y/n)?';
 str = input(prompt,'s');
 if strmatch(str,'y')==1
-    disp(['Already identified bad icebergs as #s ',num2str(bad_bergs)]);
-    disp('Specify the icebergs to remove as "bad_bergs=[A B C etc]; dbcont"');
+    disp(['Bad icebergs initially specified as #s ',num2str(iceberg_refs)]);
+    clear iceberg_refs berg_refs;
+    disp('Specify the icebergs to remove as "iceberg_refs=[A B C etc]; dbcont"');
     keyboard
     
     %identify the structure reference for the specified icebergs
-    berg_refs = [];
-    if ~isempty(bad_bergs)
-        for j = 1:length(bad_bergs)
-            if length(num2str(bad_bergs(j))) == 1
-                bad_ref = matches(string(berg_no),['0',num2str(bad_bergs(j))]);
-            else
-                bad_ref = matches(string(berg_no),num2str(bad_bergs(j)));
+    for i = 1:length(SL)
+        for k = 1:length(iceberg_refs)
+            if strmatch(num2str(iceberg_refs(k)),SL(i).name(end-1:end))
+                berg_refs(k) = k;
             end
-            berg_refs = [berg_refs; find(bad_ref==1)];
-            clear bad_ref;
         end
     end
     
     %remove the bad icebergs from the structure
     for i = 1:length(berg_refs)
         SL(berg_refs(i)).mean.TA = [];
-        SL(berg_ref(i)).mean.dHdt = [];
+        SL(berg_refs(i)).mean.dHdt = [];
     end
 end
 %resave without the bad icebergs

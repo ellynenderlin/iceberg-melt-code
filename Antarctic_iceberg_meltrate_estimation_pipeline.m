@@ -24,7 +24,7 @@ clearvars; close all;
 region_name = 'Seller-Bugge'; 
 region_abbrev = 'BI';
 % path to codes
-dir_repo = '/Users/adamdickson/Desktop/iceberg-melt-code/'; %Github repo containing custom iceberg melt code
+dir_repo = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code/'; %Github repo containing custom iceberg melt code
 dir_code = '/Users/Shared/general-code/'; %directory containing miscellaneous codes
 % path to TMD folder in directory
 dir_TMD = [dir_code,'TMD/'];
@@ -33,7 +33,7 @@ dir_DEM = ['/Users/Shared/Antarctica/iceberg-melt/',region_name,'/DEMs/'];
 % path to outputs folder (where you would like all outputs saved)
 dir_output = ['/Users/Shared/Antarctica/iceberg-melt/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20190914161731'; DEM2.time = '20191103164046'; 
+DEM1.time = '20190914161731'; DEM2.time = '20191103164046';
 
 % ----------INITIAL SET-UP----------
 % General DEM filenames (no suffixes) - Ensure filenames match this format
@@ -125,12 +125,14 @@ close all;
 %   1 = Estimate elevation change for each iceberg
 %   2 = UPDATE individual icebergs and/or remove icebergs with anomalous melt rate estimates
 answer = questdlg('Calculating melt rates the first time or updating/removing iceberg data?',...
-    'Melt Calculation Options','1) First time','2) Updating or Removing','1) First time');
+    'Melt Calculation Options','1) First time','2) Updating or Removing','3) Just checking plots','1) First time');
 switch answer
     case '1) First time'
         option_no = 1;
     case '2) Updating or Removing'
         option_no = 2;
+    case '3) Just checking plots'
+        option_no = 3;
 end
 clear answer;
 

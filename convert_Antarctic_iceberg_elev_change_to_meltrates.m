@@ -296,8 +296,8 @@ iceberg_avgtemp = nanmean(squeeze(icetemp(RACMOx,RACMOy,:))); % air temp (Kelvin
 
 
 % %load the saved data if restarting
-% cd iceberg_data
-% load_saved_data = ['load ',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']; eval(load_saved_data);
+% cd(dir_iceberg);
+% load([region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
 
 % load ROI and elevation info for all icebergs
 cd(dir_iceberg);
@@ -960,7 +960,7 @@ close(figure1); close(figure2); clear A;
 % ----------use the iceberg surface area measurements to calculate volume fluxes & melt rates----------
 disp('Converting changes in iceberg elevation to volume fluxes & melt rates');
 close all; drawnow;
-for i = 1:size(berg_numbers,1)
+for i = 1:length(SL)
     %cd to the melt rate file & load each file sequentially
     cd(dir_iceberg);
     berg_number = berg_numbers(i).name(1:end-7);
@@ -1092,7 +1092,7 @@ end
 
 %save the compiled data
 disp('Saving melt rates');
-save([dir_iceberg,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
+save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
 disp('Melt rates saved! Advance to the next dataset');
 
 close all; drawnow;

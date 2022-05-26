@@ -42,8 +42,9 @@ else
     imf_pos = [(monitor_sizes(3)-50)/2+50 50 (5/6)*(monitor_sizes(3)-50)/2 (5/6)*(monitor_sizes(4)-50)/2];
 end
 
-%calculate the time change between images
-date_o = DEM1.date; date_f = DEM2.date;
+%calculate the time change between images %used to reference date variable in these structures (changed 26/05/2022)
+date_o = [DEM1.time(1:4),'/',DEM1.time(5:6),'/',DEM1.time(7:8)]; 
+date_f = [DEM2.time(1:4),'/',DEM2.time(5:6),'/',DEM2.time(7:8)]; 
 
 %load the sea level offset file
 fjord = load([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat']).fjord;
