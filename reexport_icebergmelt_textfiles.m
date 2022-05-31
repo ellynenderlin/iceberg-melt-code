@@ -101,7 +101,7 @@ for k = 1:length(datepairs)
 %         end
 %     end
 %     column_vals = [dt' xo' yo' zo' po' Vo' xf' yf' zf' pf' Vf' coreg_zo' coreg_zf' dz' dz_sigma' dVdt' dVdt_uncert' draft' draft_uncert' Asurf' Asurf_uncert' Asub' Asub_uncert'];
-    T=table(dt,xo,yo,zo,zo,Vo,xf,yf,zf,pf,Vf,coreg_zo,coreg_zf,dz,dz_sigma,dVdt,dVdt_uncert,draft,2*draft_uncert,Asurf,2*Asurf_uncert,Asub,2*Asub_uncert); T.Properties.VariableNames = column_names;
+    T=table(dt,xo,yo,zo,po,Vo,xf,yf,zf,pf,Vf,coreg_zo,coreg_zf,dz,dz_sigma,dVdt,dVdt_uncert,draft,2*draft_uncert,Asurf,2*Asurf_uncert,Asub,2*Asub_uncert); T.Properties.VariableNames = column_names;
     
     
     %save in the region directory
