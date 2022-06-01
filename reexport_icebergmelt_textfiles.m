@@ -6,7 +6,8 @@ clearvars; close all;
 cd /Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt
 
 %modify the region name to repeat this process for each location
-region_name = 'Widdowson-Biscoe'; disp(['Region: ',region_name]);
+region_name = 'Widdowson-Biscoe'; region_abbrev = 'WG';
+disp(['Region: ',region_name]);
 cd(region_name);
 
 %find all the date directories
@@ -107,7 +108,7 @@ for k = 1:length(datepairs)
     %save in the region directory
 %     cd ../..
 %     dlmwrite([region_name,'_',datepairs(k).name,'_iceberg_meltinfo.txt'],column_vals,'delimiter','\t');
-    writetable(T,[datepairs(k).name(1:end-3),'csv']);
+    writetable(T,[region_abbrev,datepairs(k).name(end-50:end-3),'csv']);
     
     clear SL dt xo yo zo po Vo xf yf zf pf Vf coreg_zo coreg_zf dz dz_sigma dVdt dVdt_uncert draft draft_uncert Asurf Asurf_uncert Asub Asub_uncert;
 end
