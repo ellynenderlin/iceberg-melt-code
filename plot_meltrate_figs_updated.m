@@ -181,7 +181,8 @@ for i = 1:size(region,2)
         clear plotpos;
         %plot face color color-coded by date
         errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,'s',...
-            'markerfacecolor','none','markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size); hold on;
+            'markerfacecolor','none','markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size,...
+            'color',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
 %         plot(draft,365*m,[marker(i),'k'],'markerfacecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markeredgecolor','k','markersize',symbol_size); hold on;
         scatter(draft,365*m,6*symbol_size,plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'filled','s','MarkerEdgeColor','k'); hold on;
         
@@ -196,14 +197,9 @@ for i = 1:size(region,2)
         
         %add data to site scatterplots
         figure(figureE);
-        meltrate_v_draft = [meltrate_v_draft; max(365*m) max(draft)];
-        %color-coded according to region w/ edges color-coded by date
-%         errorbar(draft,m,abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,[marker(i),'k'],'markerfacecolor',plot_cmap(i,:),'markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size); hold on;
-%         indpl(j) = plot(draft,m,[marker(i),'k'],'markerfacecolor',plot_cmap(i,:),'markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size,'linewidth',1.5); hold on;
-        %plot face color color-coded by date
         errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,'sk',...
-            'markerfacecolor','none','markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',2*symbol_size); hold on;
-%         indpl(j) = plot(draft,365*m,[marker(i),'k'],'markerfacecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markeredgecolor','k','markersize',symbol_size); hold on;
+            'markerfacecolor','none','markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',2*symbol_size,...
+            'color',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
         indpl(j) = scatter(draft,365*m,2*(6*symbol_size),plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'filled','s','MarkerEdgeColor','k'); hold on;
         daterange(j,:) = [meltinfo(j).name(end-49:end-46),'/',meltinfo(j).name(end-45:end-44),'/',meltinfo(j).name(end-43:end-42),'-',meltinfo(j).name(end-34:end-31),'/',meltinfo(j).name(end-30:end-29),'/',meltinfo(j).name(end-28:end-27)];
         
