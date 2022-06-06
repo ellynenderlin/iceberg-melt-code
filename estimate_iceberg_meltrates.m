@@ -30,12 +30,12 @@ function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,d
 % ----------STEP 1: Calculate Elevation Change----------
 dir_iceberg = [dir_output,DEM1.time,'-',DEM2.time,'/'];
 cd(dir_iceberg);
-icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
-iceberg_dz = dir([dir_iceberg,'iceberg*dz.mat']);
 
 %select the iceberg number for which to start the elevation change estimates
 if option_no ~= 3
     disp('Extract iceberg elevation change');
+    icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
+    iceberg_dz = dir([dir_iceberg,'iceberg*dz.mat']);
     if ~isempty(iceberg_dz)
         disp(['Already calculated elevation change for ',num2str(length(iceberg_dz)),' of ',num2str(length(icebergs)),' icebergs']);
         answer = questdlg('Do you want/need to calculate elevation changes for more icebergs?',...
@@ -132,7 +132,8 @@ elseif option_no==2 %recalculate melt rates for select icebergs
 elseif option_no==3 %only plot
     load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
     cd(dir_iceberg);
-    plot_flag = 1; table_flag = 0; %plot data
+    plot_flag = 1; %plot data
+    table_flag = 0; %default (0) suppresses table generation, switch to 1 to create tables
     plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
 end
 

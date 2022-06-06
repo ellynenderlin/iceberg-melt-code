@@ -21,19 +21,19 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'Seller-Bugge'; 
-region_abbrev = 'BI';
+region_name = 'Edgeworth-LarsenA'; 
+region_abbrev = 'LA';
 % path to codes
 dir_repo = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code/'; %Github repo containing custom iceberg melt code
-dir_code = '/Users/Shared/general-code/'; %directory containing miscellaneous codes
+dir_code = '/Users/ellynenderlin/Research/miscellaneous/general-code/'; %directory containing miscellaneous codes
 % path to TMD folder in directory
 dir_TMD = [dir_code,'TMD/'];
 % path to DEM files in directory
-dir_DEM = ['/Users/Shared/Antarctica/iceberg-melt/',region_name,'/DEMs/'];
+dir_DEM = ['/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/',region_name,'/DEMs/'];
 % path to outputs folder (where you would like all outputs saved)
-dir_output = ['/Users/Shared/Antarctica/iceberg-melt/',region_name,'/'];
+dir_output = ['/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20190914161731'; DEM2.time = '20191103164046';
+DEM1.time = '20191012101214'; DEM2.time = '20200927092713';
 
 % ----------INITIAL SET-UP----------
 % General DEM filenames (no suffixes) - Ensure filenames match this format

@@ -12,9 +12,9 @@ plot_yrs = []; avgx = []; avgy = []; region = []; warning off;
 rho_sw = 1026; %sea water density in kg m^-3
 
 %make colormaps
-yrs = [2013:1:2022]; %plot_marker = colormap(parula(length(yrs)+1)); plot_marker = plot_marker(1:length(yrs),:);
-% plot_marker = [127,59,8;179,88,6;224,130,20;253,184,99;254,224,182;216,218,235;178,171,210;128,115,172;84,39,136;45,0,75]/255; %orange-purple colormap
-plot_marker = cmocean('dense',length(yrs)+1); plot_marker = plot_marker(2:end,:); %colormap for emphasizing different years
+yrs = [2013:1:2022]; %plot_color = colormap(parula(length(yrs)+1)); plot_color = plot_color(1:length(yrs),:);
+% plot_color = [127,59,8;179,88,6;224,130,20;253,184,99;254,224,182;216,218,235;178,171,210;128,115,172;84,39,136;45,0,75]/255; %orange-purple colormap
+plot_color = cmocean('ice',length(yrs)+1); plot_color = plot_color(1:end-1,:); %colormap for emphasizing different years
 lowmelt_cmap = flipud(colormap(hot(40))); highmelt_cmap = flipud(colormap(hot(100)));
 % plot_cmap = colormap(parula(15)); %colormap for emphasizing different locations
 close all;
@@ -26,8 +26,9 @@ disp_names = [{'i) Edgeworth'},{'j) Crane'},{'k) Ronne'},{'l) Filchner'},{'m) Po
     {'h) Thwaites'},{'g) Ferrigno'},{'f) Seller'},{'e) Heim'},{'d) Widdowson'},{'c) Cadman'},{'b) Blanchard'},{'a) Leonardo'}]; %geographically-organized figure labels
 leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Polar Times'},{'Totten'},{'Mertz'},...
     {'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}]; %generic figure labels
-% marker = ['d','d','d','d','d','d','d','s','s','s','s','s','s','s','s']; %set-up the different marker styles for E and W
-marker = ['s','s','s','s','s','s','s','s','s','s','s','s','s','s','s']; %uniform markers
+map_marker = 's'; %marker symbol for maps
+plot_marker = 's'; %marker symbol for scatterplots
+symbol_size = 4; %symbols size
 plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1]; %specifies the subplot locations for the study sites listed as "region", "disp_names", and "leg_names" above
 region_colors = [77,172,38; 77,172,38; 184,225,134; 184,225,134; 184,225,134; 184,225,134; 184,225,134;...
     241,182,218; 241,182,218; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139]./255;
@@ -52,7 +53,7 @@ figureA=figure; set(gcf,'position',[450 50 800 800]);
 im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1];
 imagesc(IM.x,IM.y,IM.z); colormap(gca,im_cmap); hold on; axis xy equal
 %set-up subplots for graphs
-figureB = figure; set(gcf,'position',[50 400 1600 600]);
+figureB = figure; set(gcf,'position',[50 400 800 600]);
 sub1b = subplot(1,2,1); sub2b = subplot(1,2,2);
 figureC = figure; set(gcf,'position',[50 50 800 1000]);
 
@@ -90,7 +91,6 @@ for i = 1:size(region,2)
     
     %scatterplot for study site
     figureE = figure; set(gcf,'position',[1200 50 800 450]);
-    if ~isempty(strmatch(marker(i),'p')) || ~isempty(strmatch(marker(i),'h')); symbol_size = 6; else symbol_size = 4; end
     
     %loop through each date pair & plot data
     for j = 1:length(meltinfo)
@@ -144,15 +144,17 @@ for i = 1:size(region,2)
         %multi-panel subplots of all data
         figure(figureB);
         subplot(sub1b);
-        errorbar(Asub,dVdt/86400,dVdt_uncert/86400,dVdt_uncert/86400,Asub_uncert,Asub_uncert,marker(i),...
-            'markerfacecolor','w','markersize',symbol_size,'markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),...
-            'color',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
-        pl(i) = plot(Asub,dVdt/86400,[marker(i),'k'],'markerfacecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size); hold on;
+        errorbar(Asub,dVdt/86400,dVdt_uncert/86400,dVdt_uncert/86400,Asub_uncert,Asub_uncert,plot_marker,...
+            'markerfacecolor','w','markersize',symbol_size,'markeredgecolor',region_colors(i,:),...
+            'color',region_colors(i,:)); hold on;
+        pl(i) = plot(Asub,dVdt/86400,plot_marker,'markerfacecolor',region_colors(i,:),'markerfacecolor',region_colors(i,:),...
+            'color',region_colors(i,:),'markersize',symbol_size,'linewidth',1); hold on;
         subplot(sub2b);
-        errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,marker(i),...
-            'markerfacecolor','w','markersize',symbol_size,'markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),...
-            'color',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
-        plot(draft,365*m,[marker(i),'k'],'markerfacecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size); hold on;
+        errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,plot_marker,...
+            'markerfacecolor','w','markersize',symbol_size,'markeredgecolor',region_colors(i,:),...
+            'color',region_colors(i,:)); hold on;
+        plot(draft,365*m,plot_marker,'markerfacecolor',region_colors(i,:),'markerfacecolor',region_colors(i,:),...
+            'color',region_colors(i,:),'markersize',symbol_size,'linewidth',1); hold on;
         
         %subplots for each region but all in one figure window
         figure(figureC);
@@ -165,7 +167,9 @@ for i = 1:size(region,2)
         if plot_loc(i) == 14
             if j == 1
                 for k = 1:length(yrs)
-                    yrpl(k) = plot(draft(1),365*dVdt(1)./Asub(1),'sk','markerfacecolor',plot_marker(yrs(k)-(min(yrs)-1),:)); hold on;
+                    yrpl(k) = plot(draft(1),365*dVdt(1)./Asub(1),plot_marker,'markerfacecolor',plot_color(yrs(k)-(min(yrs)-1),:),...
+                        'markeredgecolor',plot_color(yrs(k)-(min(yrs)-1),:),'markersize',symbol_size,...
+                        'color',plot_color(yrs(k)-(min(yrs)-1),:)); hold on;
                 end
             end
         end
@@ -180,27 +184,32 @@ for i = 1:size(region,2)
         end
         clear plotpos;
         %plot face color color-coded by date
-        errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,'s',...
-            'markerfacecolor','none','markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size,...
-            'color',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
-%         plot(draft,365*m,[marker(i),'k'],'markerfacecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markeredgecolor','k','markersize',symbol_size); hold on;
-        scatter(draft,365*m,6*symbol_size,plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'filled','s','MarkerEdgeColor','k'); hold on;
+        errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,[plot_marker,'k'],...
+            'markerfacecolor','none','markeredgecolor',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size,...
+            'color',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
+%         scatter(draft,365*m,6*symbol_size,plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),plot_marker); hold on;
+        plot(draft,365*m,plot_marker,'markerfacecolor',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),...
+            'markerfacecolor',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),...
+            'color',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',symbol_size,'linewidth',1); hold on;
         
         %add data to the site map-view figure
         figure(figureD);
         for k = 1:length(m)
             symbol_color = ceil(2*(m(k))*365);
             if symbol_color > length(highmelt_cmap); symbol_color = length(highmelt_cmap); end
-            plot(nanmean([xo(k) xf(k)]),nanmean([yo(k) yf(k)]),[marker(i),'k'],'markerfacecolor',highmelt_cmap(symbol_color,:),'markersize',round(draft(k)/30)+10); hold on;
+            plot(nanmean([xo(k) xf(k)]),nanmean([yo(k) yf(k)]),[map_marker,'k'],'markerfacecolor',highmelt_cmap(symbol_color,:),'markersize',round(draft(k)/30)+10); hold on;
             clear symbol_color;
         end
         
         %add data to site scatterplots
         figure(figureE);
-        errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,'sk',...
-            'markerfacecolor','none','markeredgecolor',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',2*symbol_size,...
-            'color',plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
-        indpl(j) = scatter(draft,365*m,2*(6*symbol_size),plot_marker(round(nanmean(plot_yrs))-(min(yrs)-1),:),'filled','s','MarkerEdgeColor','k'); hold on;
+        errorbar(draft,365*m,365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),365*abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2),draft_uncert,draft_uncert,[plot_marker,'k'],...
+            'markerfacecolor','none','markeredgecolor',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',2*symbol_size,...
+            'color',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:)); hold on;
+%         indpl(j) = scatter(draft,365*m,2*(6*symbol_size),plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),plot_marker); hold on;
+        indpl(j) = plot(draft,365*m,plot_marker,'markerfacecolor',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),...
+            'markerfacecolor',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),...
+            'color',plot_color(round(nanmean(plot_yrs))-(min(yrs)-1),:),'markersize',2*symbol_size,'linewidth',1); hold on;
         daterange(j,:) = [meltinfo(j).name(end-49:end-46),'/',meltinfo(j).name(end-45:end-44),'/',meltinfo(j).name(end-43:end-42),'-',meltinfo(j).name(end-34:end-31),'/',meltinfo(j).name(end-30:end-29),'/',meltinfo(j).name(end-28:end-27)];
         
         %remove date-specific variables
@@ -209,7 +218,7 @@ for i = 1:size(region,2)
     
     %add a symbol to the site map
     figure(figureA); colormap(gca,'gray');
-    mp(i) = plot(nanmean(avgx),nanmean(avgy),[marker(i),'k'],'markerfacecolor',region_colors(i,:),'markeredgecolor','k','markersize',16); hold on;
+    mp(i) = plot(nanmean(avgx),nanmean(avgy),[map_marker,'k'],'markerfacecolor',region_colors(i,:),'markeredgecolor','k','markersize',12); hold on;
     
     %format the scatterplot subplots
     figure(figureC);
@@ -257,9 +266,9 @@ for i = 1:size(region,2)
     %add legends
     if ~isempty(strmatch('Thwaites',char(region(i))))
         rectangle('position',[min(xlims)+0.80*(max(xlims)-min(xlims)) min(ylims)+0.725*(max(ylims)-min(ylims)) 0.15*(max(xlims)-min(xlims)) 0.175*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
-        plot(min(xlims)+0.825*(max(xlims)-min(xlims)),min(ylims)+0.87*(max(ylims)-min(ylims)),[marker(i),'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.85*(max(xlims)-min(xlims)),min(ylims)+0.8675*(max(ylims)-min(ylims)),'50 m','fontsize',16);
-        plot(min(xlims)+0.825*(max(xlims)-min(xlims)),min(ylims)+0.82*(max(ylims)-min(ylims)),[marker(i),'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.85*(max(xlims)-min(xlims)),min(ylims)+0.8175*(max(ylims)-min(ylims)),'150 m','fontsize',16);
-        plot(min(xlims)+0.825*(max(xlims)-min(xlims)),min(ylims)+0.76*(max(ylims)-min(ylims)),[marker(i),'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.85*(max(xlims)-min(xlims)),min(ylims)+0.7575*(max(ylims)-min(ylims)),'300 m','fontsize',16);
+        plot(min(xlims)+0.825*(max(xlims)-min(xlims)),min(ylims)+0.87*(max(ylims)-min(ylims)),[map_marker,'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.85*(max(xlims)-min(xlims)),min(ylims)+0.8675*(max(ylims)-min(ylims)),'50 m','fontsize',16);
+        plot(min(xlims)+0.825*(max(xlims)-min(xlims)),min(ylims)+0.82*(max(ylims)-min(ylims)),[map_marker,'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.85*(max(xlims)-min(xlims)),min(ylims)+0.8175*(max(ylims)-min(ylims)),'150 m','fontsize',16);
+        plot(min(xlims)+0.825*(max(xlims)-min(xlims)),min(ylims)+0.76*(max(ylims)-min(ylims)),[map_marker,'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.85*(max(xlims)-min(xlims)),min(ylims)+0.7575*(max(ylims)-min(ylims)),'300 m','fontsize',16);
         rectangle('position',[min(xlims)+0.575*(max(xlims)-min(xlims)) min(ylims)+0.725*(max(ylims)-min(ylims)) 0.20*(max(xlims)-min(xlims)) 0.25*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
         %             symbol_color = round(([0.001 0.01 0.1])*1000)+1; symbol_color(symbol_color>length(highmelt_cmap)) = length(highmelt_cmap);
         for k = 1:length(highmelt_cmap)
@@ -271,9 +280,9 @@ for i = 1:size(region,2)
         text(min(xlims)+0.65*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
     elseif ~isempty(strmatch('Mertz',char(region(i))))
         rectangle('position',[min(xlims)+0.25*(max(xlims)-min(xlims)) min(ylims)+0.725*(max(ylims)-min(ylims)) 0.15*(max(xlims)-min(xlims)) 0.175*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.87*(max(ylims)-min(ylims)),[marker(i),'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.8675*(max(ylims)-min(ylims)),'50 m','fontsize',16);
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.82*(max(ylims)-min(ylims)),[marker(i),'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.8175*(max(ylims)-min(ylims)),'150 m','fontsize',16);
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.76*(max(ylims)-min(ylims)),[marker(i),'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.7575*(max(ylims)-min(ylims)),'300 m','fontsize',16);
+        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.87*(max(ylims)-min(ylims)),[map_marker,'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.8675*(max(ylims)-min(ylims)),'50 m','fontsize',16);
+        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.82*(max(ylims)-min(ylims)),[map_marker,'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.8175*(max(ylims)-min(ylims)),'150 m','fontsize',16);
+        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.76*(max(ylims)-min(ylims)),[map_marker,'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.7575*(max(ylims)-min(ylims)),'300 m','fontsize',16);
         rectangle('position',[min(xlims)+0.025*(max(xlims)-min(xlims)) min(ylims)+0.725*(max(ylims)-min(ylims)) 0.20*(max(xlims)-min(xlims)) 0.25*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
         %             symbol_color = round(([0.001 0.01 0.1])*1000)+1; symbol_color(symbol_color>length(highmelt_cmap)) = length(highmelt_cmap);
         for k = 1:length(highmelt_cmap)
@@ -285,9 +294,9 @@ for i = 1:size(region,2)
         text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
     else
         rectangle('position',[min(xlims)+0.25*(max(xlims)-min(xlims)) min(ylims)+0.020*(max(ylims)-min(ylims)) 0.15*(max(xlims)-min(xlims)) 2800],'curvature',[0,0],'facecolor','w','linewidth',2); %scaling height = 0.175*(max(ylims)-min(ylims))
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,[marker(i),'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,'50 m','fontsize',16); %scaling y-offset = 0.16*(max(ylims)-min(ylims))
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,[marker(i),'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,'150 m','fontsize',16); %scaling y-offset = 0.11*(max(ylims)-min(ylims))
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,[marker(i),'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,'300 m','fontsize',16); %scaling y-offset = 0.05*(max(ylims)-min(ylims))
+        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,[map_marker,'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,'50 m','fontsize',16); %scaling y-offset = 0.16*(max(ylims)-min(ylims))
+        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,[map_marker,'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,'150 m','fontsize',16); %scaling y-offset = 0.11*(max(ylims)-min(ylims))
+        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,[map_marker,'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,'300 m','fontsize',16); %scaling y-offset = 0.05*(max(ylims)-min(ylims))
         rectangle('position',[min(xlims)+0.025*(max(xlims)-min(xlims)) min(ylims)+0.020*(max(ylims)-min(ylims)) 0.20*(max(xlims)-min(xlims)) 0.255*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
         %             symbol_color = round(([0.001 0.01 0.1])*1000)+1; symbol_color(symbol_color>length(highmelt_cmap)) = length(highmelt_cmap);
         for k = 1:length(highmelt_cmap)
@@ -341,12 +350,9 @@ legmap = legend(mp,[char(leg_names)]); set(legmap,'location','westoutside','font
 saveas(gcf,'Antarctic-iceberg-map.eps','epsc'); saveas(gcf,'Antarctic-iceberg-map.png','png');
 
 %save the subplots containing all data
-% Wfit = fit(WAsub,W365*dVdt,'poly1'); Efit = fit(EAsub,E365*dVdt,'poly1'); 
 figure(figureB);
 subplot(sub1b);
-% plot([0 max([WAsub])],Wfit.p1.*[0 max([WAsub])] + Wfit.p2,'-k','linewidth',2); hold on;
-% plot([0 max([EAsub])],Efit.p1.*[0 max([EAsub])] + Wfit.p2,'--k','linewidth',2); hold on;
-leg1 = legend(pl,[char(leg_names)]); set(leg1,'location','westoutside','fontsize',16); set(leg1,'position',[0.03    0.2756    0.0685    0.4838]);
+leg1 = legend(pl,[char(leg_names)]); set(leg1,'location','westoutside','fontsize',16); %set(leg1,'position',[0.03    0.2756    0.0685    0.4838]);
 set(gca,'xlim',[0 7e6],'xtick',[0:1e6:7e6],'xticklabel',[0:1:7],...
     'ylim',[0 6.8],'ytick',[0:1:7],'yticklabel',[0:1:7],'fontsize',16); grid on;
 xlabel('Submerged area (km^2)','fontsize',16); ylabel('Meltwater flux (m^3 s^{-1})','fontsize',16);
