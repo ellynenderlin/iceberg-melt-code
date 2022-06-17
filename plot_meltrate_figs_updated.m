@@ -345,14 +345,17 @@ text(0,6.5e5,['85',char(176),'S'],'fontsize',16); text(0,12.0e5,['80',char(176),
 text(0,17.5e5,['75',char(176),'S'],'fontsize',16); text(0,23.0e5,['70',char(176),'S'],'fontsize',16);
 text(-16.5e5,25.25e5,['-30',char(176),'E'],'fontsize',16); text(12.5e5,25.25e5,['30',char(176),'E'],'fontsize',16); 
 colormap(gca,im_cmap);
-xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
-legmap = legend(mp,[char(leg_names)]); set(legmap,'location','westoutside','fontsize',16); 
+% xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
+legmap = legend(mp,[char(leg_names)]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
+legmappos = get(legmap,'position'); set(legmap,'position',[legmappos(1) legmappos(2)+0.05 legmappos(3) legmappos(4)]);
+gcapos = get(gca,'position'); set(gca,'position',[gcapos(1) 0.09 gcapos(3) gcapos(4)]);
 saveas(gcf,'Antarctic-iceberg-map.eps','epsc'); saveas(gcf,'Antarctic-iceberg-map.png','png');
 
 %save the subplots containing all data
 figure(figureB);
 subplot(sub1b);
-leg1 = legend(pl,[char(leg_names)]); set(leg1,'location','westoutside','fontsize',16); %set(leg1,'position',[0.03    0.2756    0.0685    0.4838]);
+leg1 = legend(pl,[char(leg_names)]); set(leg1,'location','north','fontsize',16,'NumColumns',5); 
+leg1pos = get(leg1,'position'); set(leg1,'position',[0.5-0.5*leg1pos(3) 0.98-leg1pos(4) leg1pos(3) leg1pos(4)]);
 set(gca,'xlim',[0 7e6],'xtick',[0:1e6:7e6],'xticklabel',[0:1:7],...
     'ylim',[0 6.8],'ytick',[0:1:7],'yticklabel',[0:1:7],'fontsize',16); grid on;
 xlabel('Submerged area (km^2)','fontsize',16); ylabel('Meltwater flux (m^3 s^{-1})','fontsize',16);
@@ -364,6 +367,7 @@ set(gca,'xlim',[0 800],'xtick',[0:200:800],'xticklabel',[0:200:800],...
 xlabel('Draft (m b.s.l.)','fontsize',16); ylabel('Melt rate (m yr^{-1})','fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'b) ','color','k','fontsize',16);
+set(sub1b,'position',[0.1 0.11 0.38 0.750]); set(sub2b,'position',[0.57 0.11 0.38 0.750]);
 saveas(gcf,'Antarctic-iceberg-lumped-plots.eps','epsc'); saveas(gcf,'Antarctic-iceberg-lumped-plots.png','png');
 
 %save the subplots sorted by study site
