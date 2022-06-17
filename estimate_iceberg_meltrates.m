@@ -44,13 +44,13 @@ if option_no ~= 3
             case '1) Yes!'
                 %specify the iceberg numbers to loop through
                 disp('Specify range of iceberg numbers as "iceberg_refs = X:Y; dbcont" in the command window (w/o quotes) then hit enter to loop');
-                disp('   Ex of loop: iceberg_refs = 4:size(icebergs,1); dbcont');
+                disp('   Ex of loop (for 4 through the rest): iceberg_refs = 4:size(icebergs,1); dbcont');
                 disp('   Ex of select numbers: iceberg_refs = [5,15,16]; dbcont');
                 keyboard
 
                 %loop
                 for j = iceberg_refs %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
-                    iceberg_no = icebergs(j).name(8:9);
+                    if j<10; iceberg_no = ['0',num2str(j)]; else iceberg_no = num2str(j); end
                     [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
                     clear IB dz;
                 end
@@ -59,12 +59,7 @@ if option_no ~= 3
         end
     else
         for j = 1:size(icebergs,1) %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
-            %for j = berg_refs
-            %for j = 1:3 %example: pull elevation change info for icebers 01-03
-            %for j = 5:11 %example: pull elevation change info for icebergs 05-11
-            %for j = [4 11] %example: re-calculate elevation changes for two icebergs with non sequential numbers (4 and 11 in this case)
             iceberg_no = icebergs(j).name(8:9);
-
             [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
             clear IB dz;
         end

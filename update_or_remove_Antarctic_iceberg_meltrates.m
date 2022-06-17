@@ -173,8 +173,10 @@ for i = 1:length(berg_refs)
     berg_ref = berg_refs(i);
 
     %step 1: Re-extract elevation change
-    extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,berg_ref,dir_output,dir_code,region_abbrev);
+    disp('You should have already re-extracted elevation changes if you ran the wrapper & indicated you''re updating data');
+%     extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,berg_ref,dir_output,dir_code,region_abbrev);
     clear IM*; %clear full-extent images to speed up computation time
+    disp('Loaded supporting data. Grabbing elevation change data.');
 
     %step 2: Load the re-extracted elevation change data & recalculate volume flux
     load(['iceberg',berg_number,'_dz.mat']);

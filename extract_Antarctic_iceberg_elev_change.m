@@ -24,7 +24,7 @@ function [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,icebe
 
 close all; drawnow;
 PSparallel = -71; PSmeridian = 0; %Antarctic PS projection parameters
-disp(['Extracting changes in elevation for iceberg #',num2str(iceberg_no)]);
+disp(['Extracting changes in elevation for iceberg ',iceberg_no]);
 
 %figure out the size of the monitor(s) used for plotting in order to
 %determine the appropriate figure sizes and positions
@@ -59,7 +59,7 @@ icebergs_dz = dir([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg*dz.mat'])
 PScoord_files = dir([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg*PScoords.txt']);
 if ~isempty(PScoord_files)
     %read the coordinates for the iceberg
-    iceberg_coords = [dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg',num2str(iceberg_no),'_PScoords.txt'];
+    iceberg_coords = [dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg',iceberg_no,'_PScoords.txt'];
     coords = cell2mat(textscan(fopen(iceberg_coords),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1));
     early_y = coords(1); early_x = coords(2);
     late_y = coords(3); late_x = coords(4);
@@ -106,7 +106,7 @@ if ~isempty(PScoord_files)
         disp('Type new values for early_y, early_x, late_y, & late_x in the command window separated by semicolons & followed by "dbcont" (w/o quotes) then hit enter to resume');
         keyboard
         coords = [early_y early_x late_y late_x];
-        dlmwrite(['iceberg',num2str(iceberg_no),'_PScoords.txt'],coords,'\t');
+        dlmwrite(['iceberg',iceberg_no,'_PScoords.txt'],coords,'\t');
         
         %replot images
         close all;
@@ -269,7 +269,7 @@ if ~isempty(icebergs_dz)
 else
     iceberg_list = 'XX';
 end
-if isempty(strmatch(num2str(iceberg_no),iceberg_list))
+if isempty(strmatch(iceberg_no,iceberg_list))
     %draw the iceberg ROI
     figure(figure1);
     disp('Zoom in on the iceberg (leaving a buffer containing thin ice or open water) in the early DEM by clicking the UL & LR corners');
@@ -292,8 +292,8 @@ if isempty(strmatch(num2str(iceberg_no),iceberg_list))
     S.Geometry = 'Polygon';
     S.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
     S.X = double(xm'); S.Y = double(ym');
-    S.Name = ['iceberg',num2str(iceberg_no)];
-    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',num2str(iceberg_no)];
+    S.Name = ['iceberg',iceberg_no];
+    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
     shapewrite(S,shapefile_name);
     copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
     clear xm ym;
@@ -310,8 +310,8 @@ if isempty(strmatch(num2str(iceberg_no),iceberg_list))
     SL.Geometry = 'Polygon';
     SL.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
     SL.X = double(xm'); SL.Y = double(ym');
-    SL.Name = ['icefree',num2str(iceberg_no)];
-    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_icefree',num2str(iceberg_no)];
+    SL.Name = ['icefree',iceberg_no];
+    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_icefree',iceberg_no];
     shapewrite(SL,shapefile_name);
     copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',shapefile_name,'.prj']);
     sl_early.X = SL.X(1:size(SL.X,2)); sl_early.Y = SL.Y(1:size(SL.Y,2)); %truncate last value (NaN)
@@ -347,8 +347,8 @@ if isempty(strmatch(num2str(iceberg_no),iceberg_list))
     SL.Geometry = 'Polygon';
     SL.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
     SL.X = double(xm'); SL.Y = double(ym');
-    SL.Name = ['icefree',num2str(iceberg_no)];
-    shapefile_name = [region_abbrev,'_',num2str(DEM2.time),'_icefree',num2str(iceberg_no)];
+    SL.Name = ['icefree',iceberg_no];
+    shapefile_name = [region_abbrev,'_',num2str(DEM2.time),'_icefree',iceberg_no];
     shapewrite(SL,shapefile_name);
     copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',shapefile_name,'.prj']);
     sl_late.X = SL.X(1:size(SL.X,2)); sl_late.Y = SL.Y(1:size(SL.Y,2)); %truncate last value (NaN)
@@ -365,7 +365,7 @@ if isempty(strmatch(num2str(iceberg_no),iceberg_list))
     
 else
     disp('Use existing shapefiles');
-    iceberg_file = [dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',region_abbrev,'_',num2str(DEM1.time),'_iceberg',num2str(iceberg_no),'.shp'];
+    iceberg_file = [dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no,'.shp'];
     S = shaperead(iceberg_file);
     S.X = S.X(1:size(S.X,2)-1); S.Y = S.Y(1:size(S.Y,2)-1); %truncate last value (NaN)
     
@@ -380,7 +380,7 @@ else
     % Sl.X = Sl.X(1:size(Sl.X,2)-1); Sl.Y = Sl.Y(1:size(Sl.Y,2)-1); %truncate last value (NaN)
     
     %read the shape-file for nearby ice-free pixels in the early DEM
-    icefree_early_file = [dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',region_abbrev,'_',num2str(DEM1.time),'_icefree',num2str(iceberg_no),'.shp'];
+    icefree_early_file = [dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',region_abbrev,'_',num2str(DEM1.time),'_icefree',iceberg_no,'.shp'];
     cd_to_icefreerois = ['cd ',dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/']; eval(cd_to_icefreerois);
     sl_early = shaperead(icefree_early_file); 
     sl_early.X = sl_early.X(1:size(sl_early.X,2)-1); sl_early.Y = sl_early.Y(1:size(sl_early.Y,2)-1); %truncate last value (NaN)
@@ -392,7 +392,7 @@ else
     else
         sl_early.quality = 0; %lower quality adjustments assigned a value = 0
     end
-    icefree_late_file = [region_abbrev,'_',num2str(DEM2.time),'_icefree',num2str(iceberg_no),'.shp'];
+    icefree_late_file = [region_abbrev,'_',num2str(DEM2.time),'_icefree',iceberg_no,'.shp'];
     sl_late = shaperead(icefree_late_file); cd ../iceberg_rois
     sl_late.X = sl_late.X(1:size(sl_late.X,2)-1); sl_late.Y = sl_late.Y(1:size(sl_late.Y,2)-1); %truncate last value (NaN)
     figure(figureB); set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
@@ -436,8 +436,8 @@ else
         S.Geometry = 'Polygon';
         S.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
         S.X = double(xm'); S.Y = double(ym');
-        S.Name = ['iceberg',num2str(iceberg_no)];
-        shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',num2str(iceberg_no)];
+        S.Name = ['iceberg',iceberg_no];
+        shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
         copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
         cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
     else
@@ -481,8 +481,8 @@ if strmatch(str,'y')==1
     S.Geometry = 'Polygon';
     S.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
     S.X = double(xm'); S.Y = double(ym');
-    S.Name = ['iceberg',num2str(iceberg_no)];
-    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',num2str(iceberg_no)];
+    S.Name = ['iceberg',iceberg_no];
+    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
     shapewrite(S,shapefile_name);
     copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
     cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
@@ -948,7 +948,7 @@ while p
         clear new_ang x_rot y_rot median_dz;
     end
 end
-save([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg',num2str(iceberg_no),'_dz.mat'],'IB');
+save([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg',iceberg_no,'_dz.mat'],'IB');
 disp('iceberg info saved');
 
 %plot the average elevation change map
