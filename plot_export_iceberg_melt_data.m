@@ -1,4 +1,25 @@
-function [T] = plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag)
+function [T] = plot_export_iceberg_melt_data(SL,dir_output,region_abbrev,DEM1,DEM2,plot_flag,table_flag)
+% Function to plot iceberg melt data: meltwater flux vs. submerged area,
+% melt rate vs. draft, and melt rate vs. sea level correction (i.e.,
+% adjustment needed iceberg elevations so that they are with respect to a
+% local sea level of zero meters)
+% Ellyn Enderlin, Summer 2022
+%
+% INPUTS:   SL              structure containing meltwater flux, melt
+%                           rate, and iceberg geometry data
+%           DEM1            structure variable containing earlier DEM info
+%           DEM2            structure variable containing later DEM info
+%           iceberg_refs    number of iceberg to detect elevation change
+%           dir_output      directory where all output files will be placed
+%           region_abbrev   abbrevation of region used in file names
+%           plot_flag       binary flag specifying plot generation (1=true)
+%           table_flag      binary flag specifying table export (1=true)
+%
+% OUTPUTS:  If plot_flag = 1: Plots of meltwater flux vs. submerged area,
+%           melt rate vs. draft, and melt rate vs. sea level correction.
+%           If table_flag = 1: Summary data for iceberg location, size, 
+%           meltwater flux, and melt rate exported to a csv table.
+
 
 %plot
 if plot_flag == 1
@@ -136,7 +157,6 @@ end
 
 %save as a table in a text file
 if table_flag == 1
-    cd(dir_iceberg);
     clear dt xo yo zo po Vo xf yf zf pf Vf coreg_z* dz* dVdt* draft* Asurf* Asub*;
     append_ref = 1;
     for i = 1:length(SL)

@@ -93,7 +93,7 @@ if option_no==1 %calculate melt rates for all icebergs
     %plot & export to table
     plot_flag = 1; %plot data
     table_flag = 1; %export summary data to table
-    plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
+    plot_export_iceberg_melt_data(SL,dir_output,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
     
     %call-out the clearly bad icebergs
     for i = 1:length(SL)
@@ -129,7 +129,7 @@ elseif option_no==3 %only plot
     cd(dir_iceberg);
     plot_flag = 1; %plot data
     table_flag = 0; %default (0) suppresses table generation, switch to 1 to create tables
-    plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
+    plot_export_iceberg_melt_data(SL,dir_output,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
 end
 
 end

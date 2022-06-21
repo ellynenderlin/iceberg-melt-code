@@ -1,4 +1,4 @@
-function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code)
+function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Spring 2022
 %
@@ -8,9 +8,13 @@ function [SL] = update_or_remove_Antarctic_iceberg_meltrates(DEM1,DEM2,IM1,IM2,r
 %                           orthoimage info
 %           IM2             structure variable containing later orthoimage
 %                           info
-%           berg_numbers    number of iceberg to detect elevation change
+%           iceberg_refs    number of iceberg to detect elevation change
 %           dir_output      directory where all output files will be placed
+%           dir_iceberg     directory where all intermediate files for
+%                           individual icebergs are located
 %           region_abbrev   abbrevation of region used in file names
+%           region_name     name of region used in firn file name & in SL
+%                           structure
 %
 % OUTPUTS:  Rewrites individual iceberg elevation change files (iceberg##_dz.mat) &
 % updates the SL structure containing iceberg melt volume & melt rate data
@@ -20,7 +24,7 @@ close all; drawnow;
 rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
 rho_i = 917; rho_i_err = 10; %kg m^-3
 
-%load the saved iceberg data
+%load the saved iceberg data in the SL structure
 DEM1_date = DEM1.time(1:8); DEM2_date = DEM2.time(1:8);
 load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
 for i = 1:length(SL)
@@ -800,7 +804,6 @@ for i = 1:length(berg_refs)
 end
 
 %save the compiled data
-cd(dir_iceberg);
 disp('Saving melt rates');
 save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
 disp('Melt rates resaved!');
@@ -810,38 +813,7 @@ clear A B Y Z;
 %plot the data to determine if any icebergs have bad melt estimates
 plot_flag = 1; %plot data
 table_flag = 0; %suppress export to table
-plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
+plot_export_iceberg_melt_data(SL,dir_output,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
 
-%replace bad melt rate and area estimates with empty brackets
-prompt = 'Do you want to remove any icebergs from the analysis  (y/n)?';
-str = input(prompt,'s');
-if strmatch(str,'y')==1
-    disp(['Bad icebergs initially specified as #s ',num2str(iceberg_refs)]);
-    clear iceberg_refs berg_refs;
-    disp('Specify the icebergs to remove as "iceberg_refs=[A B C etc]; dbcont"');
-    keyboard
-    
-    %identify the structure reference for the specified icebergs
-    for i = 1:length(SL)
-        for k = 1:length(iceberg_refs)
-            if strmatch(num2str(iceberg_refs(k)),SL(i).name(end-1:end))
-                berg_refs(k) = k;
-            end
-        end
-    end
-    
-    %remove the bad icebergs from the structure
-    for i = 1:length(berg_refs)
-        SL(berg_refs(i)).mean.TA = [];
-        SL(berg_refs(i)).mean.dHdt = [];
-    end
-end
-%resave without the bad icebergs
-save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
-
-%replot and re-export data to a table
-table_flag = 1; %save summary data to table
-[T] = plot_export_iceberg_melt_data(SL,dir_output,dir_iceberg,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
-fprintf('Iceberg melt data saved to table for %i icebergs \n',height(T));
 
 end

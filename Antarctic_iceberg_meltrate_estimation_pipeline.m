@@ -156,3 +156,12 @@ clear answer;
 [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,option_no);
 
 
+%% 5. (As needed) Remove icebergs with unfixable sea level corrections & wonky melt rates
+cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
+
+%replace bad melt rate (dHdt) and area (TA) estimates with empty matrices
+disp('Specify the icebergs to remove as "iceberg_refs=[A B C etc]; dbcont"');
+keyboard
+[SL] = remove_bad_iceberg_meltrates(DEM1,DEM2,region_abbrev,iceberg_refs,dir_output);
+
+ disp(['Iceberg melt rate estimation complete for ',region_abbrev,' from ',num2str(DEM1.time(1:8)),'-',num2str(DEM2.time(1:8))]);
