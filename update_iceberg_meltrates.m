@@ -27,14 +27,18 @@ rho_i = 917; rho_i_err = 10; %kg m^-3
 %load the saved iceberg data in the SL structure
 DEM1_date = DEM1.time(1:8); DEM2_date = DEM2.time(1:8);
 load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
-for i = 1:length(SL)
-    for k = 1:length(iceberg_refs)
-        if strmatch(num2str(iceberg_refs(k)),SL(i).name(end-1:end))
-            berg_refs(k) = i;
+for i = 1:length(iceberg_refs)
+    for k = 1:length(SL)
+        if iceberg_refs(i) < 10
+            if strmatch([num2str(0),num2str(iceberg_refs(i))],SL(k).name(end-1:end))
+                berg_refs(i) = k;
+            end
+        else
+            if strmatch(num2str(iceberg_refs(i)),SL(k).name(end-1:end))
+                berg_refs(i) = k;
+            end
         end
     end
-    berg_name(i,:) = SL(i).name;
-    berg_no(i) = str2num(SL(i).name(end-1:end));
 end
 
 %load the firn density info
@@ -168,11 +172,11 @@ maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwe
 
 %update iceberg data for the icebergs for which you re-ran volume change calculations
 cd(dir_iceberg);
-for i = 1:length(berg_refs)
-    if berg_refs(i) < 10
-        berg_number = [num2str(0),num2str(berg_refs(i))];
+for i = 1:length(iceberg_refs)
+    if iceberg_refs(i) < 10
+        berg_number = [num2str(0),num2str(iceberg_refs(i))];
     else
-        berg_number = num2str(berg_refs(i));
+        berg_number = num2str(iceberg_refs(i));
     end
     berg_ref = berg_refs(i);
 

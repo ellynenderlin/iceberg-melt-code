@@ -129,7 +129,7 @@ answer = questdlg('Calculating melt rates the first time or updating/removing ic
 switch answer
     case '1) First time'
         option_no = 1;
-    case '2) Updating or Removing'
+    case '2) Updating'
         option_no = 2;
     case '3) Just checking plots'
         option_no = 3;
