@@ -125,7 +125,7 @@ close all;
 %   1 = Estimate elevation change for each iceberg
 %   2 = UPDATE individual icebergs and/or remove icebergs with anomalous melt rate estimates
 answer = questdlg('Calculating melt rates the first time or updating/removing iceberg data?',...
-    'Melt Calculation Options','1) First time','2) Updating or Removing','3) Just checking plots','1) First time');
+    'Melt Calculation Options','1) First time','2) Updating','3) Just checking plots','1) First time');
 switch answer
     case '1) First time'
         option_no = 1;
