@@ -18,10 +18,16 @@ DEM1_date = DEM1.time(1:8); DEM2_date = DEM2.time(1:8);
 load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
 
 %identify the structure reference for the specified icebergs
-for i = 1:length(SL)
-    for k = 1:length(iceberg_refs)
-        if strmatch(num2str(iceberg_refs(k)),SL(i).name(end-1:end))
-            berg_refs(k) = i;
+for i = 1:length(iceberg_refs)
+    for k = 1:length(SL)
+        if iceberg_refs(i) < 10
+            if strmatch([num2str(0),num2str(iceberg_refs(i))],SL(k).name(end-1:end))
+                berg_refs(i) = k;
+            end
+        else
+            if strmatch(num2str(iceberg_refs(i)),SL(k).name(end-1:end))
+                berg_refs(i) = k;
+            end
         end
     end
 end

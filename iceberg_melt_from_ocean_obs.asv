@@ -726,7 +726,7 @@ for i = 1:length(melt)
             melt(i).oceanSmax(j,1) = max(oceansals(melt(i).oceand(:,minrefs)<=melt(i).d(j))); melt(i).oceanSbottom(j,1) = nanmean(bottomS);
             %NOTE: attempting to use trapz function to integrate temp over depth then divide by the depth range to get the mean for irregularly-distributed temperature profiles
             temp_mean = trapz(oceantemps(melt(i).oceand(:,minrefs)<=melt(i).d(j)),melt(i).oceand(melt(i).oceand(:,minrefs)<=melt(i).d(j),minrefs))./(max(melt(i).oceand(melt(i).oceand(:,minrefs)<=melt(i).d(j),minrefs))-min(melt(i).oceand(melt(i).oceand(:,minrefs)<=melt(i).d(j),minrefs)));
-            Tavg_test(j,1) = nanmean(temp_mean);
+            melt(i).oceanTavg(j,1) = nanmean(temp_mean);
             
             clear bottom*;
             
