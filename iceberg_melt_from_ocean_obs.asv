@@ -22,163 +22,39 @@
 
 %% initiate
 clearvars; close all;
-addpath('/users/ellynenderlin/mfiles','/users/ellynenderlin/mfiles/general','/users/ellynenderlin/mfiles/general/cmocean');
+addpath('/users/ellynenderlin/miscellaneous/general-code','/users/ellynenderlin/miscellaneous/general-code/cmocean');
+
+%specify paths & file names for data
+CTD_path = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/CTD_Antarctica/';
+CTD_data = [CTD_path,'Antarctic-ocean-data.mat'];
+RACMO_path = '/Users/ellynenderlin/Research/miscellaneous/RACMO2.3_Antarctica/';
+iceberg_path = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/';
+
+%specify study site names
+region = [{'Edgeworth-LarsenA'},{'Crane-LarsenB'},{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},...
+    {'Thwaites'},{'Ferrigno-Eltanin'},{'Seller-Bugge'},{'Heim-Marguerite'},{'Widdowson-Biscoe'},{'Cadman-Palmer'},{'Blanchard-Danco'},{'Leonardo-Danco'}];
+leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Polar Times'},{'Totten'},{'Mertz'},{'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}];
 
 %specify plot params
 marker = ['d','d','d','d','d','d','d','s','s','s','s','s','s','s','s']; %set-up the different marker styles for E and W
 plot_names = [{'i)'},{'j)'},{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'h)'},{'g)'},{'f)'},{'e)'},{'d)'},{'c)'},{'b)'},{'a)'}]; %plot letters
 plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1];
 
+%specify generic variables
+rho_sw = 1026; %sea water density in kg m^-3
+depth_cutoff = 800; %maximum depth of icebergs & therefore ocean observation data of interest in meters
+years = [2011.75 2021.75]; year_ticks = [2012
+
 %load the RAMP image to plot as background for a map
 cd /Users/ellynenderlin/Research/miscellaneous/RAMP
-[A,S] = geotiffread('Antarctic_RAMP_image_v2_1km.tif');
+[A,S] = readgeoraster('Antarctic_RAMP_image_v2_1km.tif');
 IM.x = S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
 IM.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
 IM.z=single(A);
 clear A S;
 
-%% compile CTD & APB data (only run once to create Antarctic-ocean-data.mat)
-
-%navigate to the CTD and APB data
-cd /users/ellynenderlin/Research/NSF_Antarctic-Icebergs/CTD_Antarctica/
-
-%locate the data files
-CTD_files = dir('*CTD.mat'); APB_files = dir('*APB.mat'); 
-
-%set up days of year for leap and non-leap years for date conversions
-modays = [31 28 31 30 31 30 31 31 30 31 30 31]; cumdays = [0 cumsum(modays(1:end-1))];
-leap_modays = [31 29 31 30 31 30 31 31 30 31 30 31]; leap_cumdays = [0 cumsum(leap_modays(1:end-1))];
-
-%load the CTD data
-overviewfig = figure; set(overviewfig,'position',[50 50 1200 1200]);
-cmap = colormap(jet(length(CTD_files)+length(APB_files)));
-sub1 = subplot(1,2,1); sub2 = subplot(1,2,2);
-set(sub2,'position',[0.7 0.11 0.25 0.85]); set(sub1,'position',[0.11 0.11 0.55 0.85]); 
-subplot(sub1); imagesc(IM.x,IM.y,IM.z); colormap gray; hold on; axis xy equal
-colormap(gray(10001));
-for i = 1:length(CTD_files)
-    load_file = ['load ',CTD_files(i).name]; eval(load_file); %info_sub describes variables
-    
-    %extract region name
-    refs = strfind(CTD_files(i).name,'_');
-    if length(refs) > 1
-        region_name(i) = {CTD_files(i).name(refs(1)+1:refs(2)-1)};
-    else
-        region_name(i) = {CTD_files(i).name(1:refs(1)-1)};
-    end
-    CTD(i).name = string(region_name(i));
-    
-    if ~strcmp(CTD_files(i).name,'WesternPeninsula_CTD.mat')
-        CTD(i).lat = latitude; %latitude (degrees N)
-        CTD(i).lon = longitude; %longitude (degrees E)
-        [CTD(i).x,CTD(i).y] = wgs2ps(CTD(i).lon,CTD(i).lat,'StandardParallel',-71,'StandardMeridian',0);
-        CTD(i).depth = depth; %depth (m)
-        CTD(i).time = date_datenum; %matlab dates
-        [YYYY,MM,DD,~,~,~] = datevec(CTD(i).time); decidate = NaN(length(YYYY),1); 
-        decidate(mod(YYYY,4)~=0) = YYYY(mod(YYYY,4)~=0) + ((cumdays(MM(mod(YYYY,4)~=0))'+DD(mod(YYYY,4)~=0))./sum(modays));
-        decidate(mod(YYYY,4)==0) = YYYY(mod(YYYY,4)==0) + ((leap_cumdays(MM(mod(YYYY,4)==0))'+DD(mod(YYYY,4)==0))./sum(leap_modays));
-        CTD(i).date = decidate; %decimal date
-        clear YYYY MM DD hh mm ss decidate;
-        CTD(i).P = []; %pressure (dbar)
-        CTD(i).T = temperature; %in situ or conservative temp? (C)
-        CTD(i).sal = salinity; %practical or absolute salinity?
-    else %W Peninsula is a combination of different datasets (including CTD and APB)
-        CTD(i).lat = lat_sub; %latitude (degrees N)
-        CTD(i).lon = lon_sub+360; %longitude (degrees E)
-        [CTD(i).x,CTD(i).y] = wgs2ps(CTD(i).lon,CTD(i).lat,'StandardParallel',-71,'StandardMeridian',0);
-        CTD(i).depth = repmat(z_sub,1,length(time_sub)); %height (m)
-        CTD(i).time = time_sub; %matlab dates
-        [YYYY,MM,DD,~,~,~] = datevec(CTD(i).time); decidate = NaN(length(YYYY),1); 
-        decidate(mod(YYYY,4)~=0) = YYYY(mod(YYYY,4)~=0) + ((cumdays(MM(mod(YYYY,4)~=0))+DD(mod(YYYY,4)~=0))./sum(modays));
-        decidate(mod(YYYY,4)==0) = YYYY(mod(YYYY,4)==0) + ((leap_cumdays(MM(mod(YYYY,4)==0))+DD(mod(YYYY,4)==0))./sum(leap_modays));
-        CTD(i).date = decidate; %decimal date
-        clear YYYY MM DD hh mm ss decidate;
-        CTD(i).P = p_sub; %pressure (dbar)
-        CTD(i).T = temp_sub; %in situ or conservative temp? (C)
-        CTD(i).sal = salt_sub; %practical or absolute salinity?
-    end
-    subplot(sub1);
-    plot(CTD(i).x,CTD(i).y,'x','color',cmap(i,:)); hold on; drawnow;
-    subplot(sub2);
-    plot(CTD(i).T,CTD(i).depth,'x','color',cmap(i,:)); hold on; drawnow;
-    pl(i) = plot(CTD(i).T(1),CTD(i).depth(1),'x','color',cmap(i,:)); hold on; drawnow;
-    
-    clearvars -except CTD* APB* cmap sub* pl region_name *days*;
-end
-
-%load the APB data
-for i = 1:length(APB_files)
-    load_file = ['load ',APB_files(i).name]; eval(load_file); %info_sub describes variables
-    
-    %extract region name
-    refs = strfind(APB_files(i).name,'_');
-    if length(refs) > 1
-        region_name(i+length(CTD_files)) = {APB_files(i).name(refs(1)+1:refs(2)-1)};
-    else
-        region_name(i+length(CTD_files)) = {APB_files(i).name(1:refs(1)-1)};
-    end
-    APB(i).name = string(region_name(i+length(CTD_files)));
-    
-    APB(i).lat = latitude; %latitude (degrees N)
-    APB(i).lon = longitude; %longitude (degrees E)
-    [APB(i).x,APB(i).y] = wgs2ps(APB(i).lon,APB(i).lat,'StandardParallel',-71,'StandardMeridian',0);
-    APB(i).depth = depth; %depth (m)
-    APB(i).time = date_datenum; %matlab dates
-    [YYYY,MM,DD,~,~,~] = datevec(APB(i).time); decidate = NaN(length(YYYY),1);
-    decidate(mod(YYYY,4)~=0) = YYYY(mod(YYYY,4)~=0) + ((cumdays(MM(mod(YYYY,4)~=0))'+DD(mod(YYYY,4)~=0))./sum(modays));
-    decidate(mod(YYYY,4)==0) = YYYY(mod(YYYY,4)==0) + ((leap_cumdays(MM(mod(YYYY,4)==0))'+DD(mod(YYYY,4)==0))./sum(leap_modays));
-    APB(i).date = decidate; %decimal date
-    clear YYYY MM DD hh mm ss decidate;
-    APB(i).P = []; %pressure (dbar)
-    APB(i).T = temperature; %in situ or conservative temp? (C)
-    for j = 1:size(APB(i).T,2)
-       if max(APB(i).T(:,j)) > 5;  APB(i).T(:,j) = NaN; end %remove strangely high temps when I assume the seals are beached
-    end
-    APB(i).sal = salinity; %practical or absolute salinity?
-    subplot(sub1);
-    plot(APB(i).x,APB(i).y,'x','color',cmap(i+length(CTD_files),:)); hold on; drawnow;
-    subplot(sub2);
-    plot(APB(i).T,APB(i).depth,'x','color',cmap(i+length(CTD_files),:)); hold on; drawnow;
-    pl(i+length(CTD_files)) = plot(APB(i).T(1),APB(i).depth(1),'x','color',cmap(i+length(CTD_files),:)); hold on; drawnow;
-    
-    clearvars -except CTD* APB* cmap sub* pl region_name *days*;
-end
-subplot(sub2);
-leg = legend(pl,region_name);
-subplot(sub1);
-set(gca,'xlim',[-28e5 28e5],'xtick',[-32e5:8e5:32e5],'xticklabel',[-3200:800:3200],...
-    'ylim',[-24e5 24e5],'ytick',[-24e5:8e5:24e5],'yticklabel',[-2400:800:2400]); grid off;
-
-% %plot time series of temperature profiles for each dataset
-% for i = 1:length(CTD)
-%     %identify unique years
-%     yrs = unique(floor(CTD(i).date));
-%     
-%     %set up the figure
-%     figure; yr_cmap = colormap(jet(length(yrs)));
-%     for j = 1:length(CTD(i).date)
-%        plot(CTD(i).T(:,j),CTD(i).depth(:,j),'-','color',yr_cmap(find(yrs==floor(CTD(i).date(j))),:)); hold on;
-%     end
-%     drawnow;
-%     xlabel('Temperature (C)'); ylabel('Depth (m)'); title(region_name(i));
-%     clear yrs yr_cmap;
-% end
-% for i = 1:length(APB)
-%     %identify unique years
-%     yrs = unique(floor(APB(i).date));
-%     
-%     %set up the figure
-%     figure; yr_cmap = colormap(jet(length(yrs)));
-%     for j = 1:length(APB(i).date)
-%        plot(APB(i).T(:,j),APB(i).depth(:,j),'-','color',yr_cmap(find(yrs==floor(APB(i).date(j))),:)); hold on;
-%     end
-%     drawnow;
-%     xlabel('Temperature (C)'); ylabel('Depth (m)'); title(region_name(i+length(CTD)));
-%     clear yrs yr_cmap;
-% end
-
-%save the data
-save('Antarctic-ocean-data.mat','CTD','APB','-v7.3');
+%navigate to the iceberg directory as the default workspace
+cd(iceberg_path);
 
 
 %% organize ocean data & pair with remotely-sensed iceberg melt data (run once to create Antarctic-icebergmelt-comparison.mat)
@@ -190,11 +66,10 @@ save('Antarctic-ocean-data.mat','CTD','APB','-v7.3');
 buffer = 100000; %m
 
 %load the compiled ocean data
-cd /Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/CTD_Antarctica; 
-load Antarctic-ocean-data.mat;
+load(CTD_data);
 
 %load RACMO air temps
-cd /Users/ellynenderlin/Research/miscellaneous/RACMO2.3_Antarctica
+cd(RACMO_path);
 AP_lat = ncread('RACMO2.3p2_XPEN055_T2m_daily_2011_2016.nc','lat');
 AP_lon = ncread('RACMO2.3p2_XPEN055_T2m_daily_2011_2016.nc','lon');
 AP_airtemp = ncread('RACMO2.3p2_XPEN055_T2m_daily_2011_2016.nc','t2m'); AP_airtemp(AP_airtemp==-9999)=NaN;
@@ -207,17 +82,8 @@ for i = 1:size(AP_lat,1); for j = 1:size(AP_lat,2); [AP_x(i,j),AP_y(i,j)] = wgs2
 for i = 1:size(AIS_lat,1); for j = 1:size(AIS_lat,2); [AIS_x(i,j),AIS_y(i,j)] = wgs2ps(AIS_lon(i,j),AIS_lat(i,j),'StandardParallel',-71,'StandardMeridian',0); end; end
 
 
-%go through the remotely-sensed iceberg melt data
-cd /Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt
-region = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},{'Thwaites'},{'Eltanin'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}];
-leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},{'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}];
-rho_sw = 1026; %sea water density in kg m^-3
-
-%set up days of year for leap and non-leap years for date conversions
-modays = [31 28 31 30 31 30 31 31 30 31 30 31]; cumdays = [0 cumsum(modays(1:end-1))];
-leap_modays = [31 29 31 30 31 30 31 31 30 31 30 31]; leap_cumdays = [0 cumsum(leap_modays(1:end-1))];
-
-%loop through folders and extract data
+%loop through the remotely-sensed iceberg melt data & extract data
+cd(iceberg_path);
 files = dir;
 for i = 1:length(region) %loop through the regions
     %find the folder containing the data for the specified region
@@ -230,7 +96,7 @@ for i = 1:length(region) %loop through the regions
     % extract the data for the region
     cd_to_region = ['cd ',files(regionref).name]; eval(cd_to_region);
     melt(i).name = region(i); melt(i).dispname = leg_names(i);
-    meltinfo = dir('*iceberg_meltinfo.txt');
+    meltinfo = dir('*iceberg_meltinfo.csv');
     date_o = []; xcoord_o = []; ycoord_o = []; 
     date_f = []; xcoord_f = []; ycoord_f = [];
     rhoi_o = []; rhoi_f = [];
@@ -239,7 +105,8 @@ for i = 1:length(region) %loop through the regions
     surf_area = []; surf_area_sigma = []; 
     sub_area = []; sub_area_sigma = []; 
     for k = 1:length(meltinfo)
-        load_data = ['M=dlmread(''',meltinfo(k).name,''');']; eval(load_data);
+        M=readtable(meltinfo(k).name); %table exported using plot_export_iceberg_melt_data.m
+        M = table2array(M); %convert to array to enable easier indexing
         
         %pull variables
         xo = M(:,2); yo = M(:,3); zo = M(:,4); rhoo = M(:,5); %initial locations, median elev, density
@@ -259,17 +126,9 @@ for i = 1:length(region) %loop through the regions
         keeld = [keeld; draft]; keeld_sigma = [keeld_sigma; draft_uncert];
         
         %converting to decimal dates
-        if mod(str2num(meltinfo(k).name(end-49:end-46)),4) ~=0
-            decidate = str2num(meltinfo(k).name(end-49:end-46)) + ((cumdays(str2num(meltinfo(k).name(end-45:end-44)))+str2num(meltinfo(k).name(end-43:end-42)))./sum(modays));
-        else
-            decidate = str2num(meltinfo(k).name(end-49:end-46)) + ((leap_cumdays(str2num(meltinfo(k).name(end-45:end-44)))+str2num(meltinfo(k).name(end-43:end-42)))./sum(leap_modays));
-        end
+        decidate = convert_to_decimaldate(meltinfo(k).name(end-49:end-42));
         date_o = [date_o; repmat(decidate,size(xo))]; xcoord_o = [xcoord_o; xo]; ycoord_o = [ycoord_o; yo]; clear decidate;
-        if mod(str2num(meltinfo(k).name(end-34:end-31)),4) ~= 0
-            decidate = str2num(meltinfo(k).name(end-34:end-31)) + ((cumdays(str2num(meltinfo(k).name(end-30:end-29)))+str2num(meltinfo(k).name(end-28:end-27)))./sum(modays));
-        else
-            decidate = str2num(meltinfo(k).name(end-34:end-31)) + ((leap_cumdays(str2num(meltinfo(k).name(end-30:end-29)))+str2num(meltinfo(k).name(end-28:end-27)))./sum(leap_modays));
-        end
+        decidate = convert_to_decimaldate(meltinfo(k).name(end-34:end-27));
         date_f = [date_f; repmat(decidate,size(xf))]; xcoord_f = [xcoord_f; xf]; ycoord_f = [ycoord_f; yf]; clear decidate;
         
         clear xo yo zo rhoo xf yf zf rhof dVdt* draft* Asurf* Asub* M;
@@ -302,7 +161,7 @@ for i = 1:length(region) %loop through the regions
         [RACMOy RACMOx] = ind2sub(size(squeeze(nanmean(AIS_airtemp(:,:,1,270:450),4))),RACMO_ref); %convert cell reference to an x- and y-cell index
         melt(i).bergT = squeeze(nanmean(AIS_airtemp(RACMOx,RACMOy,1,:),4))-273.15;
     end
-    clear *diff* RACMO*;
+    clear *diff* RACMOy RACMOx;
     
     %crop the CTD and APB data to within the specified buffer distance of the icebergs
     xlimits = [min(melt(i).x)-buffer max(melt(i).x)+buffer]; ylimits = [min(melt(i).y)-buffer max(melt(i).y)+buffer];
@@ -336,7 +195,7 @@ for i = 1:length(region) %loop through the regions
             
         end
         if ~isempty(oceanrefs)
-            disp(['Number of ocean observations for ',char(region(i)),' = ',num2str(length(oceanrefs))]);
+            disp(['Number of CTD observations for ',char(region(i)),' = ',num2str(length(oceanrefs))]);
         end
         clear oceanrefs;
     end
@@ -370,111 +229,158 @@ for i = 1:length(region) %loop through the regions
             
         end
         if ~isempty(oceanrefs)
-            disp(['Number of ocean observations for ',char(region(i)),' = ',num2str(length(oceanrefs))]);
+            disp(['Number of APB observations for ',char(region(i)),' = ',num2str(length(oceanrefs))]);
         end
         clear oceanrefs;
     end
     clear *limits;
     
 end
-save('Antarctic-icebergmelt-comparison.mat','melt','-v7.3');
-clear CTD APB;
+save([iceberg_path,'Antarctic-icebergmelt-comparison.mat'],'melt','-v7.3');
+clear CTD APB *airtemp;
 disp('Done compiling iceberg melt estimates, RACMO air temps (for iceberg temps), & ocean data');
 
 
-%% create plots of ocean temperature data (creates Antarctic-iceberg-oceandata-profiles.eps)
+% determine the appropriate depth resolution of the ocean observations
 close all; warning off;
+figure; set(gcf,'position',[50 50 800 400]);
+sub1 = subplot(1,2,1); sub2 = subplot(1,2,2);
+for i = 1:length(melt)
+    disp(char(melt(i).name));
+    
+    %calculate the median profile depth increment for each profile
+    if size(melt(i).oceand,2) > 0
+        for j = 1:size(melt(i).oceand,2)
+            dz0_200m(j) = nanmedian(diff(melt(i).oceand(find(melt(i).oceand(:,j)<=200),j)));
+            dz201_800m(j) = nanmedian(diff(melt(i).oceand(find(melt(i).oceand(:,j)>200 & melt(i).oceand(:,j)<=depth_cutoff),j)));
+            dz0_800m(j) = nanmedian(diff(melt(i).oceand(find(melt(i).oceand(:,j)<=depth_cutoff),j)));
+        end
+        
+        %plot histograms of median profile increments
+        subplot(sub1); hps(i) = histogram(dz0_200m); hold on;
+        subplot(sub2); hpd(i) = histogram(dz201_800m); hold on;
+        
+        %print the median profile increment for the site
+        fprintf('median depth increment for shallow water: %i \n',round(nanmedian(dz0_200m)));
+        fprintf('median depth increment for deep water: %i \n',round(nanmedian(dz201_800m)));
+        
+        %create a standard depth profile for the site
+        melt(i).oceandavg_prof = [0:round(nanmedian(dz0_800m)):depth_cutoff]';
+        
+        clear dz0_200m dz201_800m dz0_800m;
+    else
+        melt(i).oceandavg_prof = [0:10:depth_cutoff]';
+        fprintf('no ocean observations for site \n');
+    end
+end
+drawnow;
+save([iceberg_path,'Antarctic-icebergmelt-comparison.mat'],'melt','-v7.3');
 
-cd /Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt
-load Antarctic-icebergmelt-comparison.mat; 
+%% interpolate profiles to a standard, uniform, site-specific profile
+warning off;
+
+load([iceberg_path,'Antarctic-icebergmelt-comparison.mat']);
 % melt = rmfield(melt,{'oceand_prof','oceanTavg_prof','oceanTstd_prof','oceanSavg_prof','oceanSstd_prof'}); melt = rmfield(melt,'bergtemp');
-cd /Users/ellynenderlin/Research/miscellaneous/RAMP
-[A,S] = geotiffread('Antarctic_RAMP_image_v2_1km.tif');
-IM.x = S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
-IM.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
-IM.z=single(A);
-clear A S;
+
+%interpolate data to a standard, regular depth profile and then temporally
+%average if multiple profiles were collected for the same date
+disp('Interpolating to a standard uniform depth scale based on median depth increment of data for site');
+for i = 1:length(melt)
+    if ~isempty(melt(i).oceant)
+        disp(char(melt(i).name));
+        
+        %identify the unique dates for temperature observations
+        [unique_dates,unique_refs] = unique(melt(i).oceant);
+        for j = 1:length(unique_dates)
+            year_refs = find(melt(i).oceant == unique_dates(j));
+            melt(i).oceantavg(j) = unique_dates(j);
+            if length(year_refs) > 1
+                melt(i).oceanxavg(:,j) = nanmean(melt(i).oceanx(year_refs)); melt(i).oceanyavg(:,j) = nanmean(melt(i).oceany(year_refs));
+                for k = 1:length(year_refs)
+                    if sum(~isnan(melt(i).oceand(:,year_refs(k))))>1 && sum(~isnan(melt(i).oceanT(:,year_refs(k))))>1
+                        Tprof(:,k) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),melt(i).oceanT(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),melt(i).oceandavg_prof,'linear');
+                        Sprof(:,k) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),melt(i).oceanS(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),melt(i).oceandavg_prof,'linear');
+                    else
+                        Tprof(:,k) = NaN(size(melt(i).oceandavg_prof)); Sprof(:,k) = NaN(size(melt(i).oceandavg_prof));
+                    end
+                end
+                melt(i).oceanTavg_prof(:,j) = nanmean(Tprof,2); melt(i).oceanTstd_prof(:,j) = nanstd(Tprof,0,2);
+                melt(i).oceanSavg_prof(:,j) = nanmean(Sprof,2); melt(i).oceanSstd_prof(:,j) = nanstd(Sprof,0,2);
+                melt(i).oceanTfreeze_prof(:,j) = (((-5.73*10^-2).*melt(i).oceanSavg_prof(:,j)) + (8.32*10^-2) - ((7.61*10^-4).*melt(i).oceandavg_prof));
+                clear Tprof Sprof;
+            else
+                melt(i).oceanxavg(:,j) = melt(i).oceanx(year_refs); melt(i).oceanyavg(:,j) = melt(i).oceany(year_refs);
+                if sum(~isnan(melt(i).oceand(:,year_refs)))>1 && sum(~isnan(melt(i).oceanT(:,year_refs)))>1
+                    melt(i).oceanTavg_prof(:,j) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),melt(i).oceanT(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),melt(i).oceandavg_prof,'linear'); 
+                    melt(i).oceanSavg_prof(:,j) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),melt(i).oceanS(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),melt(i).oceandavg_prof,'linear'); 
+                else
+                    melt(i).oceanTavg_prof(:,j) = NaN(size(melt(i).oceandavg_prof)); melt(i).oceanSavg_prof(:,j) = NaN(size(melt(i).oceandavg_prof));
+                end
+                melt(i).oceanTstd_prof(:,j) = NaN(size(melt(i).oceandavg_prof)); melt(i).oceanSstd_prof(:,j) = NaN(size(melt(i).oceandavg_prof));
+                melt(i).oceanTfreeze_prof(:,j) = (((-5.73*10^-2).*melt(i).oceanSavg_prof(:,j)) + (8.32*10^-2) - ((7.61*10^-4).*melt(i).oceandavg_prof));
+            end
+
+            clear year_refs;
+        end
+        clear unique_*;
+        
+        %add date-averaged profiles to structure
+        save([iceberg_path,'Antarctic-icebergmelt-comparison.mat'],'melt','-v7.3');
+    end
+    
+end
 
 
-%set-up a standard depth profile
+%% create plots of ocean temperature data (Antarctic-iceberg-oceandata-profiles.eps)
+if ~exist('melt')
+    load([iceberg_path,'Antarctic-icebergmelt-comparison.mat']);
+end
+
+%set up plot
+close all; 
 % Tm_mapplot = figure; set(gcf,'position',[450 50 800 800]);
 figure; set(gcf,'position',[50 50 800 1000]);
 region_cmap = [171,221,164; 43,131,186; 253,174,97; 215,25,28]./255;
 depth_cmap = cmocean('deep',750); Temp_cmap = cmocean('thermal',600);
 imagesc(IM.x,IM.y,IM.z); colormap gray; hold on; axis xy equal; colormap(gray(10001));
 cmap_ref = [1 1 2 2 2 2 2 3 3 4 4 4 4 4 4];
-z = [1:1:800]'; %set up a standard depth scale
 
-
-%plot 'heat map' temperature profiles for each observation to explore
-%temporal changes in ocean temperatures near these glaciers as well as 
-%visualize the stratification of the water masses
-% for i = 1:length(melt)
-%     if ~isempty(melt(i).oceant)
-%         disp(melt(i).name);
-%         
-%         %identify the unique dates for temperature observations
-%         [unique_dates,unique_refs] = unique(melt(i).oceant);
-%         for j = 1:length(unique_dates)
-%             year_refs = find(melt(i).oceant == unique_dates(j));
-%             melt(i).oceantavg(j) = unique_dates(j);
-%             if length(year_refs) > 1
-%                 melt(i).oceanxavg(:,j) = nanmean(melt(i).oceanx(year_refs)); melt(i).oceanyavg(:,j) = nanmean(melt(i).oceany(year_refs));
-%                 melt(i).oceandavg_prof(:,j) = z; %nanmean(melt(i).oceand(:,year_refs),2);
-%                 for k = 1:length(year_refs)
-%                     if sum(~isnan(melt(i).oceand(:,year_refs(k))))>1 && sum(~isnan(melt(i).oceanT(:,year_refs(k))))>1
-%                         Tprof(:,k) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),melt(i).oceanT(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),z,'linear');
-%                         Sprof(:,k) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),melt(i).oceanS(~isnan(melt(i).oceand(:,year_refs(k))) & ~isnan(melt(i).oceanT(:,year_refs(k))),year_refs(k)),z,'linear');
-%                     else
-%                         Tprof(:,k) = NaN(size(melt(i).oceandavg_prof(:,j))); Sprof(:,k) = NaN(size(melt(i).oceandavg_prof(:,j)));
-%                     end
-%                 end
-%                 melt(i).oceanTavg_prof(:,j) = nanmean(Tprof,2); melt(i).oceanTstd_prof(:,j) = nanstd(Tprof,0,2);
-%                 melt(i).oceanSavg_prof(:,j) = nanmean(Sprof,2); melt(i).oceanSstd_prof(:,j) = nanstd(Sprof,0,2);
-%                 melt(i).oceanTfreeze_prof(:,j) = (((-5.73*10^-2).*melt(i).oceanSavg_prof(:,j)) + (8.32*10^-2) - ((7.61*10^-4).*melt(i).oceandavg_prof(:,j)));
-%                 clear Tprof Sprof;
-%             else
-%                 melt(i).oceanxavg(:,j) = melt(i).oceanx(year_refs); melt(i).oceanyavg(:,j) = melt(i).oceany(year_refs);
-%                 melt(i).oceandavg_prof(:,j) = z; %melt(i).oceand(:,year_refs);
-%                 if sum(~isnan(melt(i).oceand(:,year_refs)))>1 && sum(~isnan(melt(i).oceanT(:,year_refs)))>1
-%                     melt(i).oceanTavg_prof(:,j) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),melt(i).oceanT(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),z,'linear'); 
-%                     melt(i).oceanSavg_prof(:,j) = interp1(melt(i).oceand(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),melt(i).oceanS(~isnan(melt(i).oceand(:,year_refs)) & ~isnan(melt(i).oceanT(:,year_refs)),year_refs),z,'linear'); 
-%                 else
-%                     melt(i).oceanTavg_prof(:,j) = NaN(size(melt(i).oceandavg_prof(:,j))); melt(i).oceanSavg_prof(:,j) = NaN(size(melt(i).oceandavg_prof(:,j)));
-%                 end
-%                 melt(i).oceanTstd_prof(:,j) = NaN(size(melt(i).oceandavg_prof(:,j))); melt(i).oceanSstd_prof(:,j) = NaN(size(melt(i).oceandavg_prof(:,j)));
-%                 melt(i).oceanTfreeze_prof(:,j) = (((-5.73*10^-2).*melt(i).oceanSavg_prof(:,j)) + (8.32*10^-2) - ((7.61*10^-4).*melt(i).oceandavg_prof(:,j)));
-%             end
-%             
-%             
-% 
-%             clear year_refs;
-%         end
-%         clear unique_*;
-%         
-%         %add date-averaged profiles to structure
-%         cd /Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt
-%         save('Antarctic-icebergmelt-comparison.mat','melt','-v7.3');
-%     end
-%     
-% end
-
-
-%plot the temperature profiles
+%loop through data
+disp('Plotting temperature profiles & iceberg depth timeseries');
 for i = 1:length(melt)
     if ~isempty(melt(i).oceant)
-        disp(melt(i).name);
         subpl = subplot(8,2,plot_loc(i));
-%         figure;
         
-        %plot profiles with colors to distinguish temps
+        %plot temperature profiles with colors to distinguish temps
         for j = 1:length(melt(i).oceantavg)
-            for k = 6:10:size(melt(i).oceanTavg_prof(:,j),1)-5
-                if ~isnan(nanmean(melt(i).oceanTavg_prof(k-5:k+5,j))) %&& ~isnan(melt(i).oceanTfreeze_prof(k,j))
-                    plot(melt(i).oceantavg(j),nanmean(melt(i).oceandavg_prof(k-5:k+5,j)),'.','color',Temp_cmap(round((nanmean(melt(i).oceanTavg_prof(k-5:k+5,j))+3)*100),:)); hold on;
+            prof_cmap = []; prof_d = [];
+            
+            if nanmedian(diff(melt(i).oceandavg_prof)) == 1
+                %average over 20 rows to create smoothed profiles at 20 m increments
+                for k = 11:20:size(melt(i).oceanTavg_prof(:,j),1)-10
+                    prof_d = [prof_d; nanmean(melt(i).oceandavg_prof(k-10:k+10))];
+                    if ~isnan(nanmean(melt(i).oceanTavg_prof(k-10:k+10,j))) %&& ~isnan(melt(i).oceanTfreeze_prof(k,j))
+                        prof_cmap = [prof_cmap; Temp_cmap(round((nanmean(melt(i).oceanTavg_prof(k-10:k+10,j))+3)*100),:)];
+                        %                         plot(melt(i).oceantavg(j),nanmean(melt(i).oceandavg_prof(k-10:k+10)),'.','color',Temp_cmap(round((nanmean(melt(i).oceanTavg_prof(k-10:k+10,j))+3)*100),:),'markersize',10); hold on;
+                    else
+                        prof_cmap = [prof_cmap; 1,1,1];
+                    end
+                end
+            else
+                %plot at native standardized resolution because it should be ~20 m
+                for k = 1:size(melt(i).oceanTavg_prof(:,j),1)
+                    prof_d = [prof_d; melt(i).oceandavg_prof(k)];
+                    if ~isnan(melt(i).oceanTavg_prof(k,j))
+                        prof_cmap = [prof_cmap; Temp_cmap(round((melt(i).oceanTavg_prof(k,j)+3)*100),:)];
+                        %                         plot(melt(i).oceantavg(j),melt(i).oceandavg_prof(k),'.','color',Temp_cmap(round((melt(i).oceanTavg_prof(k,j)+3)*100),:),'markersize',10); hold on;
+                    else
+                        prof_cmap = [prof_cmap; 1,1,1];
+                    end
                 end
             end
-            
+            bottom_ref = find(sum(prof_cmap,2) < 3,1,'last');
+            scatter(repmat(melt(i).oceantavg(j),size(prof_d(1:bottom_ref))),prof_d(1:bottom_ref),10,prof_cmap(1:bottom_ref,:),'filled','s'); hold on;
+            clear prof_cmap prof_d bottom_ref;
         end
         
         %plot the iceberg depths for each date
@@ -482,7 +388,7 @@ for i = 1:length(melt)
         errorbar(nanmean([melt(i).to melt(i).tf],2),melt(i).d,[],[],abs(nanmean([melt(i).to melt(i).tf],2)-melt(i).to),abs(nanmean([melt(i).to melt(i).tf],2)-melt(i).tf),'.k');
         
         %format plot
-        set(gca,'ydir','reverse','xlim',[2012 2021],'ylim',[0 800],'ytick',[0:250:750],'fontsize',16);
+        set(gca,'ydir','reverse','xlim',[2011.5 2021.5],'ylim',[0 depth_cutoff],'ytick',[0:250:750],'fontsize',16);
         if plot_loc(i) == 15
             xlabel('Year','fontsize',16); ylabel('Depth (m b.s.l.)','fontsize',16);
         end
@@ -497,7 +403,7 @@ for i = 1:length(melt)
         errorbar(nanmean([melt(i).to melt(i).tf],2),melt(i).d,[],[],abs(nanmean([melt(i).to melt(i).tf],2)-melt(i).to),abs(nanmean([melt(i).to melt(i).tf],2)-melt(i).tf),'.k');
         
         %format plot
-        set(gca,'ydir','reverse','xlim',[2012 2021],'ylim',[0 800],'ytick',[0:250:750],'fontsize',16);
+        set(gca,'ydir','reverse','xlim',[2011.5 2021.5],'ylim',[0 depth_cutoff],'ytick',[0:250:750],'fontsize',16);
         text(min(get(gca,'xlim'))+0.025*(max(get(gca,'xlim'))-min(get(gca,'xlim'))),max(get(gca,'ylim'))-0.2*abs(max(get(gca,'ylim'))-min(get(gca,'ylim'))),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
         drawnow;
         
@@ -506,14 +412,14 @@ for i = 1:length(melt)
     %format axes
     pos = get(gca,'position'); set(gca,'position',[pos(1) pos(2) 1.05*pos(3) 1.15*pos(4)]);
     if plot_loc(i) == 14
-        set(gca,'xlim',[2012 2021],'xtick',[2013:2:2021],'ylim',[0 800],'ytick',[0:250:750],'fontsize',16);
+        set(gca,'xlim',[2011.5 2021.5],'xtick',[2013:2:2021],'ylim',[0 depth_cutoff],'ytick',[0:250:750],'fontsize',16);
         xlabel('Year','fontsize',20); 
     elseif plot_loc(i) == 15
-        set(gca,'xlim',[2012 2021],'xtick',[2013:2:2021],'ylim',[0 800],'ytick',[0:250:750],'fontsize',16);
+        set(gca,'xlim',[2011.5 2021.5],'xtick',[2013:2:2021],'ylim',[0 depth_cutoff],'ytick',[0:250:750],'fontsize',16);
         xlabel('Year','fontsize',20); ylbl = ylabel('Depth (m b.s.l.)','fontsize',20);
         set(ylbl,'position',[2010.75 -3000 -1]);
     else
-        set(gca,'xlim',[2012 2021],'xtick',[2013:2:2021],'xticklabel',[],'ylim',[0 800],'ytick',[0:250:750],'fontsize',16);
+        set(gca,'xlim',[2011.5 2021.5],'xtick',[2013:2:2021],'xticklabel',[],'ylim',[0 800],'ytick',[0:250:750],'fontsize',16);
     end
     
 end
@@ -527,8 +433,7 @@ annotation('textbox',[0.725 0.11 0.05 0.03],'string',['0',char(176),'C'],'fontsi
 annotation('textbox',[0.875 0.11 0.05 0.03],'string',['3',char(176),'C'],'fontsize',16,'edgecolor','none');
 
 %save
-cd /Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt
-saveas(gcf,'Antarctic-iceberg-oceandata-profiles.eps','epsc'); saveas(gcf,'Antarctic-iceberg-oceandata-profiles.png','png');
+saveas(gcf,[iceberg_path,'Antarctic-iceberg-oceandata-profiles.eps'],'epsc'); saveas(gcf,[iceberg_path,'Antarctic-iceberg-oceandata-profiles.png'],'png');
 disp('iceberg and ocean temp depth profiles saved');
 
 % %create a map that shows the average temperature for each profile down to
@@ -537,8 +442,8 @@ disp('iceberg and ocean temp depth profiles saved');
 % for i = 1:length(melt)
 %     if ~isempty(melt(i).oceant)
 %         for j = 1:length(melt(i).oceantavg)
-%             hundred_ref = find(melt(i).oceandavg_prof(:,j)<=100,1,'last');
-%             median_ref = find(melt(i).oceandavg_prof(:,j)<=nanmedian(melt(i).d),1,'last');
+%             hundred_ref = find(melt(i).oceandavg_prof<=100,1,'last');
+%             median_ref = find(melt(i).oceandavg_prof<=nanmedian(melt(i).d),1,'last');
 %             if ~isnan(nanmean(melt(i).oceanTavg_prof(1:hundred_ref,j)-melt(i).oceanTfreeze_prof(1:hundred_ref,j)))
 %             plot(melt(i).oceanxavg(j),melt(i).oceanyavg(j),'x','color',Temp_cmap(round((nanmean(melt(i).oceanTavg_prof(1:hundred_ref,j)-melt(i).oceanTfreeze_prof(1:hundred_ref,j))+1)*100),:)); hold on;
 %             end
@@ -726,7 +631,7 @@ for i = 1:length(melt)
             melt(i).oceanSmax(j,1) = max(oceansals(melt(i).oceand(:,minrefs)<=melt(i).d(j))); melt(i).oceanSbottom(j,1) = nanmean(bottomS);
             %NOTE: attempting to use trapz function to integrate temp over depth then divide by the depth range to get the mean for irregularly-distributed temperature profiles
             temp_mean = trapz(oceantemps(melt(i).oceand(:,minrefs)<=melt(i).d(j)),melt(i).oceand(melt(i).oceand(:,minrefs)<=melt(i).d(j),minrefs))./(max(melt(i).oceand(melt(i).oceand(:,minrefs)<=melt(i).d(j),minrefs))-min(melt(i).oceand(melt(i).oceand(:,minrefs)<=melt(i).d(j),minrefs)));
-            melt(i).oceanTavg(j,1) = nanmean(temp_mean);
+            Tavg_test(j,1) = nanmean(temp_mean);
             
             clear bottom*;
             
@@ -768,8 +673,8 @@ for i = 1:length(melt)
     %add glacier locations to map
     figure(Tm_mapplot); 
     for k = 1:size(melt(i).oceanTavg_prof,2)
-        temp(k) = nanmean(melt(i).oceanTavg_prof(1:find(melt(i).oceandavg_prof(:,k)<=nanmean(melt(i).d),1,'last'),k));
-        freeze_temp(k) = ((-5.73*10^-2).*nanmean(melt(i).oceanSavg_prof(1:find(melt(i).oceandavg_prof(:,k)<=nanmean(melt(i).d),1,'last'),k))) + (8.32*10^-2) - ((7.61*10^-4).*nanmean(melt(i).oceandavg_prof(1:find(melt(i).oceandavg_prof(:,k)<=nanmean(melt(i).d),1,'last'),k)));
+        temp(k) = nanmean(melt(i).oceanTavg_prof(1:find(melt(i).oceandavg_prof<=nanmean(melt(i).d),1,'last'),k));
+        freeze_temp(k) = ((-5.73*10^-2).*nanmean(melt(i).oceanSavg_prof(1:find(melt(i).oceandavg_prof<=nanmean(melt(i).d),1,'last'),k))) + (8.32*10^-2) - ((7.61*10^-4).*nanmean(melt(i).oceandavg_prof(1:find(melt(i).oceandavg_prof(:,k)<=nanmean(melt(i).d),1,'last'))));
         if ~isnan(temp(k)) && ~isnan(freeze_temp(k))
             tempref = [tempref; round((temp(k)-freeze_temp(k)+0.5)*150)];
             plot(melt(i).oceanxavg(k),melt(i).oceanyavg(k),'x','color',Temp_cmap(round((temp(k)-freeze_temp(k)+0.5)*150),:),'markersize',8); hold on;
