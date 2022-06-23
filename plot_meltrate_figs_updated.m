@@ -3,27 +3,28 @@
 %figures. Exports concatenated data for all sites to a table.
 
 
-%% Set-up workspace
+%% Initialize
 clearvars; close all; drawnow;
 addpath('/users/ellynenderlin/Research/miscellaneous/general-code','/users/ellynenderlin/Research/miscellaneous/general-code/cmocean');
 
-root_dir = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/';
+%specify paths & file names for data
+iceberg_path = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/';
+figure_path = [iceberg_path,'figures/'];
+
+%specify generic variables
 plot_yrs = []; avgx = []; avgy = []; region = []; warning off;
 rho_sw = 1026; %sea water density in kg m^-3
+years = [2011.75 2022.25]; year_ticks = [2013:2:2022]; %approximate date range for plots
 
-%make colormaps
-yrs = [2013:1:2022]; %plot_color = colormap(parula(length(yrs)+1)); plot_color = plot_color(1:length(yrs),:);
+%specify plot parameters
+yrs = [round(min(years)):1:round(max(years))]; 
 % plot_color = [127,59,8;179,88,6;224,130,20;253,184,99;254,224,182;216,218,235;178,171,210;128,115,172;84,39,136;45,0,75]/255; %orange-purple colormap
 plot_color = cmocean('ice',length(yrs)+1); plot_color = plot_color(1:end-1,:); %colormap for emphasizing different years
 lowmelt_cmap = flipud(colormap(hot(40))); highmelt_cmap = flipud(colormap(hot(100)));
 % plot_cmap = colormap(parula(15)); %colormap for emphasizing different locations
-close all;
-
-%if subplots for each region are organized 2 rows by 8 columns
 region = [{'Edgeworth-LarsenA'},{'Crane-LarsenB'},{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},...
     {'Thwaites'},{'Ferrigno-Eltanin'},{'Seller-Bugge'},{'Heim-Marguerite'},{'Widdowson-Biscoe'},{'Cadman-Palmer'},{'Blanchard-Danco'},{'Leonardo-Danco'}]; %site directory names
-disp_names = [{'i) Edgeworth'},{'j) Crane'},{'k) Ronne'},{'l) Filchner'},{'m) Polar Times'},{'n) Totten'},{'o) Mertz'},...
-    {'h) Thwaites'},{'g) Ferrigno'},{'f) Seller'},{'e) Heim'},{'d) Widdowson'},{'c) Cadman'},{'b) Blanchard'},{'a) Leonardo'}]; %geographically-organized figure labels
+plot_letters = [{'i)'},{'j)'},{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'h)'},{'g)'},{'f)'},{'e)'},{'d)'},{'c)'},{'b)'},{'a)'}]; %plot letters for sites to be used in geographically-arranged subplots
 leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Polar Times'},{'Totten'},{'Mertz'},...
     {'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}]; %generic figure labels
 map_marker = 's'; %marker symbol for maps
@@ -33,12 +34,7 @@ plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1]; %specifies the subplot locatio
 region_colors = [77,172,38; 77,172,38; 184,225,134; 184,225,134; 184,225,134; 184,225,134; 184,225,134;...
     241,182,218; 241,182,218; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139]./255;
 
-%days of year (needed for datestring to decimal year conversion)
-modays_norm = [31 28 31 30 31 30 31 31 30 31 30 31];
-cumdays_norm = cumsum(modays_norm); cumdays_norm = [0 cumdays_norm(1:11)];
-modays_leap = [31 29 31 30 31 30 31 31 30 31 30 31];
-cumdays_leap = cumsum(modays_leap); cumdays_leap = [0 cumdays_leap(1:11)];
-
+close all;
 
 %% create a location map
 close all;
@@ -62,7 +58,7 @@ figureC = figure; set(gcf,'position',[50 50 800 1000]);
 WdVdt = []; WAsub = []; EdVdt = []; EAsub = [];
 
 %% create subplots & add site info to the map
-cd(root_dir);
+cd(iceberg_path);
 
 %set-up dummy vectors to fill with concatenated variables for all sites
 start_yr = []; end_yr = []; avg_x = []; avg_y = []; depth = []; depth_uncert = []; subarea = []; subarea_uncert = [];
@@ -73,8 +69,7 @@ xcoord_f = []; ycoord_f = [];
 
 %plot
 for i = 1:size(region,2)
-%     cd_to_dir = ['cd ',char(region(i))]; eval(cd_to_dir);
-    cd(char(region(i)));
+    cd(char(region(i))); disp_names(i) = {strjoin([cellstr(plot_letters(i)),' ',cellstr(leg_names(i))])};
     meltinfo = dir('*iceberg_meltinfo.csv'); landsats = dir('LC*PS.TIF');
     avgx = []; avgy = []; meltrate_v_draft = [];
 %     date_o = []; xcoord_o = []; ycoord_o = [];
@@ -123,15 +118,11 @@ for i = 1:size(region,2)
 %         flux = [flux; dVdt]; sub_area = [sub_area; Asub]; meltrate = [meltrate; (dVdt./Asub)]; keeld = [keeld; draft];
 
         %compile data to create a concatenated table for all sites, all dates
-        yr_o = str2num(meltinfo(j).name(end-49:end-46)); 
-        if mod(yr_o,4) == 0; decidate_o = (cumdays_leap(str2num(meltinfo(j).name(end-45:end-44)))+str2num(meltinfo(j).name(end-43:end-42)))/sum(modays_leap);
-        else; decidate_o = (cumdays_norm(str2num(meltinfo(j).name(end-45:end-44)))+str2num(meltinfo(j).name(end-43:end-42)))/sum(modays_norm); end
-        yr_f = str2num(meltinfo(j).name(end-34:end-31));
-        if mod(yr_f,4) == 0; decidate_f = (cumdays_leap(str2num(meltinfo(j).name(end-30:end-29)))+str2num(meltinfo(j).name(end-28:end-27)))/sum(modays_leap);
-        else; decidate_f = (cumdays_norm(str2num(meltinfo(j).name(end-30:end-29)))+str2num(meltinfo(j).name(end-28:end-27)))/sum(modays_norm); end
-        start_yr = [start_yr; repmat(yr_o+decidate_o,length(draft),1)]; end_yr = [end_yr; repmat(yr_f+decidate_f,length(draft),1)];
-        plot_yrs = [yr_o+decidate_o yr_f+decidate_f];
-        clear yr_* decidate_*;
+        decidate_o = convert_to_decimaldate(meltinfo(j).name(end-49:end-42));
+        decidate_f = convert_to_decimaldate(meltinfo(j).name(end-34:end-27));
+        start_yr = [start_yr; repmat(decidate_o,length(draft),1)]; end_yr = [end_yr; repmat(decidate_f,length(draft),1)];
+        plot_yrs = [decidate_o decidate_f];
+        clear decidate_*;
         avgx = [avgx; nanmean([xo xf],2)]; avgy = [avgy; nanmean([yo yf],2)]; %average coordinates for regional map
         xcoord_o = [xcoord_o; xo]; ycoord_o = [ycoord_o; yo]; xcoord_f = [xcoord_f; xf]; ycoord_f = [ycoord_f; yf]; %coordinates for coordinate data table
         avg_x = [avg_x; nanmean([xo xf],2)]; avg_y = [avg_y; nanmean([yo yf],2)]; %average coordinates for site map & regional data table
@@ -219,6 +210,15 @@ for i = 1:size(region,2)
     %add a symbol to the site map
     figure(figureA); colormap(gca,'gray');
     mp(i) = plot(nanmean(avgx),nanmean(avgy),[map_marker,'k'],'markerfacecolor',region_colors(i,:),'markeredgecolor','k','markersize',12); hold on;
+    if strcmp(char(plot_letters(i)),'f)')
+        text(nanmean(avgx)-200000,nanmean(avgy)-100000,char(plot_letters(i)),'fontsize',16);
+    elseif strcmp(char(plot_letters(i)),'a)')
+        text(nanmean(avgx)-200000,nanmean(avgy)+100000,char(plot_letters(i)),'fontsize',16);
+    elseif strcmp(char(plot_letters(i)),'b)') || strcmp(char(plot_letters(i)),'c)') || strcmp(char(plot_letters(i)),'e)')
+        text(nanmean(avgx)-200000,nanmean(avgy)-100000,char(plot_letters(i)),'fontsize',16);
+    else
+        text(nanmean(avgx)+100000,nanmean(avgy),char(plot_letters(i)),'fontsize',16);
+    end
     
     %format the scatterplot subplots
     figure(figureC);
@@ -237,7 +237,7 @@ for i = 1:size(region,2)
     %add axes labels
     if plot_loc(i) == 14
         legsub = legend(yrpl,num2str(yrs')); set(legsub,'location','southoutside','NumColumns',5,'fontsize',16);
-        legpos = get(legsub,'position'); set(legsub,'position',[0.5 0.13 legpos(3) legpos(4)]); clear legpos;
+        legpos = get(legsub,'position'); set(legsub,'position',[0.56 0.11 legpos(3) legpos(4)]); clear legpos;
         set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[0:100:400]); grid on;
         xlabel('Draft (m b.s.l.)','fontsize',16);
     end
@@ -246,7 +246,7 @@ for i = 1:size(region,2)
         set(gca,'xlim',[0 800],'xtick',[0:200:800],'xticklabel',[0:200:800]);
         set(ylb,'position',[-100 350 -1]);
     end
-    text(0.6*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),char(disp_names(i)),'fontsize',16);
+    text(0.6*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_letters(i)),' ',char(leg_names(i))],'fontsize',16);
     
     %format the site map-view figure
     figure(figureD);
@@ -308,7 +308,7 @@ for i = 1:size(region,2)
         text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
     end
     clear im;
-    saveas(figureD,[char(region(i)),'_melt-map.eps'],'epsc'); saveas(figureD,[char(region(i)),'_melt-map.png'],'png');
+    saveas(figureD,[figure_path,char(region(i)),'_melt-map.eps'],'epsc'); saveas(figureD,[figure_path,char(region(i)),'_melt-map.png'],'png');
     clear xlims ylims;
     
     %format the site scatterplot
@@ -324,12 +324,12 @@ for i = 1:size(region,2)
     xlabel('Draft (m b.s.l.)','fontsize',16); ylabel('Melt rate (m yr^{-1})','fontsize',16);
     %find the best location for the legend based on data
     leg = legend(indpl,daterange); 
-    if i <= 2
-        set(leg,'fontsize',16,'location','southeast');
-    else
+%     if i <= 2
+%         set(leg,'fontsize',16,'location','southeast');
+%     else
         set(leg,'fontsize',16,'location','northwest');
-    end
-    saveas(figureE,[char(region(i)),'_iceberg-meltrate-v-draft.eps'],'epsc'); saveas(figureE,[char(region(i)),'_iceberg-meltrate-v-draft.png'],'png');
+%     end
+    saveas(figureE,[figure_path,char(region(i)),'_iceberg-meltrate-v-draft.eps'],'epsc'); saveas(figureE,[figure_path,char(region(i)),'_iceberg-meltrate-v-draft.png'],'png');
     clear xlims ylims;
     
     %save all dates and coords to a tab-delimited text file
@@ -346,10 +346,10 @@ text(0,17.5e5,['75',char(176),'S'],'fontsize',16); text(0,23.0e5,['70',char(176)
 text(-16.5e5,25.25e5,['-30',char(176),'E'],'fontsize',16); text(12.5e5,25.25e5,['30',char(176),'E'],'fontsize',16); 
 colormap(gca,im_cmap);
 % xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
-legmap = legend(mp,[char(leg_names)]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
+legmap = legend(mp,[char(disp_names)]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
 legmappos = get(legmap,'position'); set(legmap,'position',[legmappos(1) legmappos(2)+0.05 legmappos(3) legmappos(4)]);
 gcapos = get(gca,'position'); set(gca,'position',[gcapos(1) 0.09 gcapos(3) gcapos(4)]);
-saveas(gcf,'Antarctic-iceberg-map.eps','epsc'); saveas(gcf,'Antarctic-iceberg-map.png','png');
+saveas(gcf,[figure_path,'Antarctic-iceberg-map.eps'],'epsc'); saveas(gcf,[figure_path,'Antarctic-iceberg-map.png'],'png');
 
 %save the subplots containing all data
 figure(figureB);
@@ -368,11 +368,11 @@ xlabel('Draft (m b.s.l.)','fontsize',16); ylabel('Melt rate (m yr^{-1})','fontsi
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'b) ','color','k','fontsize',16);
 set(sub1b,'position',[0.1 0.11 0.38 0.750]); set(sub2b,'position',[0.57 0.11 0.38 0.750]);
-saveas(gcf,'Antarctic-iceberg-lumped-plots.eps','epsc'); saveas(gcf,'Antarctic-iceberg-lumped-plots.png','png');
+saveas(gcf,[figure_path,'Antarctic-iceberg-lumped-plots.eps'],'epsc'); saveas(gcf,[figure_path,'Antarctic-iceberg-lumped-plots.png'],'png');
 
 %save the subplots sorted by study site
 figure(figureC);
-saveas(gcf,'Antarctic-iceberg-subplots.eps','epsc'); saveas(gcf,'Antarctic-iceberg-subplots.png','png');
+saveas(gcf,[figure_path,'Antarctic-iceberg-subplots.eps'],'epsc'); saveas(gcf,[figure_path,'Antarctic-iceberg-subplots.png'],'png');
 
 
 %save the data tables
@@ -385,7 +385,7 @@ column_units = {'years' 'years' 'meters' 'meters'...
     'cubic meters per day' 'cubic meters per day' 'meters per day' 'meters per day'};
 T=table(start_yr,end_yr,avg_x,avg_y,depth,depth_uncert,subarea,subarea_uncert,meltflux,meltflux_uncert,meltrate,meltrate_uncert);
 T.Properties.VariableNames = column_names; T.Properties.VariableUnits = column_units;
-writetable(T,[root_dir,'Antarctic-iceberg-meltinfo.csv']);
+writetable(T,[iceberg_path,'Antarctic-iceberg-meltinfo.csv']);
 disp('Antarctic iceberg melt rate text file written');
 clear column_*;
 %COORDINATES ONLY
@@ -395,7 +395,7 @@ column_units = {'years' 'meters' 'meters'...
     'years' 'meters' 'meters'};
 t=table(start_yr,xcoord_o,ycoord_o,end_yr,xcoord_f,ycoord_f);
 t.Properties.VariableNames = column_names; t.Properties.VariableUnits = column_units;
-writetable(t,[root_dir,'Antarctic-iceberg-PScoords.csv']);
+writetable(t,[iceberg_path,'Antarctic-iceberg-PScoords.csv']);
 disp('Antarctic iceberg coordinates text file written');
 clear T t;
 
