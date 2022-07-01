@@ -19,14 +19,15 @@ years = [2011.75 2022.25]; year_ticks = [2013:2:2022]; %approximate date range f
 %specify plot parameters
 yrs = [round(min(years)):1:round(max(years))]; 
 % plot_color = [127,59,8;179,88,6;224,130,20;253,184,99;254,224,182;216,218,235;178,171,210;128,115,172;84,39,136;45,0,75]/255; %orange-purple colormap
-plot_color = cmocean('ice',length(yrs)+1); plot_color = plot_color(1:end-1,:); %colormap for emphasizing different years
-lowmelt_cmap = flipud(colormap(hot(40))); highmelt_cmap = flipud(colormap(hot(100)));
+plot_color = cmocean('tempo',length(yrs)+1); plot_color = plot_color(2:end,:); %colormap for emphasizing different years
+highmelt_cmap = cmocean('amp',100); % highmelt_cmap = flipud(colormap(hot(100)));
 % plot_cmap = colormap(parula(15)); %colormap for emphasizing different locations
 region = [{'Edgeworth-LarsenA'},{'Crane-LarsenB'},{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},...
     {'Thwaites'},{'Ferrigno-Eltanin'},{'Seller-Bugge'},{'Heim-Marguerite'},{'Widdowson-Biscoe'},{'Cadman-Palmer'},{'Blanchard-Danco'},{'Leonardo-Danco'}]; %site directory names
 plot_letters = [{'i)'},{'j)'},{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'h)'},{'g)'},{'f)'},{'e)'},{'d)'},{'c)'},{'b)'},{'a)'}]; %plot letters for sites to be used in geographically-arranged subplots
 leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Polar Times'},{'Totten'},{'Mertz'},...
     {'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}]; %generic figure labels
+leg_ref = [9,10,11,12,13,14,15,8,7,6,5,4,3,2,1]; %arrange legend in alphabetical order
 map_marker = 's'; %marker symbol for maps
 plot_marker = 's'; %marker symbol for scatterplots
 symbol_size = 4; %symbols size
@@ -337,6 +338,7 @@ for i = 1:size(region,2)
     clear subpl indpl daterange;
 end
 figure(figureA);
+[sorted,inds] = sort(leg_ref); mp_sort = mp(inds);
 set(gca,'xlim',[-28e5 28e5],'xtick',[-32e5:8e5:32e5],'xticklabel',[-3200:800:3200],...
     'ylim',[-24e5 24e5],'ytick',[-24e5:8e5:24e5],'yticklabel',[-2400:800:2400],'fontsize',16); grid off;
 xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
@@ -346,15 +348,15 @@ text(0,17.5e5,['75',char(176),'S'],'fontsize',16); text(0,23.0e5,['70',char(176)
 text(-16.5e5,25.25e5,['-30',char(176),'E'],'fontsize',16); text(12.5e5,25.25e5,['30',char(176),'E'],'fontsize',16); 
 colormap(gca,im_cmap);
 % xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
-legmap = legend(mp,[char(disp_names)]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
-legmappos = get(legmap,'position'); set(legmap,'position',[legmappos(1) legmappos(2)+0.05 legmappos(3) legmappos(4)]);
+legmap = legend(mp_sort,[char(disp_names(inds))]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
+legmappos = get(legmap,'position'); set(legmap,'position',[0.05 legmappos(2)+0.05 legmappos(3) legmappos(4)]);
 gcapos = get(gca,'position'); set(gca,'position',[gcapos(1) 0.09 gcapos(3) gcapos(4)]);
 saveas(gcf,[figure_path,'Antarctic-iceberg-map.eps'],'epsc'); saveas(gcf,[figure_path,'Antarctic-iceberg-map.png'],'png');
 
 %save the subplots containing all data
 figure(figureB);
 subplot(sub1b);
-leg1 = legend(pl,[char(leg_names)]); set(leg1,'location','north','fontsize',16,'NumColumns',5); 
+leg1 = legend(pl(inds),[char(leg_names(inds))]); set(leg1,'location','north','fontsize',16,'NumColumns',5); 
 leg1pos = get(leg1,'position'); set(leg1,'position',[0.5-0.5*leg1pos(3) 0.98-leg1pos(4) leg1pos(3) leg1pos(4)]);
 set(gca,'xlim',[0 7e6],'xtick',[0:1e6:7e6],'xticklabel',[0:1:7],...
     'ylim',[0 6.8],'ytick',[0:1:7],'yticklabel',[0:1:7],'fontsize',16); grid on;
@@ -401,7 +403,7 @@ clear T t;
 
 %% replot Larsen A & B to hone-in on potential variations btw dates
 % cd /users/mariamadryak/Desktop/Antarctic_icebergs
-% clear marker; yrs = [2011:1:2018]; 
+% clear marker; yrs = [2011:1:2018]; lowmelt_cmap = flipud(colormap(hot(40))); 
 % region = [{'LarsenA'},{'LarsenB'},{'Bugge'},{'Marguerite'},{'Biscoe'},{'Palmer'},{'Danco'}];
 % marker = ['x','*','s','d','^','p','h','o'];
 % plot_cmap = colormap(parula(length(yrs))); %colormap for emphasizing different locations
