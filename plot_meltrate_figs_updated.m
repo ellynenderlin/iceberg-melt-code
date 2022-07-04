@@ -60,6 +60,7 @@ WdVdt = []; WAsub = []; EdVdt = []; EAsub = [];
 
 %% create subplots & add site info to the map
 cd(iceberg_path);
+disp('Generating plots...');
 
 %set-up dummy vectors to fill with concatenated variables for all sites
 start_yr = []; end_yr = []; avg_x = []; avg_y = []; depth = []; depth_uncert = []; subarea = []; subarea_uncert = [];
@@ -212,15 +213,15 @@ for i = 1:size(region,2)
     figure(figureA); colormap(gca,'gray');
     mp(i) = plot(nanmean(avgx),nanmean(avgy),[map_marker,'k'],'markerfacecolor',region_colors(i,:),'markeredgecolor','k','markersize',12); hold on;
     if strcmp(char(plot_letters(i)),'f)')
-        text(nanmean(avgx)-200000,nanmean(avgy)-100000,char(plot_letters(i)),'fontsize',16);
+        text(nanmean(avgx)-100000,nanmean(avgy)-100000,char(plot_letters(i)),'fontsize',12);
     elseif strcmp(char(plot_letters(i)),'a)')
-        text(nanmean(avgx)-200000,nanmean(avgy)+100000,char(plot_letters(i)),'fontsize',16);
+        text(nanmean(avgx)-100000,nanmean(avgy)+75000,char(plot_letters(i)),'fontsize',12);
     elseif strcmp(char(plot_letters(i)),'b)') || strcmp(char(plot_letters(i)),'c)') || strcmp(char(plot_letters(i)),'e)')
-        text(nanmean(avgx)-200000,nanmean(avgy)-100000,char(plot_letters(i)),'fontsize',16);
+        text(nanmean(avgx)-100000,nanmean(avgy)-50000,char(plot_letters(i)),'fontsize',12);
     else
-        text(nanmean(avgx)+100000,nanmean(avgy),char(plot_letters(i)),'fontsize',16);
+        text(nanmean(avgx)+75000,nanmean(avgy),char(plot_letters(i)),'fontsize',12);
     end
-    
+       
     %format the scatterplot subplots
     figure(figureC);
     if nanmean(avgx) > -1.5e6
@@ -238,7 +239,7 @@ for i = 1:size(region,2)
     %add axes labels
     if plot_loc(i) == 14
         legsub = legend(yrpl,num2str(yrs')); set(legsub,'location','southoutside','NumColumns',5,'fontsize',16);
-        legpos = get(legsub,'position'); set(legsub,'position',[0.56 0.11 legpos(3) legpos(4)]); clear legpos;
+        legpos = get(legsub,'position'); set(legsub,'position',[0.56 0.10 legpos(3) legpos(4)]); clear legpos;
         set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[0:100:400]); grid on;
         xlabel('Draft (m b.s.l.)','fontsize',16);
     end
