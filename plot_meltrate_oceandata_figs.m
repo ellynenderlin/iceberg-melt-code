@@ -660,7 +660,7 @@ text(min(xlims)+0.055*(max(xlims)-min(xlims)),min(ylims)+0.275*(max(ylims)-min(y
 %save figure
 [sorted,inds] = sort(leg_ref); mp_sort = mp(inds);
 colormap(gca,im_cmap);%make sure the image colormap didn't get accidentally altered
-legmap = legend(mp_sort,[char(disp_names(inds))]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
+legmap = legend(mp_sort,[char(disp_names(inds))]); set(legmap,'location','northoutside','fontsize',14,'NumColumns',5); 
 legmappos = get(legmap,'position'); set(legmap,'position',[0.05 legmappos(2)+0.05 legmappos(3) legmappos(4)]);
 gcapos = get(gca,'position'); set(gca,'position',[gcapos(1) 0.09 gcapos(3) gcapos(4)]);
 saveas(Tm_mapplot,[figure_path,'Antarctic-iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot,[figure_path,'Antarctic-iceberg-oceandata-map.png'],'png');

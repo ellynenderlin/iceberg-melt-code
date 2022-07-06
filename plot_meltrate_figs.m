@@ -18,7 +18,6 @@ years = [2011.75 2022.25]; year_ticks = [2013:2:2022]; %approximate date range f
 
 %specify plot parameters
 yrs = [round(min(years)):1:round(max(years))]; 
-% plot_color = [127,59,8;179,88,6;224,130,20;253,184,99;254,224,182;216,218,235;178,171,210;128,115,172;84,39,136;45,0,75]/255; %orange-purple colormap
 plot_color = cmocean('tempo',length(yrs)+1); plot_color = plot_color(2:end,:); %colormap for emphasizing different years
 highmelt_cmap = cmocean('amp',100); % highmelt_cmap = flipud(colormap(hot(100)));
 % plot_cmap = colormap(parula(15)); %colormap for emphasizing different locations
@@ -28,12 +27,20 @@ plot_letters = [{'i)'},{'j)'},{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'h)'},{'g)'},{
 leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Polar Times'},{'Totten'},{'Mertz'},...
     {'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}]; %generic figure labels
 leg_ref = [9,10,11,12,13,14,15,8,7,6,5,4,3,2,1]; %arrange legend in alphabetical order
+region_ref = [1,1,2,2,2,2,2,3,3,4,4,4,4,4,4]; %group according to region (1=EAP, 2=EAIS, 3=WAIS, 4=WAP)
+
+%specify plot parameters
 map_marker = 's'; %marker symbol for maps
 plot_marker = 's'; %marker symbol for scatterplots
 symbol_size = 4; %symbols size
 plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1]; %specifies the subplot locations for the study sites listed as "region", "disp_names", and "leg_names" above
-region_colors = [77,172,38; 77,172,38; 184,225,134; 184,225,134; 184,225,134; 184,225,134; 184,225,134;...
-    241,182,218; 241,182,218; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139]./255;
+EAP_color = [77,172,38]./255; EAIS_color = [184,225,134]./255; WAIS_color = [241,182,218]./255; WAP_color = [208,28,139]./255; 
+%create color pallettes
+region_colors = zeros(length(region_ref),3);
+region_colors(find(region_ref == 1),:) = repmat(EAP_color,length(find(region_ref == 1)),1); 
+region_colors(find(region_ref == 2),:) = repmat(EAIS_color,length(find(region_ref == 2)),1); 
+region_colors(find(region_ref == 3),:) = repmat(WAIS_color,length(find(region_ref == 3)),1); 
+region_colors(find(region_ref == 4),:) = repmat(WAP_color,length(find(region_ref == 4)),1); 
 
 %load Antarctic image to plot as background for a map
 Antarctic_map = 'LIMA';
@@ -59,6 +66,24 @@ close all;
 figureA=figure; set(gcf,'position',[450 50 800 800]);
 im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1];
 imagesc(IM.x,IM.y,IM.z); colormap(gca,im_cmap); hold on; axis xy equal
+xlims = [-26.5e5 27.5e5]; ylims = [-22.5e5 22.5e5];
+set(gca,'xlim',xlims,'xtick',[-30e5:6e5:30e5],'xticklabel',[-3000:600:3000],...
+    'ylim',ylims,'ytick',[-24e5:6e5:24e5],'yticklabel',[-2400:600:2400],'fontsize',16); grid off;
+xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
+%add polar stereo coordinates
+graticuleps(-50:-5:-90,-180:30:180);
+text(-5.5e5,3.25e5,['85',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',45); 
+text(-9.5e5,7.0e5,['80',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',45); 
+text(-13.5e5,10.75e5,['75',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',45); 
+text(-17.55e5,14.55e5,['70',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',45);
+text(-21.65e5,18.4e5,['65',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',45);
+text(0.75e5,max(ylims)-2.75e5,['0',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',90); 
+text(max(xlims)-4e5,0.75e5,['90',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',0);
+text(0.75e5,min(ylims)+4.25e5,['180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',-90);
+text(min(xlims)+0.5e5,0.75e5,['-90',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',0);
+text(-0.75e5,min(ylims),['-180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',90);
+clear xlims ylims;
+
 %set-up subplots for graphs
 figureB = figure; set(gcf,'position',[50 400 800 600]);
 sub1b = subplot(1,2,1); sub2b = subplot(1,2,2);
@@ -80,7 +105,7 @@ xcoord_o = []; ycoord_o = [];
 xcoord_f = []; ycoord_f = [];
 
 %plot
-for i = 1:size(region,2)
+for i = [7:-1:1 8:1:length(region)]
     cd(char(region(i))); disp_names(i) = {strjoin([cellstr(plot_letters(i)),' ',cellstr(leg_names(i))])};
     meltinfo = dir('*iceberg_meltinfo.csv'); landsats = dir('LC*PS.TIF');
     avgx = []; avgy = []; meltrate_v_draft = [];
@@ -222,14 +247,12 @@ for i = 1:size(region,2)
     %add a symbol to the site map
     figure(figureA); colormap(gca,'gray');
     mp(i) = plot(nanmean(avgx),nanmean(avgy),[map_marker,'k'],'markerfacecolor',region_colors(i,:),'markeredgecolor','k','markersize',12); hold on;
-    if strcmp(char(plot_letters(i)),'f)')
-        text(nanmean(avgx)-100000,nanmean(avgy)-100000,char(plot_letters(i)),'fontsize',12);
-    elseif strcmp(char(plot_letters(i)),'a)')
-        text(nanmean(avgx)-100000,nanmean(avgy)+75000,char(plot_letters(i)),'fontsize',12);
+    if strcmp(char(plot_letters(i)),'a)')
+        text(nanmean(avgx)-150000,nanmean(avgy)+50000,char(plot_letters(i)),'fontsize',12,'color',[0.5 0.5 0.5]);
     elseif strcmp(char(plot_letters(i)),'b)') || strcmp(char(plot_letters(i)),'c)') || strcmp(char(plot_letters(i)),'e)')
-        text(nanmean(avgx)-100000,nanmean(avgy)-50000,char(plot_letters(i)),'fontsize',12);
+        text(nanmean(avgx)-150000,nanmean(avgy)-50000,char(plot_letters(i)),'fontsize',12,'color',[0.5 0.5 0.5]);
     else
-        text(nanmean(avgx)+75000,nanmean(avgy),char(plot_letters(i)),'fontsize',12);
+        text(nanmean(avgx)+75000,nanmean(avgy),char(plot_letters(i)),'fontsize',12,'color',[0.5 0.5 0.5]);
     end
        
     %format the scatterplot subplots
@@ -350,15 +373,6 @@ for i = 1:size(region,2)
 end
 figure(figureA);
 [sorted,inds] = sort(leg_ref); mp_sort = mp(inds);
-set(gca,'xlim',[-28e5 28e5],'xtick',[-32e5:8e5:32e5],'xticklabel',[-3200:800:3200],...
-    'ylim',[-24e5 24e5],'ytick',[-24e5:8e5:24e5],'yticklabel',[-2400:800:2400],'fontsize',16); grid off;
-xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
-graticuleps(-50:-5:-90,-180:30:180);
-text(0,6.5e5,['85',char(176),'S'],'fontsize',16); text(0,12.0e5,['80',char(176),'S'],'fontsize',16); 
-text(0,17.5e5,['75',char(176),'S'],'fontsize',16); text(0,23.0e5,['70',char(176),'S'],'fontsize',16);
-text(-16.5e5,25.25e5,['-30',char(176),'E'],'fontsize',16); text(12.5e5,25.25e5,['30',char(176),'E'],'fontsize',16); 
-colormap(gca,im_cmap);
-% xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 legmap = legend(mp_sort,[char(disp_names(inds))]); set(legmap,'location','northoutside','fontsize',16,'NumColumns',5); 
 legmappos = get(legmap,'position'); set(legmap,'position',[0.05 legmappos(2)+0.05 legmappos(3) legmappos(4)]);
 gcapos = get(gca,'position'); set(gca,'position',[gcapos(1) 0.09 gcapos(3) gcapos(4)]);
@@ -411,6 +425,7 @@ t.Properties.VariableNames = column_names; t.Properties.VariableUnits = column_u
 writetable(t,[iceberg_path,'Antarctic-iceberg-PScoords.csv']);
 disp('Antarctic iceberg coordinates text file written');
 clear T t;
+
 
 %% replot Larsen A & B to hone-in on potential variations btw dates
 % cd /users/mariamadryak/Desktop/Antarctic_icebergs
