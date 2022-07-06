@@ -34,18 +34,19 @@ iceberg_path = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-mel
 figure_path = [iceberg_path,'figures/'];
 
 %specify study site names
-region = [{'Edgeworth-LarsenA'},{'Crane-LarsenB'},{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},...
+region = [{'Ronne'},{'Filchner'},{'Amery'},{'Totten'},{'Mertz'},{'Edgeworth-LarsenA'},{'Crane-LarsenB'},...
     {'Thwaites'},{'Ferrigno-Eltanin'},{'Seller-Bugge'},{'Heim-Marguerite'},{'Widdowson-Biscoe'},{'Cadman-Palmer'},{'Blanchard-Danco'},{'Leonardo-Danco'}];
 leg_names = [{'Edgeworth'},{'Crane'},{'Ronne'},{'Filchner'},{'Polar Times'},{'Totten'},{'Mertz'},{'Thwaites'},{'Ferrigno'},{'Seller'},{'Heim'},{'Widdowson'},{'Cadman'},{'Blanchard'},{'Leonardo'}];
 leg_ref = [9,10,11,12,13,14,15,8,7,6,5,4,3,2,1]; %arrange legend in alphabetical order
 
 %specify plot params
 marker = ['s','s','s','s','s','s','s','s','s','s','s','s','s','s','s']; %modify if you want to change symbols to indicate something about data (E vs W for example)
-plot_letters = [{'i)'},{'j)'},{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'h)'},{'g)'},{'f)'},{'e)'},{'d)'},{'c)'},{'b)'},{'a)'}]; %plot letters for sites to be used in geographically-arranged subplots
-plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1];
-region_colors = [77,172,38; 77,172,38; 184,225,134; 184,225,134; 184,225,134; 184,225,134; 184,225,134;...
-    241,182,218; 241,182,218; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139]./255; 
-Temp_cmap = cmocean('thermal',600); cmap_add = 3; cmap_mult = 100;
+plot_letters = [{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'i)'},{'j)'},{'h)'},{'g)'},{'f)'},{'e)'},{'d)'},{'c)'},{'b)'},{'a)'}]; %plot letters for sites to be used in geographically-arranged subplots
+plot_loc = [6,8,10,12,14,2,4,15,13,11,9,7,5,3,1];
+region_colors = [184,225,134; 184,225,134; 184,225,134; 184,225,134; 184,225,134; 39,100,25; 39,100,25;...
+    241,182,218; 241,182,218; 197,27,125; 197,27,125; 197,27,125; 197,27,125; 197,27,125; 197,27,125]./255; 
+cmap_add = 2.5; cmap_mult = 100;
+Temp_cmap = cmocean('thermal',cmap_add*200); 
 highmelt_cmap = cmocean('amp',100);
 Tforcing_cmap = cmocean('amp',600);
 
@@ -57,12 +58,19 @@ years = [2011.75 2022.25]; year_ticks = [2013:2:2022]; %approximate date range f
 %specify the buffer region to search for ocean data around the icebergs
 buffer = 100000; %m
 
-%load the RAMP image to plot as background for a map
-cd /Users/ellynenderlin/Research/miscellaneous/RAMP
-[A,S] = readgeoraster('Antarctic_RAMP_image_v2_1km.tif');
-IM.x = S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
-IM.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
-IM.z=single(A);
+%load Antarctic image to plot as background for a map
+Antarctic_map = 'LIMA';
+cd(['/Users/ellynenderlin/Research/miscellaneous/',Antarctic_map]);
+if strcmp('LIMA',Antarctic_map)
+    [A,S] = readgeoraster('00000-20080319-092059124.tif');
+    IM.x = S.XWorldLimits(1):S.SampleSpacingInWorldX:S.XWorldLimits(2);
+    IM.y = S.YWorldLimits(2):-S.SampleSpacingInWorldY:S.YWorldLimits(1);
+    IM.z=single(A); IM.z = IM.z./255;
+else %assume REMA
+    IM.x =S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
+    IM.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
+    IM.z=single(A);
+end
 clear A S;
 
 %navigate to the iceberg directory as the default workspace
@@ -828,18 +836,18 @@ rectangle('position',[-26.5e5 -23.5e5 28e5 15e5],'facecolor','w','edgecolor','k'
 %sizes
 scatter(min(xlims)+0.4*(max(xlims)-min(xlims)),min(ylims)+0.07*(max(ylims)-min(ylims)),round(100/5+10),'w','filled','s','markeredgecolor','k'); text(min(xlims)+0.425*(max(xlims)-min(xlims)),min(ylims)+0.07*(max(ylims)-min(ylims)),'100 m','fontsize',16); %scaling y-offset = 0.16*(max(ylims)-min(ylims))
 scatter(min(xlims)+0.4*(max(xlims)-min(xlims)),min(ylims)+0.15*(max(ylims)-min(ylims)),round(300/5+10),'w','filled','s','markeredgecolor','k'); text(min(xlims)+0.425*(max(xlims)-min(xlims)),min(ylims)+0.15*(max(ylims)-min(ylims)),'300 m','fontsize',16); %scaling y-offset = 0.11*(max(ylims)-min(ylims))
-scatter(min(xlims)+0.4*(max(xlims)-min(xlims)),min(ylims)+0.23*(max(ylims)-min(ylims)),round(500/5+10),'w','filled','s','markeredgecolor','k'); text(min(xlims)+0.425*(max(xlims)-min(xlims)),min(ylims)+0.23*(max(ylims)-min(ylims)),'500 m','fontsize',16); %scaling y-offset = 0.05*(max(ylims)-min(ylims))
+scatter(min(xlims)+0.4*(max(xlims)-min(xlims)),min(ylims)+0.23*(max(ylims)-min(ylims)),round(500/5+10),'w','filled','s','markeredgecolor','k'); text(min(xlims)+0.425*(max(xlims)-min(xlims)),min(ylims)+0.98*0.23*(max(ylims)-min(ylims)),'500 m','fontsize',16); %scaling y-offset = 0.05*(max(ylims)-min(ylims))
 text(min(xlims)+0.40*(max(xlims)-min(xlims)),min(ylims)+0.305*(max(ylims)-min(ylims)),'iceberg','fontsize',16,'fontweight','bold');
 text(min(xlims)+0.415*(max(xlims)-min(xlims)),min(ylims)+0.275*(max(ylims)-min(ylims)),'draft','fontsize',16,'fontweight','bold');
 %colors
 for k = 1:length(highmelt_cmap)
     plot([min(xlims)+0.20*(max(xlims)-min(xlims)) min(xlims)+0.25*(max(xlims)-min(xlims))],...
         [min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)) min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap))],...
-        '-','linewidth',2*((max(ylims)-min(ylims))/(max(xlims)-min(xlims))),'color',highmelt_cmap(k,:));
+        '-','linewidth',2*((max(ylims)-min(ylims))/(max(xlims)-min(xlims))),'color',highmelt_cmap((length(highmelt_cmap)+1)-k,:));
 end
-text(min(xlims)+0.26*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims)),'<1 m yr^{-1}','fontsize',16);
-text(min(xlims)+0.26*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-(length(highmelt_cmap)/5)*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
-text(min(xlims)+0.26*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-length(highmelt_cmap)*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)),'50 m yr^{-1}','fontsize',16);
+text(min(xlims)+0.26*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims)),'50 m yr^{-1}','fontsize',16);
+text(min(xlims)+0.26*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-(length(highmelt_cmap)*4/5)*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
+text(min(xlims)+0.26*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-(0.98*length(highmelt_cmap)*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap))),'<1 m yr^{-1}','fontsize',16);
 text(min(xlims)+0.23*(max(xlims)-min(xlims)),min(ylims)+0.305*(max(ylims)-min(ylims)),'iceberg','fontsize',16,'fontweight','bold');
 text(min(xlims)+0.22*(max(xlims)-min(xlims)),min(ylims)+0.275*(max(ylims)-min(ylims)),'melt rate','fontsize',16,'fontweight','bold');
 
@@ -865,11 +873,11 @@ text(min(xlims)+0.22*(max(xlims)-min(xlims)),min(ylims)+0.275*(max(ylims)-min(yl
 for k = 1:length(Temp_cmap)
     plot([min(xlims)+0.06*(max(xlims)-min(xlims)) min(xlims)+0.11*(max(xlims)-min(xlims))],...
         [min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(Temp_cmap)) min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(Temp_cmap))],...
-        '-','color',Temp_cmap(k,:)); hold on;
+        '-','color',Temp_cmap((length(Temp_cmap)+1)-k,:)); hold on;
 end
-text(min(xlims)+0.12*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16); 
+text(min(xlims)+0.12*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims)),[num2str(cmap_add),char(176),'C'],'fontsize',16); 
 text(min(xlims)+0.12*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-(length(Temp_cmap)/2)*((0.20*(max(ylims)-min(ylims)))/length(Temp_cmap)),['0',char(176),'C'],'fontsize',16); 
-text(min(xlims)+0.12*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-(length(Temp_cmap))*((0.20*(max(ylims)-min(ylims)))/length(Temp_cmap)),[num2str(cmap_add),char(176),'C'],'fontsize',16);
+text(min(xlims)+0.12*(max(xlims)-min(xlims)),min(ylims)+0.245*(max(ylims)-min(ylims))-(length(Temp_cmap))*((0.20*(max(ylims)-min(ylims)))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(min(xlims)+0.07*(max(xlims)-min(xlims)),min(ylims)+0.305*(max(ylims)-min(ylims)),'ocean','fontsize',16,'fontweight','bold');
 text(min(xlims)+0.075*(max(xlims)-min(xlims)),min(ylims)+0.275*(max(ylims)-min(ylims)),'temp.','fontsize',16,'fontweight','bold');
 

@@ -35,16 +35,26 @@ plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1]; %specifies the subplot locatio
 region_colors = [77,172,38; 77,172,38; 184,225,134; 184,225,134; 184,225,134; 184,225,134; 184,225,134;...
     241,182,218; 241,182,218; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139; 208,28,139]./255;
 
+%load Antarctic image to plot as background for a map
+Antarctic_map = 'LIMA';
+cd(['/Users/ellynenderlin/Research/miscellaneous/',Antarctic_map]);
+if strcmp('LIMA',Antarctic_map)
+    [A,S] = readgeoraster('00000-20080319-092059124.tif');
+    IM.x = S.XWorldLimits(1):S.SampleSpacingInWorldX:S.XWorldLimits(2);
+    IM.y = S.YWorldLimits(2):-S.SampleSpacingInWorldY:S.YWorldLimits(1);
+    IM.z=single(A); IM.z = IM.z./255;
+else %assume REMA
+    IM.x =S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
+    IM.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
+    IM.z=single(A);
+end
+clear A S;
+
 close all;
 
 %% create a location map
 close all;
-cd /Users/ellynenderlin/Research/miscellaneous/RAMP
-[A,S] = readgeoraster('Antarctic_RAMP_image_v2_1km.tif');
-IM.x = S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
-IM.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
-IM.z=single(A);
-clear A S;
+
 %set-up a map
 figureA=figure; set(gcf,'position',[450 50 800 800]);
 im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1];
