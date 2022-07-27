@@ -239,6 +239,18 @@ disp('Solving for thermal forcing & plotting figures to show iceberg melt rates 
 
 %set-up the scatterplot
 Tm_scatterplot = figure; set(gcf,'position',[850 50 800 400]); 
+%knowing the Thwaites data are comprehensive, plot the trendline for those
+%data in the background
+[f,gof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp,365*melt(strmatch('Thwaites',leg_names)).m,'poly1');
+ci = confint(f,0.95);
+plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10],...
+    feval(f,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10]),...
+    '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
+fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10,...
+    fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10])],...
+    [(ci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10]+ci(1,2)),...
+    (ci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10])+ci(2,2))],...
+    region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
 
 %set-up full Antarctic map
 Tm_mapplot = figure; set(gcf,'position',[50 50 800 800]);
@@ -570,7 +582,7 @@ for i = 1:length(melt)
     else
         %set symbol sizes so that they vary with draft
         for j = 1:length(melt(i).to)
-            draft_size(j) = round(melt(i).d(j)/5)+20;
+            draft_size(j) = round(melt(i).d(j)*draft_mult)+draft_add;
         end
         
         %plot data on the regional map
@@ -583,7 +595,7 @@ for i = 1:length(melt)
         elseif ~isempty(strmatch('Filchner',char(leg_names(i))))
             figure(Tm_mapplot_FI); %call the Filchner map figure handle
         end
-        scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,highmelt_cmap(symbol_color,:),'filled','s','markeredgecolor','k','linewidth',0.5); hold on; %iceberg locations
+        scatter(melt(i).x,melt(i).y,round(melt(i).d*draft_mult)+draft_add,highmelt_cmap(symbol_color,:),'filled','s','markeredgecolor','k','linewidth',0.5); hold on; %iceberg locations
         drawnow;
     end
     clear draft_size;
@@ -667,13 +679,7 @@ saveas(Tm_mapplot,[figure_path,'Antarctic-iceberg-oceandata-map.eps'],'epsc'); s
 
 
 %label the scatterplot & save
-figure(Tm_scatterplot); xlims = get(gca,'xlim'); ylims = get(gca,'ylim'); 
-[f,gof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp,365*melt(strmatch('Thwaites',leg_names)).m,'poly1');
-ci = confint(f,0.95);
-plot([min(xlims):0.1:max(xlims)],feval(f,[min(xlims):0.1:max(xlims)]),'-k','linewidth',2); hold on;
-fill([min(xlims):0.1:max(xlims) fliplr([min(xlims):0.1:max(xlims)])],...
-    [(ci(1,1).*[min(xlims):0.1:max(xlims)]+ci(1,2)) (ci(2,1).*fliplr([min(xlims):0.1:max(xlims)])+ci(2,2))],...
-    [0.5 0.5 0.5],'FaceAlpha',0.25);
+figure(Tm_scatterplot);
 set(gca,'fontsize',16); grid on;
 %uncomment next 4 lines if you use the plot function to specify symbol colors as a function of draft
 % for k = 1:length(depth_cmap)
@@ -681,11 +687,11 @@ set(gca,'fontsize',16); grid on;
 % end
 % text(0.275,47,'0 m','fontsize',16); text(0.275,45,'200 m','fontsize',16); text(0.275,39.5,'750 m','fontsize',16);
 %next 9 lines should be used if scatterplot function specifies symbol colors as a function of region & symbol size as a function of draft
-ylims = get(gca,'ylim');
-rectangle('position',[0.425 max(ylims) - 0.06*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.3 0.06*((depth_cutoff-50)/150*1.05)*(range(ylims))],'facecolor','w','edgecolor','k');
+ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
+rectangle('position',[0.425 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.3 0.05*((depth_cutoff-50)/150*1.05)*(range(ylims))],'facecolor','w','edgecolor','k');
 for j = 1:1:(depth_cutoff-50)/150
-    draft_size(j) = round((50+((j-1)*150))/8)+12;
-    yloc(j) = max(ylims) - 0.06*j*(range(ylims)) - 0.01*(range(ylims));
+    draft_size(j) = round((50+((j-1)*150))*draft_mult)+draft_add;
+    yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.01*(range(ylims));
     text(0.525,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
 end
 scatter(repmat(0.475,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
@@ -827,7 +833,6 @@ text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_ysh
 text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(Temp_cmap))*((scale_ystretch*range(ylims))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(max(xlims)-(temp_xshift-(xspan/10)+0.025)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-(xspan/10)+0.02)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
-disp('NEED TO ADD LEGENDS TO REGIONAL MAPS!')
 
 %save regional maps
 saveas(Tm_mapplot_AP,[figure_path,'AP_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_AP,[figure_path,'AP_iceberg-oceandata-map.png'],'png');
