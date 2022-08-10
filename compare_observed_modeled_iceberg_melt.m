@@ -416,9 +416,9 @@ for i = 1:length(melt)
                     Mwc_weighted = vertmean2(-davg,Mwc);
                     melt(i).mWC_TSobs(j,k) = 31536000*((Mwc_weighted*lat_area)+(Mwc(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
                     
-                    %calculate the relative velocity needed to match observed melt rates
-                    melt(i).oceanUWC_est(j,k) = abs((((melt(i).m(j)/86400)*((Lobs(1)).^(1/5)))/(0.037*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*(melt(i).oceanTavg(j)-vertmean2(-davg,T_fp))))^(5/4));
-                    melt(i).oceanUHJ_est(j,k) = abs(melt(i).mHJ_TSobs(j,k)/melt(i).mWC_TSobs(j,k))*abs(melt(i).oceanUWC_est(j,k))^(4/5);
+%                     %calculate the relative velocity needed to match observed melt rates
+%                     melt(i).oceanUWC_est(j,k) = abs((((melt(i).m(j)/86400)*((Lobs(1)).^(1/5)))/(0.037*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*(melt(i).oceanTavg(j)-vertmean2(-davg,T_fp))))^(5/4));
+%                     melt(i).oceanUHJ_est(j,k) = abs(melt(i).mHJ_TSobs(j,k)/melt(i).mWC_TSobs(j,k))*abs(melt(i).oceanUWC_est(j,k))^(4/5);
                     clear *obs Mwc* Mhj*;
                     
                     %report the SOSE depth-weighted temp
@@ -454,7 +454,7 @@ for i = 1:length(melt)
     ylabel('DEM-derived melt rate (m yr^{-1})','fontsize',16);
     xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
     legyr = legend(plyr,num2str([2013:1:2020]')); set(legyr,'location','northeast');
-    text(min(get(gca,'xlim'))+0.9*(max(get(gca,'xlim'))-min(get(gca,'xlim'))),min(get(gca,'ylim'))+0.95*(max(get(gca,'ylim'))-min(get(gca,'ylim'))),'a)','fontsize',16);
+    text(min(get(gca,'xlim'))+0.05*(max(get(gca,'xlim'))-min(get(gca,'xlim'))),min(get(gca,'ylim'))+0.95*(max(get(gca,'ylim'))-min(get(gca,'ylim'))),'a)','fontsize',16);
     %plot SOSE-derived melt rates
     subplot(1,2,2); set(gca,'fontsize',16); %Parameterized melt rate using all SOSE data & SOSE w/ observed temps
     %Holland-Jenkins parameterized melt rates, flagging
@@ -471,20 +471,20 @@ for i = 1:length(melt)
     grid on;
     ylabel('SOSE-derived melt rate (m yr^{-1})','fontsize',16);
     xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
-    text(min(get(gca,'xlim'))+0.9*(max(get(gca,'xlim'))-min(get(gca,'xlim'))),min(get(gca,'ylim'))+0.95*(max(get(gca,'ylim'))-min(get(gca,'ylim'))),'b)','fontsize',16);
+    text(min(get(gca,'xlim'))+0.05*(max(get(gca,'xlim'))-min(get(gca,'xlim'))),min(get(gca,'ylim'))+0.95*(max(get(gca,'ylim'))-min(get(gca,'ylim'))),'b)','fontsize',16);
     
     %comparison of DEM- and SOSE-derived melt rates
     %individual site figure
-    figure(site_meltcompare); set(gca,'fontsize',16); 
+    figure(site_meltcompare); set(gca,'fontsize',16);
     plot([0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],[0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],'-k'); hold on;
     %Holland-Jenkins parameterized melt rates, flagging
     %estimates from time-averaged SOSE data with +s
-    pc(1) = scatter(melt(i).mWC,365*melt(i).m,20,[230,97,1]/255,'filled','d','markeredgecolor','k'); hold on; 
+    pc(1) = scatter(melt(i).mWC,365*melt(i).m,20,[1 1 1],'filled','d','markeredgecolor','k'); hold on; 
     scatter(melt(i).mWC(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
     scatter(melt(i).mWC(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
     %Weeks-Campbell parameterized melt rates, flagging
     %estimates from time-averaged SOSE data with +s
-    pc(2) = scatter(melt(i).mHJ,365*melt(i).m,28,[178,171,210]/255,'filled','h','markeredgecolor','k'); hold on;
+    pc(2) = scatter(melt(i).mHJ,365*melt(i).m,28,[0.5 0.5 0.5],'filled','h','markeredgecolor','k'); hold on;
     scatter(melt(i).mHJ(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
     scatter(melt(i).mHJ(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
     set(gca,'ylim',[0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],...
@@ -492,34 +492,49 @@ for i = 1:length(melt)
     grid on;
     xlabel('SOSE-derived melt rate (m yr^{-1})','fontsize',16);
     ylabel('DEM-derived melt rate (m yr^{-1})','fontsize',16);
-    pcleg = legend(pc,'Holland-Jenkins','Weeks-Campbell'); set(pcleg,'location','northeast');
+    pcleg = legend(pc,'Holland-Jenkins','Weeks-Campbell'); set(pcleg,'location','northeast'); clear pc;
     %add to the scatterplot subplots figure
     figure(fig3); subpl = subplot(8,2,plot_loc(i));
-    plot([0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],[0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],'-k'); hold on;
+    plot([0 210],[0 210],'-k'); hold on;
     %Holland-Jenkins parameterized melt rates, flagging
     %estimates from time-averaged SOSE data with +s
-    pc(1) = scatter(melt(i).mWC,365*melt(i).m,20,[230,97,1]/255,'filled','d','markeredgecolor','k'); hold on; 
-    scatter(melt(i).mWC(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
-    scatter(melt(i).mWC(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
+    pc(1) = scatter(melt(i).mWC,365*melt(i).m,20,[1 1 1],'filled','d','markeredgecolor','k'); hold on; 
+%     scatter(melt(i).mWC(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
+%     scatter(melt(i).mWC(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
     %Weeks-Campbell parameterized melt rates, flagging
     %estimates from time-averaged SOSE data with +s
-    pc(2) = scatter(melt(i).mHJ,365*melt(i).m,28,[178,171,210]/255,'filled','h','markeredgecolor','k'); hold on;
-    scatter(melt(i).mHJ(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
-    scatter(melt(i).mHJ(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
-    set(gca,'ylim',[0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],...
-        'xlim',[0 ceil(max([365*melt(i).m; max(melt(i).mWC); max(melt(i).mHJ)]))],'box','on','fontsize',16);
+    pc(2) = scatter(melt(i).mHJ,365*melt(i).m,28,[0.5 0.5 0.5],'filled','h','markeredgecolor','k'); hold on;
+%     pc(3) = scatter(melt(i).mHJ(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
+%     scatter(melt(i).mHJ(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
+    %set the axis limits
+    if ~isempty(strmatch(melt(i).dispname,'Ferrigno')) || ~isempty(strmatch(melt(i).dispname,'Thwaites'))
+        set(gca,'xlim',[0 210],'xtick',[0:90:210],'xticklabel',[0:90:210],...
+            'ylim',[0 210],'ytick',[0:90:210],'yticklabel',[0:90:210],'box','on','fontsize',16);
+    elseif ~isempty(strmatch(melt(i).dispname,'Seller')) || ~isempty(strmatch(melt(i).dispname,'Mertz'))
+        set(gca,'xlim',[0 70],'xtick',[0:30:70],'xticklabel',[0:30:70],...
+            'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'box','on','fontsize',16);
+    else
+        set(gca,'xlim',[0 35],'xtick',[0:15:35],'xticklabel',[0:15:35],...
+            'ylim',[0 35],'ytick',[0:15:35],'yticklabel',[0:15:35],'box','on','fontsize',16);
+    end
     grid on;
-    %add a legend at the top of the figure
-    if i == 1
+    %label
+    text(0.58*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
+    %format
+    pos = get(gca,'position'); set(gca,'position',[pos(1) pos(2) 1.1*pos(3) pos(4)]);
+    if i == ceil(length(melt)/2)
+        %add a legend
         pos = get(gca,'position');
-        pclegc = legend(pc,'Holland-Jenkins','Weeks-Campbell'); set(pclegc,'location','northoutside','orientation','vertical');
-        set(gca,'position',pos); set(pclegc,'position',[0.63 0.12 0.20 0.06]);
-    elseif i == ceil(length(melt)/2)
+        pclegc = legend(pc,'Holland-Jenkins','Weeks-Campbell');
+%         pclegc = legend(pc,'Holland-Jenkins','Weeks-Campbell','SOSE-averaged'); 
+        set(pclegc,'location','northoutside','orientation','vertical');
+        set(gca,'position',pos); set(pclegc,'position',[0.65 pos(2) 0.20 pos(4)]);
+        %label axes
         xlabel('SOSE-derived melt rate (m yr^{-1})','fontsize',16);
         ylbl = ylabel('DEM-derived melt rate (m yr^{-1})','fontsize',16); 
         set(ylbl,'position',[-30 1150 -1]);
     end
-    clear lat_area bas_area *avg;
+    clear lat_area bas_area *avg pc;
     drawnow;
     
     
@@ -564,18 +579,18 @@ for i = 1:length(melt)
     meltdata(1,14) = nanmedian(melt(i).mHJ - melt(i).mWC); %median difference between HJ & WC melt rates
     if ~isempty(melt(i).oceanTavg)
         meltdata(1,15) = nanmedian(melt(i).oceanTavg - nanmean(temp_weighted,2)); %median difference between observed & SOSE temps
-        meltdata(1,16) = nanmedian(nanmean([melt(i).oceanUWC_est; melt(i).oceanUHJ_est],1)); %median parameterized water speed
-        meltdata(1,17) = mad(nanmean([melt(i).oceanUWC_est(~isnan(melt(i).m)); melt(i).oceanUHJ_est(~isnan(melt(i).m))],1),1); %mad parameterized water speed
+%         meltdata(1,16) = nanmedian(nanmean([melt(i).oceanUWC_est; melt(i).oceanUHJ_est],1)); %median parameterized water speed
+%         meltdata(1,17) = mad(nanmean([melt(i).oceanUWC_est(~isnan(melt(i).m)); melt(i).oceanUHJ_est(~isnan(melt(i).m))],1),1); %mad parameterized water speed
         
         %display summary data
         disp(['Observed - Modeled temperature = ',num2str(round(nanmedian(melt(i).oceanTavg - nanmean(temp_weighted,2)),3)),' +/- ',num2str(round(mad(melt(i).oceanTavg - nanmean(temp_weighted,2),1),3))]);
-        disp(['Inferred:Modeled velocity = ',num2str(round(nanmedian(nanmean([melt(i).oceanUWC_est melt(i).oceanUHJ_est],2)./vel_weighted),2)),' +/- ',num2str(round(mad(nanmean([melt(i).oceanUWC_est melt(i).oceanUHJ_est],2)./vel_weighted,1),2))]);
-        velratio(i) = nanmedian(nanmean([melt(i).oceanUWC_est melt(i).oceanUHJ_est],2)./vel_weighted);
+%         disp(['Inferred:Modeled velocity = ',num2str(round(nanmedian(nanmean([melt(i).oceanUWC_est melt(i).oceanUHJ_est],2)./vel_weighted),2)),' +/- ',num2str(round(mad(nanmean([melt(i).oceanUWC_est melt(i).oceanUHJ_est],2)./vel_weighted,1),2))]);
+%         velratio(i) = nanmedian(nanmean([melt(i).oceanUWC_est melt(i).oceanUHJ_est],2)./vel_weighted);
     else
         meltdata(1,15) = -9999;
         meltdata(1,16) = -9999;
         meltdata(1,17) = -9999;
-        velratio(i) = NaN;
+%         velratio(i) = NaN;
     end
     dlmwrite(combined_filename,meltdata,'delimiter','\t','precision','%.2f','-append');
     clear meltdata *weight*
@@ -609,7 +624,7 @@ save([iceberg_path,'Antarctic-icebergmelt-comparison.mat'],'melt','-v7.3');
 % set(leg,'position',[0.61 0.09 0.2212 0.0446]);
 % saveas(gcf,'Antarctic-iceberg-melt-observed-vs-parameterized-scatterplots.eps','epsc'); saveas(gcf,'Antarctic-iceberg-melt-observed-vs-parameterized-scatterplots.png','png');
 saveas(fig3,[figure_path,'Antarctic-iceberg-melt-comparisonplots.eps'],'epsc'); saveas(fig3,[figure_path,'Antarctic-iceberg-melt-comparisonplots.png'],'png');
-clear leg* pc* pl* ylbl*;
+clear leg* ylbl*;
 
 
 %% create geographically-arranged subplots that show the difference in observed & parameterized iceberg melt rates
