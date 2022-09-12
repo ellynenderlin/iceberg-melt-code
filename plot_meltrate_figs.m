@@ -92,6 +92,7 @@ figureC = figure; set(gcf,'position',[50 50 800 1000]);
 %create dummy matrices to fill with meltwater flux & submerged area for E
 %vs W Antarctica in order to fit trendlines to the 2 datasets
 WdVdt = []; WAsub = []; EdVdt = []; EAsub = [];
+disp('Created figure templates');
 
 %% create subplots & add site info to the map
 cd(iceberg_path);

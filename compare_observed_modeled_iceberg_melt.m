@@ -425,7 +425,8 @@ for i = 1:length(melt)
                     %report the SOSE depth-weighted temp
                     temp_weighted(j,k) = vertmean2(-davg,Tavg);
                 else
-                    melt(i).mHJ_TSobs(j,k) = NaN; melt(i).mWC_TSobs(j,k) = NaN; melt(i).oceanUWC_est(j,k) = NaN; melt(i).oceanUHJ_est(j,k) = NaN; temp_weighted(j,k) = NaN;
+                    melt(i).mHJ_TSobs(j,k) = NaN; melt(i).mWC_TSobs(j,k) = NaN; %melt(i).oceanUWC_est(j,k) = NaN; melt(i).oceanUHJ_est(j,k) = NaN; 
+                    temp_weighted(j,k) = NaN;
                 end
                 
             end
@@ -630,7 +631,7 @@ saveas(fig3,[figure_path,'Antarctic-iceberg-melt-comparisonplots.eps'],'epsc'); 
 clear leg* ylbl*;
 
 
-%% create geographically-arranged subplots that show the difference in observed & parameterized iceberg melt rates
+%% NO LONGER USED: create geographically-arranged subplots that show the difference in observed & parameterized iceberg melt rates
 close all; drawnow;
 
 %set-up figure for subplots
@@ -640,270 +641,270 @@ yr_cmap = cmocean('dense',9); yr_cmap = yr_cmap(2:end,:);
 
 %loop through melt structure & plot figures
 for i = 1:length(melt)
-    
-    %identify the envelope for observed melt rate vs draft 
-%     min_dmdd = min((365*melt(i).m)./melt(i).d); max_dmdd = max((365*melt(i).m)./melt(i).d); 
-    DT = delaunayTriangulation(melt(i).d,(365*melt(i).m));
-    C = convexHull(DT);
-    
-    %melt rate subplots
-    figure(melt_fig);
-    subpl = subplot(8,2,plot_loc(i)); set(gca,'fontsize',16); 
-    plotpos = get(subpl,'position');
-%     fill([0 max(melt(i).d) max(melt(i).d) 0], [0 max_dmdd*max(melt(i).d) min_dmdd*max(melt(i).d) 0],[0.5 0.5 0.5],'edgecolor','none','facealpha',0.5);
-    fill(DT.Points(C,1),DT.Points(C,2),[0.5 0.5 0.5],'edgecolor','none','facealpha',0.5); hold on;
-    if plot_loc(i) == 15
-        for j = 1:length(yr_cmap)
-            plyr(j) = plot(melt(i).d(1),nanmean([melt(i).mWC(1); melt(i).mHJ(1)]),'s','markerfacecolor',yr_cmap(j,:),'linewidth',1.5,'markeredgecolor','none');
+    if ~isempty(melt(i).oceanT)
+        %identify the envelope for observed melt rate vs draft
+        %     min_dmdd = min((365*melt(i).m)./melt(i).d); max_dmdd = max((365*melt(i).m)./melt(i).d);
+        DT = delaunayTriangulation(melt(i).d,(365*melt(i).m));
+        C = convexHull(DT);
+        
+        %melt rate subplots
+        figure(melt_fig);
+        subpl = subplot(8,2,plot_loc(i)); set(gca,'fontsize',16);
+        plotpos = get(subpl,'position');
+        %     fill([0 max(melt(i).d) max(melt(i).d) 0], [0 max_dmdd*max(melt(i).d) min_dmdd*max(melt(i).d) 0],[0.5 0.5 0.5],'edgecolor','none','facealpha',0.5);
+        fill(DT.Points(C,1),DT.Points(C,2),[0.5 0.5 0.5],'edgecolor','none','facealpha',0.5); hold on;
+        if plot_loc(i) == 15
+            for j = 1:length(yr_cmap)
+                plyr(j) = plot(melt(i).d(1),nanmean([melt(i).mWC(1); melt(i).mHJ(1)]),'s','markerfacecolor',yr_cmap(j,:),'linewidth',1.5,'markeredgecolor','none');
+            end
         end
-    end
-    for j = 1:length(melt(i).d)
-        plot(melt(i).d(j),nanmean([melt(i).mWC(j); melt(i).mHJ(j)]),'^k','markerfacecolor',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',8); hold on;
-        if ~isempty(melt(i).oceanTavg)
-            plot(melt(i).d(j),nanmean([melt(i).mWC_TSobs(j); melt(i).mHJ_TSobs(j)]),'x','color',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',9,'linewidth',1.5); hold on;
+        for j = 1:length(melt(i).d)
+            plot(melt(i).d(j),nanmean([melt(i).mWC(j); melt(i).mHJ(j)]),'^k','markerfacecolor',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',8); hold on;
+            if ~isempty(melt(i).oceanTavg)
+                plot(melt(i).d(j),nanmean([melt(i).mWC_TSobs(j); melt(i).mHJ_TSobs(j)]),'x','color',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',9,'linewidth',1.5); hold on;
+            end
         end
-    end
-    %set axes
-    grid on;
-    if mod(plot_loc(i),2) == 0
-        set(gca,'xlim',[0 400],'xticklabel',[],'fontsize',16);
-        if plot_loc(i) >= 6
-            set(gca,'ylim',[0 9],'ytick',[0:4:9]);
+        %set axes
+        grid on;
+        if mod(plot_loc(i),2) == 0
+            set(gca,'xlim',[0 400],'xticklabel',[],'fontsize',16);
+            if plot_loc(i) >= 6
+                set(gca,'ylim',[0 9],'ytick',[0:4:9]);
+            else
+                set(gca,'ylim',[0 22],'ytick',[0:10:22]);
+            end
         else
-            set(gca,'ylim',[0 22],'ytick',[0:10:22]);
+            set(gca,'xlim',[0 800],'ylim',[0 70],'ytick',[0:30:70],'xticklabel',[],'fontsize',16);
         end
-    else
-        set(gca,'xlim',[0 800],'ylim',[0 70],'ytick',[0:30:70],'xticklabel',[],'fontsize',16);
-    end
-    %label bottom subplots
-    if plot_loc(i) == 14
-        set(gca,'xticklabel',[0:100:400]);
-        xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
-    elseif plot_loc(i) == 15
-        set(gca,'xticklabel',[0:200:800]);
-        legyr = legend(plyr,num2str([2013:1:2020]'),'NumColumns',4);
-        legpos = get(legyr,'position'); set(legyr,'position',[0.56 0.11 legpos(3) legpos(4)]); clear legpos;
-        xlabel('Iceberg draft (m b.s.l.)','fontsize',16); 
-        ylbl = ylabel('Parameterized iceberg melt rate (m yr^{-1})','fontsize',16);
-        set(ylbl,'position',[-100 350 -1]);
-    end
-    %adjust subplot positions
-    if mod(plot_loc(i),2) ~= 0
-        set(gca,'position',[plotpos(1)-0.03 plotpos(2)+0.04/(plot_loc(i)+1) 1.1*plotpos(3) 1.1*plotpos(4)]);
-    else
-        set(gca,'position',[plotpos(1) plotpos(2)+0.04/(plot_loc(i)) 1.1*plotpos(3) 1.1*plotpos(4)]);
-    end
-    text(0.6*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
-    clear plotpos;
-    
-    %parameterized relative speed subplots
-    figure(vel_fig); subpl2 = subplot(8,2,plot_loc(i));
-    set(gca,'fontsize',16); grid on;
-    for j = 1:length(melt(i).d)
+        %label bottom subplots
+        if plot_loc(i) == 14
+            set(gca,'xticklabel',[0:100:400]);
+            xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
+        elseif plot_loc(i) == 15
+            set(gca,'xticklabel',[0:200:800]);
+            legyr = legend(plyr,num2str([2013:1:2020]'),'NumColumns',4);
+            legpos = get(legyr,'position'); set(legyr,'position',[0.56 0.11 legpos(3) legpos(4)]); clear legpos;
+            xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
+            ylbl = ylabel('Parameterized iceberg melt rate (m yr^{-1})','fontsize',16);
+            set(ylbl,'position',[-100 350 -1]);
+        end
+        %adjust subplot positions
+        if mod(plot_loc(i),2) ~= 0
+            set(gca,'position',[plotpos(1)-0.03 plotpos(2)+0.04/(plot_loc(i)+1) 1.1*plotpos(3) 1.1*plotpos(4)]);
+        else
+            set(gca,'position',[plotpos(1) plotpos(2)+0.04/(plot_loc(i)) 1.1*plotpos(3) 1.1*plotpos(4)]);
+        end
+        text(0.6*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
+        clear plotpos;
         
-        %identify the nearest SOSE cell with data
-        [lon,lat] = ps2wgs(melt(i).x(j),melt(i).y(j),'StandardParallel',-71,'StandardMeridian',0);
-        lon(lon<0) = lon(lon<0)+360;
-        %         figure(fig1); plot(lat,lon,'xr','linewidth',2,'markersize',20); hold on;
-        diffmap = sqrt((lon-SOSExgrid).^2 + (lat-SOSEygrid).^2);
-        diffmap(Velmap==0 | isnan(Velmap)) = NaN;
-        map_ind = find(diffmap == min(min(diffmap)));
-        [x_ind,y_ind] = ind2sub(size(Tmap),map_ind);
-        clear lon lat diffmap map_ind;
-        
-        %find the SOSE indices for the appropriate date range
-        if melt(i).to(j) > 2013 && melt(i).tf(j) < 2020
-            earlyref = find(abs(melt(i).to(j)-SOSEdate) == min(abs(melt(i).to(j)-SOSEdate)));
-            lateref = find(abs(melt(i).tf(j)-SOSEdate) == min(abs(melt(i).tf(j)-SOSEdate)));
-            Tprofs = squeeze(SOSET(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
-            Sprofs = squeeze(SOSES(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
-            Uprofs = squeeze(SOSEU(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
-            Vprofs = squeeze(SOSEV(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
+        %parameterized relative speed subplots
+        figure(vel_fig); subpl2 = subplot(8,2,plot_loc(i));
+        set(gca,'fontsize',16); grid on;
+        for j = 1:length(melt(i).d)
             
-            clear earlyref lateref;
+            %identify the nearest SOSE cell with data
+            [lon,lat] = ps2wgs(melt(i).x(j),melt(i).y(j),'StandardParallel',-71,'StandardMeridian',0);
+            lon(lon<0) = lon(lon<0)+360;
+            %         figure(fig1); plot(lat,lon,'xr','linewidth',2,'markersize',20); hold on;
+            diffmap = sqrt((lon-SOSExgrid).^2 + (lat-SOSEygrid).^2);
+            diffmap(Velmap==0 | isnan(Velmap)) = NaN;
+            map_ind = find(diffmap == min(min(diffmap)));
+            [x_ind,y_ind] = ind2sub(size(Tmap),map_ind);
+            clear lon lat diffmap map_ind;
             
-        elseif melt(i).to(j) < 2013
-            %identify the partial years before 2013
-            partyrs = ceil(12*(ceil(melt(i).to(j)) - melt(i).to(j)));
-            
-            %determine if the entire date range is before 2013
-            if melt(i).tf(j) < 2013
-                %identify the number of full years before 2013
-                fullyrs = floor(melt(i).tf(j))-ceil(melt(i).to(j));
-                
-                %identify the end reference
-                lateref = ceil(12*(melt(i).tf(j) - floor(melt(i).tf(j))));
-                
-                %combine averaged data for the full time period
-                Tprofs = horzcat(squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                Sprofs = horzcat(squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                Uprofs = horzcat(squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                Vprofs = horzcat(squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                
-            else
-                %identify the number of full years before 2013
-                fullyrs = 2013-ceil(melt(i).to(j));
-                
-                %identify the end reference
-                lateref = find(abs(melt(i).tf(j)-SOSEdate) == min(abs(melt(i).tf(j)-SOSEdate)));
-                
-                %combine averaged data from before 2013 & post-2013 data
-                Tprofs = horzcat(squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSET(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                Sprofs = horzcat(squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSES(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                Uprofs = horzcat(squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEU(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                Vprofs = horzcat(squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
-                    fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEV(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
-                
-            end
-            clear partyrs fullyrs lateref;
-            
-        elseif melt(i).tf(j) > 2019
-            %identify the partial years after 2019
-            partyrs = ceil(12*(melt(i).tf(j) - floor(melt(i).tf(j))));
-            
-            %determine if the entire date range is after 2019
-            if melt(i).to(j) > 2019
-                %identify the number of full years after 2019
-                fullyrs = floor(melt(i).tf(j))-ceil(melt(i).to(j));
-                
-                %identify the start reference
-                earlyref = ceil(12*(ceil(melt(i).to(j)) - melt(i).to(j)));
-                
-                %combine averaged data for the full time period
-                Tprofs = horzcat(squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
-                    fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                Sprofs = horzcat(squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
-                    fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                Uprofs = horzcat(squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
-                    fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                Vprofs = horzcat(squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
-                    fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                
-            else
-                %identify the number of full years after 2019
-                fullyrs = floor(melt(i).tf(j))-2019;
-                
-                %identify the start reference
+            %find the SOSE indices for the appropriate date range
+            if melt(i).to(j) > 2013 && melt(i).tf(j) < 2020
                 earlyref = find(abs(melt(i).to(j)-SOSEdate) == min(abs(melt(i).to(j)-SOSEdate)));
+                lateref = find(abs(melt(i).tf(j)-SOSEdate) == min(abs(melt(i).tf(j)-SOSEdate)));
+                Tprofs = squeeze(SOSET(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
+                Sprofs = squeeze(SOSES(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
+                Uprofs = squeeze(SOSEU(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
+                Vprofs = squeeze(SOSEV(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:lateref));
                 
-                %combine averaged data from before 2013 & post-2013 data
-                Tprofs = horzcat(squeeze(SOSET(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
-                    fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                Sprofs = horzcat(squeeze(SOSES(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
-                    fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                Uprofs = horzcat(squeeze(SOSEU(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
-                    fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
-                Vprofs = horzcat(squeeze(SOSEV(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
-                    fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
-                    squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                clear earlyref lateref;
+                
+            elseif melt(i).to(j) < 2013
+                %identify the partial years before 2013
+                partyrs = ceil(12*(ceil(melt(i).to(j)) - melt(i).to(j)));
+                
+                %determine if the entire date range is before 2013
+                if melt(i).tf(j) < 2013
+                    %identify the number of full years before 2013
+                    fullyrs = floor(melt(i).tf(j))-ceil(melt(i).to(j));
+                    
+                    %identify the end reference
+                    lateref = ceil(12*(melt(i).tf(j) - floor(melt(i).tf(j))));
+                    
+                    %combine averaged data for the full time period
+                    Tprofs = horzcat(squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    Sprofs = horzcat(squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    Uprofs = horzcat(squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    Vprofs = horzcat(squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    
+                else
+                    %identify the number of full years before 2013
+                    fullyrs = 2013-ceil(melt(i).to(j));
+                    
+                    %identify the end reference
+                    lateref = find(abs(melt(i).tf(j)-SOSEdate) == min(abs(melt(i).tf(j)-SOSEdate)));
+                    
+                    %combine averaged data from before 2013 & post-2013 data
+                    Tprofs = horzcat(squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSET(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    Sprofs = horzcat(squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSES(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    Uprofs = horzcat(squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEU(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    Vprofs = horzcat(squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-partyrs:12)),...
+                        fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEV(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:lateref)));
+                    
+                end
+                clear partyrs fullyrs lateref;
+                
+            elseif melt(i).tf(j) > 2019
+                %identify the partial years after 2019
+                partyrs = ceil(12*(melt(i).tf(j) - floor(melt(i).tf(j))));
+                
+                %determine if the entire date range is after 2019
+                if melt(i).to(j) > 2019
+                    %identify the number of full years after 2019
+                    fullyrs = floor(melt(i).tf(j))-ceil(melt(i).to(j));
+                    
+                    %identify the start reference
+                    earlyref = ceil(12*(ceil(melt(i).to(j)) - melt(i).to(j)));
+                    
+                    %combine averaged data for the full time period
+                    Tprofs = horzcat(squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
+                        fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    Sprofs = horzcat(squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
+                        fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    Uprofs = horzcat(squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
+                        fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    Vprofs = horzcat(squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),12-earlyref:12)),...
+                        fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    
+                else
+                    %identify the number of full years after 2019
+                    fullyrs = floor(melt(i).tf(j))-2019;
+                    
+                    %identify the start reference
+                    earlyref = find(abs(melt(i).to(j)-SOSEdate) == min(abs(melt(i).to(j)-SOSEdate)));
+                    
+                    %combine averaged data from before 2013 & post-2013 data
+                    Tprofs = horzcat(squeeze(SOSET(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
+                        fullyrs*squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSETmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    Sprofs = horzcat(squeeze(SOSES(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
+                        fullyrs*squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSESmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    Uprofs = horzcat(squeeze(SOSEU(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
+                        fullyrs*squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEUmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    Vprofs = horzcat(squeeze(SOSEV(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),earlyref:end)),...
+                        fullyrs*squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),:)),...
+                        squeeze(SOSEVmean(x_ind,y_ind,1:find(SOSEd>=melt(i).d(j),1,'first'),1:partyrs)));
+                    
+                end
+                clear partyrs fullyrs earlyref;
                 
             end
-            clear partyrs fullyrs earlyref;
             
-        end
-        
-        %average the profiles over time
-        Tavg=nanmean(Tprofs,2); Savg=nanmean(Sprofs,2); Uavg=nanmean(Uprofs,2); Vavg=nanmean(Vprofs,2); davg = SOSEd(1:length(Tavg));
-        Tavg(Savg==0) = []; Uavg(Savg==0) = []; Vavg(Savg==0) = []; davg(Savg==0) = []; Savg(Savg==0) = [];
-        clear *profs;
-        
-        %determine the draft range that gives iceberg velocities that
-        %minimize the difference between observed and modeled melt rates
-        for k = 1:length(Tavg)
-            depthref = k;
+            %average the profiles over time
+            Tavg=nanmean(Tprofs,2); Savg=nanmean(Sprofs,2); Uavg=nanmean(Uprofs,2); Vavg=nanmean(Vprofs,2); davg = SOSEd(1:length(Tavg));
+            Tavg(Savg==0) = []; Uavg(Savg==0) = []; Vavg(Savg==0) = []; davg(Savg==0) = []; Savg(Savg==0) = [];
+            clear *profs;
             
+            %determine the draft range that gives iceberg velocities that
+            %minimize the difference between observed and modeled melt rates
+            for k = 1:length(Tavg)
+                depthref = k;
+                
+                %estimate iceberg velocity as the depth-averaged water velocity
+                U_weight = nansum(Uavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
+                V_weight = nansum(Vavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
+                
+                %estimate melt rate using the Holland & Jenkins/Silva melt equations
+                [Mhj, T_sh, T_fp,a] = melt_forcedwater(Tavg,Savg,davg, sqrt((Uavg-U_weight).^2 + (Vavg-V_weight).^2), abs(melt(i).bergT));
+                %calculate the average melt rate, weighting according to lateral & basal areas
+                lat_area = melt(i).Asub(j)-melt(i).Asurf(j); bas_area = melt(i).Asurf(j);
+                Mhj_weighted = nansum(Mhj.*SOSEH(1:length(Tavg)))./nansum(SOSEH(1:length(Tavg)));
+                mHJ(k) = 31536000*((Mhj_weighted*lat_area)+(Mhj(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
+                %estimate melt rate using the Weeks & Campbell melt equation
+                Mwc = 0.037*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*((sqrt((Uavg-U_weight).^2 + (Vavg-V_weight).^2).^(0.8).*(Tavg-T_fp))./((2*sqrt(melt(i).Asurf(j)/pi)).^0.2));
+                Mwc_weighted = nansum(Mwc.*SOSEH(1:length(Tavg)))./nansum(SOSEH(1:length(Tavg)));
+                mWC(k) = 31536000*((Mwc_weighted*lat_area)+(Mwc(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
+                clear Mhj* Mwc* U_weight V_weight;
+            end
+            depthref = find(melt(i).m(j)./nanmean([mWC; mHJ]) == min(melt(i).m(j)./nanmean([mWC; mHJ])));
+            clear mWC mHJ;
             %estimate iceberg velocity as the depth-averaged water velocity
-            U_weight = nansum(Uavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
-            V_weight = nansum(Vavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
+            U_weighted(j) = nansum(Uavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
+            V_weighted(j) = nansum(Vavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
             
-            %estimate melt rate using the Holland & Jenkins/Silva melt equations
-            [Mhj, T_sh, T_fp,a] = melt_forcedwater(Tavg,Savg,davg, sqrt((Uavg-U_weight).^2 + (Vavg-V_weight).^2), abs(melt(i).bergT));
-            %calculate the average melt rate, weighting according to lateral & basal areas
-            lat_area = melt(i).Asub(j)-melt(i).Asurf(j); bas_area = melt(i).Asurf(j);
-            Mhj_weighted = nansum(Mhj.*SOSEH(1:length(Tavg)))./nansum(SOSEH(1:length(Tavg)));
-            mHJ(k) = 31536000*((Mhj_weighted*lat_area)+(Mhj(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
-            %estimate melt rate using the Weeks & Campbell melt equation
-            Mwc = 0.037*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*((sqrt((Uavg-U_weight).^2 + (Vavg-V_weight).^2).^(0.8).*(Tavg-T_fp))./((2*sqrt(melt(i).Asurf(j)/pi)).^0.2));
-            Mwc_weighted = nansum(Mwc.*SOSEH(1:length(Tavg)))./nansum(SOSEH(1:length(Tavg)));
-            mWC(k) = 31536000*((Mwc_weighted*lat_area)+(Mwc(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
-            clear Mhj* Mwc* U_weight V_weight;
-        end
-        depthref = find(melt(i).m(j)./nanmean([mWC; mHJ]) == min(melt(i).m(j)./nanmean([mWC; mHJ])));
-        clear mWC mHJ;
-        %estimate iceberg velocity as the depth-averaged water velocity
-        U_weighted(j) = nansum(Uavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
-        V_weighted(j) = nansum(Vavg(1:depthref).*SOSEH(1:depthref))./nansum(SOSEH(1:depthref));
-        
-        %plot the weighted velocities
-        subplot(subpl2); plotpos2 = get(subpl2,'position');
-        vel_weighted(j) = nansum(sqrt((Uavg-U_weighted(j)).^2 + (Vavg-V_weighted(j)).^2).*SOSEH(1:length(Tavg)))./nansum(SOSEH(1:length(Tavg)));
-        if j == 1 && plot_loc(i) == 15
-            for k = 1:length(yr_cmap)
-                plyr2(k) = plot(melt(i).d(1),vel_weighted(1),'s','markerfacecolor',yr_cmap(k,:),'linewidth',1.5,'markeredgecolor','none'); hold on;
+            %plot the weighted velocities
+            subplot(subpl2); plotpos2 = get(subpl2,'position');
+            vel_weighted(j) = nansum(sqrt((Uavg-U_weighted(j)).^2 + (Vavg-V_weighted(j)).^2).*SOSEH(1:length(Tavg)))./nansum(SOSEH(1:length(Tavg)));
+            if j == 1 && plot_loc(i) == 15
+                for k = 1:length(yr_cmap)
+                    plyr2(k) = plot(melt(i).d(1),vel_weighted(1),'s','markerfacecolor',yr_cmap(k,:),'linewidth',1.5,'markeredgecolor','none'); hold on;
+                end
             end
-        end
-        plot(melt(i).d(j),vel_weighted(j),'^k','markerfacecolor',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',8); hold on;
-        if ~isempty(melt(i).oceanTavg)
-            plot(melt(i).d(j),nanmean([melt(i).oceanUHJ_est(j) melt(i).oceanUWC_est(j)]),'x','color',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',9,'linewidth',1.5); hold on;
+            plot(melt(i).d(j),vel_weighted(j),'^k','markerfacecolor',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',8); hold on;
+            %         if ~isempty(melt(i).oceanTavg)
+            %             plot(melt(i).d(j),nanmean([melt(i).oceanUHJ_est(j) melt(i).oceanUWC_est(j)]),'x','color',yr_cmap(round(nanmean([melt(i).to(j) melt(i).tf(j)]))-2012,:),'markersize',9,'linewidth',1.5); hold on;
+            %         end
+            
         end
         
+        %set axes
+        figure(vel_fig);  subplot(subpl2);
+        grid on; set(gca,'ylim',[0 0.26],'fontsize',16);
+        if mod(plot_loc(i),2) == 0
+            set(gca,'xlim',[0 400],'xticklabel',[],'fontsize',16);
+        else
+            set(gca,'xlim',[0 800],'xticklabel',[],'fontsize',16);
+        end
+        %label bottom subplots
+        if plot_loc(i) == 14
+            set(gca,'xticklabel',[0:100:400],'ytick',[0:0.12:0.26]);
+            xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
+        elseif plot_loc(i) == 15
+            set(gca,'xticklabel',[0:200:800],'ylim',[0 2],'ytick',[0.9:2]);
+            legyr2 = legend(plyr2,num2str([2013:1:2020]'),'NumColumns',4);
+            legpos = get(legyr2,'position'); set(legyr2,'position',[0.56 0.11 legpos(3) legpos(4)]); clear legpos;
+            xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
+            ylb = ylabel('Relative velocity (m s^{-1})','fontsize',16);
+            set(ylb,'position',[-100 4 -1]);
+        elseif plot_loc(i) == 2 || plot_loc(i) == 8
+            set(gca,'ylim',[0 2],'ytick',[0.9:2]);
+        else
+            set(gca,'ytick',[0:0.12:0.26]);
+        end
+        %adjust subplot positions
+        if mod(plot_loc(i),2) ~= 0
+            set(gca,'position',[plotpos2(1)-0.03 plotpos2(2)+0.04/(plot_loc(i)+1) 1.1*plotpos2(3) 1.1*plotpos2(4)]);
+        else
+            set(gca,'position',[plotpos2(1) plotpos2(2)+0.04/(plot_loc(i)) 1.1*plotpos2(3) 1.1*plotpos2(4)]);
+        end
+        text(0.6*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
+        clear plotpos; clear subpl*;
     end
-    
-    %set axes
-    figure(vel_fig);  subplot(subpl2);
-    grid on; set(gca,'ylim',[0 0.26],'fontsize',16);
-    if mod(plot_loc(i),2) == 0
-        set(gca,'xlim',[0 400],'xticklabel',[],'fontsize',16);
-    else
-        set(gca,'xlim',[0 800],'xticklabel',[],'fontsize',16);
-    end
-    %label bottom subplots
-    if plot_loc(i) == 14
-        set(gca,'xticklabel',[0:100:400],'ytick',[0:0.12:0.26]);
-        xlabel('Iceberg draft (m b.s.l.)','fontsize',16);
-    elseif plot_loc(i) == 15
-        set(gca,'xticklabel',[0:200:800],'ylim',[0 2],'ytick',[0.9:2]);
-        legyr2 = legend(plyr2,num2str([2013:1:2020]'),'NumColumns',4);
-        legpos = get(legyr2,'position'); set(legyr2,'position',[0.56 0.11 legpos(3) legpos(4)]); clear legpos;
-        xlabel('Iceberg draft (m b.s.l.)','fontsize',16); 
-        ylb = ylabel('Relative velocity (m s^{-1})','fontsize',16);
-        set(ylb,'position',[-100 4 -1]);
-    elseif plot_loc(i) == 2 || plot_loc(i) == 8
-        set(gca,'ylim',[0 2],'ytick',[0.9:2]);
-    else
-        set(gca,'ytick',[0:0.12:0.26]);
-    end
-    %adjust subplot positions
-    if mod(plot_loc(i),2) ~= 0
-        set(gca,'position',[plotpos2(1)-0.03 plotpos2(2)+0.04/(plot_loc(i)+1) 1.1*plotpos2(3) 1.1*plotpos2(4)]);
-    else
-        set(gca,'position',[plotpos2(1) plotpos2(2)+0.04/(plot_loc(i)) 1.1*plotpos2(3) 1.1*plotpos2(4)]);
-    end
-    text(0.6*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
-    clear plotpos; clear subpl*;
-  
 end
 
 %save the figures
