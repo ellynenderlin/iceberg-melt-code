@@ -118,7 +118,7 @@ for i = 1:length(region) %loop through the regions
     
     % extract the data for the region
     cd_to_region = ['cd ',files(regionref).name]; eval(cd_to_region);
-    melt(i).name = region(i); melt(i).dispname = leg_names(i); disp(char(melt(i).dispname));
+    melt(i).name = region(i); melt(i).dispname = leg_names(i);
     meltinfo = dir('*iceberg_meltinfo.csv');
     date_o = []; xcoord_o = []; ycoord_o = []; 
     date_f = []; xcoord_f = []; ycoord_f = [];
@@ -183,11 +183,10 @@ for i = 1:length(region) %loop through the regions
         diff_map = sqrt(lat_diff.^2+lon_diff.^2); diff_map(isnan(squeeze(nanmean(AIS_airtemp(:,:,1,270:450),4)))) = NaN; %solve for the distance vector using the x&y distances
         RACMO_ref = find(diff_map==min(min(diff_map))); %find the minimum distance (reference for your grid cell is output)
         [RACMOy RACMOx] = ind2sub(size(squeeze(nanmean(AIS_airtemp(:,:,1,270:450),4))),RACMO_ref); %convert cell reference to an x- and y-cell index
-        melt(i).bergT = squeeze(nanmean(AIS_airtemp(RACMOy,RACMOx,1,:),4))-273.15;
+        melt(i).bergT = squeeze(nanmean(AIS_airtemp(RACMOx,RACMOy,1,:),4))-273.15;
         subplot(AISsub); plot(RACMOx,RACMOy,'xk','markersize',36,'linewidth',2); hold on;
     end
     clear *diff* RACMOy RACMOx;
-    disp(['Iceberg temp ~= ',num2str(melt(i).bergT),' deg C']);
     
     %crop the CTD, APB, & ARGO data to within the specified buffer distance of the icebergs
     xlimits = [min(melt(i).x)-buffer max(melt(i).x)+buffer]; ylimits = [min(melt(i).y)-buffer max(melt(i).y)+buffer];
@@ -350,7 +349,7 @@ end
 disp('Interpolating to a standard uniform depth scale based on median depth increment of data for site');
 for i = 1:length(melt)
     if ~isempty(melt(i).oceant)
-        disp(char(melt(i).dispname));
+        disp(char(melt(i).name));
         
         %create average temperature & salinity profiles for each date
         [unique_dates,unique_refs] = unique(melt(i).oceant);

@@ -102,6 +102,7 @@ for j=2:length(SOSEd)
     SOSEdbottom(j) = SOSEdbottom(j-1)+SOSEH(j);
 end
 SOSEH = SOSEH';
+disp('Created depth-averaged SOSE maps');
 
 %% estimate melt using SOSE data
 close all; drawnow;
@@ -508,18 +509,20 @@ for i = 1:length(melt)
 %     scatter(melt(i).mHJ(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
     %set the axis limits
     if ~isempty(strmatch(melt(i).dispname,'Ferrigno')) || ~isempty(strmatch(melt(i).dispname,'Thwaites'))
-        set(gca,'xlim',[0 210],'xtick',[0:90:210],'xticklabel',[0:90:210],...
-            'ylim',[0 210],'ytick',[0:90:210],'yticklabel',[0:90:210],'box','on','fontsize',16);
-    elseif ~isempty(strmatch(melt(i).dispname,'Seller')) || ~isempty(strmatch(melt(i).dispname,'Mertz'))
-        set(gca,'xlim',[0 70],'xtick',[0:30:70],'xticklabel',[0:30:70],...
-            'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'box','on','fontsize',16);
-    else
-        set(gca,'xlim',[0 35],'xtick',[0:15:35],'xticklabel',[0:15:35],...
-            'ylim',[0 35],'ytick',[0:15:35],'yticklabel',[0:15:35],'box','on','fontsize',16);
+        set(gca,'xlim',[0 150],'xtick',[0:60:150],'xticklabel',[0:60:150],...
+            'ylim',[0 150],'ytick',[0:60:150],'yticklabel',[0:60:150],'box','on','fontsize',16);
+    elseif ~isempty(strmatch(melt(i).dispname,'Totten')) || ~isempty(strmatch(melt(i).dispname,'Polar Times'))...
+            || ~isempty(strmatch(melt(i).dispname,'Filchner')) || ~isempty(strmatch(melt(i).dispname,'Ronne'))...
+            || ~isempty(strmatch(melt(i).dispname,'Crane')) || ~isempty(strmatch(melt(i).dispname,'Edgeworth'))
+        set(gca,'xlim',[0 25],'xtick',[0:10:25],'xticklabel',[0:10:25],...
+            'ylim',[0 25],'ytick',[0:10:25],'yticklabel',[0:10:25],'box','on','fontsize',16);
+    else 
+        set(gca,'xlim',[0 75],'xtick',[0:30:75],'xticklabel',[0:30:75],...
+            'ylim',[0 75],'ytick',[0:30:75],'yticklabel',[0:30:75],'box','on','fontsize',16);
     end
     grid on;
     %label
-    text(0.58*max(get(gca,'xlim')),0.85*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
+    text(0.62*max(get(gca,'xlim')),0.20*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
     %format
     pos = get(gca,'position'); set(gca,'position',[pos(1) pos(2) 1.1*pos(3) pos(4)]);
     if i == ceil(length(melt)/2)
@@ -532,7 +535,7 @@ for i = 1:length(melt)
         %label axes
         xlabel('SOSE-derived melt rate (m yr^{-1})','fontsize',16);
         ylbl = ylabel('DEM-derived melt rate (m yr^{-1})','fontsize',16); 
-        set(ylbl,'position',[-30 1150 -1]);
+        set(ylbl,'position',[-20 900 -1]);
     end
     clear lat_area bas_area *avg pc;
     drawnow;
@@ -603,7 +606,7 @@ for i = 1:length(melt)
     saveas(gcf,[figure_path,char(melt(i).name),'-iceberg-melt-scatterplots.eps'],'epsc'); saveas(gcf,[figure_path,char(melt(i).name),'-iceberg-melt-scatterplots.png'],'png');
     figure(site_meltcompare); 
     saveas(gcf,[figure_path,char(melt(i).name),'-iceberg-melt-comparisonplots.eps'],'epsc'); saveas(gcf,[figure_path,char(melt(i).name),'-iceberg-melt-comparisonplots.png'],'png');
-    drawnow;
+    close(site_meltdepth); close(site_meltcompare); drawnow;
 
     clear yr_cmap;
 end
