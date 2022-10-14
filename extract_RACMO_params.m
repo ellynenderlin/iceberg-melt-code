@@ -1,4 +1,4 @@
-function [berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates)
+function [ddays,berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates)
 
 %read the RACMO files & find nearest pixel
 cd([dir_code,'RACMO2.3_Antarctica/']);
@@ -49,30 +49,39 @@ disp(['RACMO x-reference = ',num2str(RACMOx),' & y-reference = ',num2str(RACMOy)
 
 %adjust RACMO reference grid cell if necessary
 disp('Adjust coordinates (if necessary) to extract surface melt estimates');
-figure; set(gcf,'position',[500 100 900 900]);
+figure; set(gcf,'position',[500 100 700 700]);
 runoff_cmap = colormap(jet(10001)); runoff_cmap(1,:) = [1 1 1];
 if ~isempty(snowmelt)
-    imagesc(max(snowmelt(:,:,270:450),[],3).*86500./1000); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); %plot coordinates on average melt from peak summer melt rates in the big 2012 melt season
+    snowmelt_map = max(snowmelt(:,:,270:450),[],3).*86500./1000; snowmelt_map(isnan(snowmelt_map)) = min(snowmelt_map(~isnan(snowmelt_map)))-1;
+    imagesc(snowmelt_map); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); %plot coordinates on average melt from peak summer melt rates in the big 2012 melt season
     disp(['snowmelt at RACMO pixel = ',num2str(max(snowmelt(RACMOy,RACMOx,270:450)).*86500./1000),' mm w.e.']);
 else
-    imagesc(max(smb(:,:,270:450),[],3).*86500./1000); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); %plot coordinates on average melt from peak summer melt rates in the big 2012 melt season
+    smb_map = max(smb(:,:,270:450),[],3).*86500./1000; smb_map(isnan(smb_map)) = min(smb_map(~isnan(smb_map)))-1;
+    imagesc(smb_map); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); %plot coordinates on average melt from peak summer melt rates in the big 2012 melt season
     disp(['surface mass balance at RACMO pixel = ',num2str(max(smb(RACMOy,RACMOx,270:450)).*86500./1000),' mm w.e.']);
 end
 set(gca,'clim',[0 0.05]); cbar = colorbar; set(get(cbar,'ylabel'),'string','Runoff (m w.e. per day');
-plot(RACMOy,RACMOx,'ok','markerfacecolor','k','markeredgecolor','w','markersize',20); hold on;
-plot(RACMOy,RACMOx,'xw','markersize',20); hold on;
+plot(RACMOx,RACMOy,'ok','markerfacecolor','k','markeredgecolor','w','markersize',20); hold on;
+plot(RACMOx,RACMOy,'xw','markersize',20); hold on;
 set(gca,'xlim',[RACMOx-10 RACMOx+10],'ylim',[RACMOy-10 RACMOy+10]);
-prompt = 'Modify coordinates if the marker is in a region with no data. Do the coordinates need to be modified (y/n)?';
-str = input(prompt,'s');
-if strmatch(str,'y')==1
-    disp('To change coordinates, identify new coordinates using tick marks and type RACMOx=XX; RACMOy=YY; dbcont ');
-    keyboard
+
+%adjust coordinates as necessary
+disp('Modify coordinates if the marker is in a region with no data');
+adjustment = questdlg('Do the coordinates need to be modified?',...
+    'RACMO coordinate adjustment','yes','no','yes');
+switch adjustment
+    case 'yes'
+        disp('To change coordinates, identify new coordinates using tick marks and type RACMOx=XX; RACMOy=YY; dbcont ');
+        keyboard
+    case 'no'
+        disp('Using default coordinates');
 end
+clear adjustment;
 close all; drawnow;
 
 %calculate the time separation between DEMs in terms of
 %decimal years (ddays) & decimal days (days)
-to = berg_dates(1); tf = berg_dates(2);
+to = berg_dates(1,:); tf = berg_dates(2,:);
 if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
 if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
 doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
@@ -178,19 +187,28 @@ else
     
     %adjust FAC reference grid cell if necessary
     disp('Adjust coordinates (if necessary) to extract firn density estimates');
-    figure; set(gcf,'position',[500 100 900 900]);
-    imagesc(nanmean(FAC,3)); colormap(jet(10001)); hold on; set(gca,'ydir','reverse');
+    figure; set(gcf,'position',[500 100 700 700]); 
+    firn_cmap = colormap(jet(10001)); firn_cmap(1,:) = [1 1 1];
+    firn_map = nanmean(FAC,3); firn_map(isnan(firn_map)) = min(firn_map(~isnan(firn_map))) - 1;
+    imagesc(firn_map); colormap(gca,firn_cmap); hold on; set(gca,'ydir','reverse');
     cbar = colorbar; set(get(cbar,'ylabel'),'string','FAC (m) ');
     plot(firnx,firny,'ok','markerfacecolor','k','markeredgecolor','w','markersize',20); hold on;
     plot(firnx,firny,'xw','markersize',20); hold on;
     set(gca,'xlim',[firnx-10 firnx+10],'ylim',[firny-10 firny+10]);
     disp(['firn air content estimate = ',num2str(nanmean(FAC(firny,firnx,:),3)),'m']);
-    prompt = 'Modify coordinates if the marker is in a region with no data. Do the coordinates need to be modified (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        disp('To change coordinates, identify new coordinates using tick marks and type firnx=XX; firny=YY; dbcont ');
-        keyboard
+    
+    %adjust coordinates as necessary
+    disp('Modify coordinates if the marker is in a region with no data');
+    adjustment = questdlg('Do the coordinates need to be modified?',...
+        'FDM coordinate adjustment','yes','no','yes');
+    switch adjustment
+        case 'yes'
+            disp('To change coordinates, identify new coordinates using tick marks and type firnx=XX; firny=YY; dbcont ');
+            keyboard
+        case 'no'
+            disp('Using default coordinates');
     end
+    clear adjustment;
     close all; drawnow;
     
     %interpolate the FAC uncertainty map to the FAC grid
@@ -255,7 +273,7 @@ else
     firn_density.eightthir = eightthirty(firn_density.yref,firn_density.xref);
     density_levels = [700 750 800 830]; density_depths = [firn_density.sevhun firn_density.sevfif firn_density.eighthun firn_density.eightthir];
     %fit a curve to the density-depth profile to estimate the depth of the base of the firn column
-    [firn_fit,~] = firndensity_curvefit(density_depths,density_levels,firnair.median); firn_fitci = confint(f); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
+    [firn_fit,~] = firndensity_curvefit(density_depths,density_levels,firnair.median); firn_fitci = confint(firn_fit); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
 end
 
 

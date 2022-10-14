@@ -26,7 +26,7 @@ for j = 1:length(coord_files)
     clear coords;
 end
 berg_x = nanmean([PSx_early PSx_late]); berg_y = nanmean([PSy_early PSy_late]);
-berg_dates = [DEM1.time, DEM2.time];
+berg_dates = [DEM1.time; DEM2.time];
 
 %extract air temp & firn density info from RACMO
 answer = questdlg('Where are you working?',...
@@ -39,7 +39,8 @@ switch answer
     case '3) Antarctica'
         geography = 3;
 end
-[iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
+to = berg_dates(1,:); tf = berg_dates(2,:);
+[days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
 density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
 %create density profiles
 clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content

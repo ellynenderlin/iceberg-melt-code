@@ -26,13 +26,13 @@ opts.StartPoint = [350 median_firnair];
 % Fit model to data.
 [fitresult, gof] = fit( xData, yData, ft, opts );
 
-% Plot fit with data.
-figure( 'Name', 'untitled fit 1' );
-h = plot( fitresult, xData, yData );
-legend( h, 'density_levels vs. density_depths', 'untitled fit 1', 'Location', 'NorthEast', 'Interpreter', 'none' );
-% Label axes
-xlabel( 'density_depths', 'Interpreter', 'none' );
-ylabel( 'density_levels', 'Interpreter', 'none' );
-grid on
+% % Plot fit with data.
+% figure( 'Name', 'untitled fit 1' );
+% h = plot( fitresult, xData, yData );
+% legend( h, 'density_levels vs. density_depths', 'untitled fit 1', 'Location', 'NorthEast', 'Interpreter', 'none' );
+% % Label axes
+% xlabel( 'density_depths', 'Interpreter', 'none' );
+% ylabel( 'density_levels', 'Interpreter', 'none' );
+% grid on
 
 
