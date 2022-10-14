@@ -1,4 +1,4 @@
-function [ddays,berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates)
+function [dt,berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates)
 
 %read the RACMO files & find nearest pixel
 cd([dir_code,'RACMO2.3_Antarctica/']);
@@ -49,7 +49,7 @@ disp(['RACMO x-reference = ',num2str(RACMOx),' & y-reference = ',num2str(RACMOy)
 
 %adjust RACMO reference grid cell if necessary
 disp('Adjust coordinates (if necessary) to extract surface melt estimates');
-figure; set(gcf,'position',[500 100 700 700]);
+figure; set(gcf,'position',[100 100 700 700]);
 runoff_cmap = colormap(jet(10001)); runoff_cmap(1,:) = [1 1 1];
 if ~isempty(snowmelt)
     snowmelt_map = max(snowmelt(:,:,270:450),[],3).*86500./1000; snowmelt_map(isnan(snowmelt_map)) = min(snowmelt_map(~isnan(snowmelt_map)))-1;
@@ -82,35 +82,10 @@ close all; drawnow;
 %calculate the time separation between DEMs in terms of
 %decimal years (ddays) & decimal days (days)
 to = berg_dates(1,:); tf = berg_dates(2,:);
-if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
-if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
-doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
-if str2num(tf(1:4)) == str2num(to(1:4))
-    ddays = doyf-doyo+1;
-elseif str2num(tf(1:4)) - str2num(to(1:4)) == 1
-    ddays = doyf + (doyso-doyo)+1;
-else
-    years = str2num(to(1:4)):1:str2num(tf(1:4));
-    for k = 1:length(years)
-        if mod(years(k),4)==0
-            doys(k)=366;
-        else
-            doys(k) = 365;
-        end
-    end
-    
-    %calculate the sum of days differently if during a leap year
-    if doyo > sum(modayso(1:2))
-        ddays = doyf + sum(doys(2:end-1)) + (365-doyo)+1;
-    else
-        ddays = doyf + sum(doys(2:end-1)) + (366-doyo)+1;
-    end
-end
-hrs_o = ((str2num(to(13:14))/(60*60*24))+(str2num(to(11:12))/(60*24))+(str2num(to(9:10))/24));
-hrs_f = ((str2num(tf(13:14))/(60*60*24))+(str2num(tf(11:12))/(60*24))+(str2num(tf(9:10))/24));
-dhrs = hrs_f - hrs_o;
-dt = ddays + dhrs;
-days = ones(1,ceil(dt)); days(1) = 1-hrs_o; days(2:end-1) = 1; days(end) = hrs_f;
+dt = datenum(tf,'yyyymmddHHMMSS') - datenum(to,'yyyymmddHHMMSS');
+days = ones(1,ceil(dt)); days(2:end-1) = 1; 
+days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS'); 
+days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));
 
 %estimate surface melting using RACMO runoff (mm w.e. per day)
 %data start in 2011 so date indices are referenced to Jan 1, 2011
@@ -187,7 +162,7 @@ else
     
     %adjust FAC reference grid cell if necessary
     disp('Adjust coordinates (if necessary) to extract firn density estimates');
-    figure; set(gcf,'position',[500 100 700 700]); 
+    figure; set(gcf,'position',[100 100 700 700]); 
     firn_cmap = colormap(jet(10001)); firn_cmap(1,:) = [1 1 1];
     firn_map = nanmean(FAC,3); firn_map(isnan(firn_map)) = min(firn_map(~isnan(firn_map))) - 1;
     imagesc(firn_map); colormap(gca,firn_cmap); hold on; set(gca,'ydir','reverse');

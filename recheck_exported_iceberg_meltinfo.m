@@ -34,17 +34,17 @@ for j = 1:length(region)
     csvs = dir('*meltinfo.csv');
     
     %identify the region where you are working for RACMO data extraction
-    fprintf([char(region(j)),' \n']);
-    answer = questdlg('Where are you working?',...
-        'Iceberg Location','1) Greenland','2) Antarctic Peninsula','3) Antarctica','1) Greenland');
-    switch answer
-        case '1) Greenland'
-            geography = 0;
-        case '2) Antarctic Peninsula'
-            geography = 1;
-        case '3) Antarctica'
+    fprintf(['Site: ',char(region(j)),' \n']);
+%     answer = questdlg('Where are you working?',...
+%         'Iceberg Location','1) Greenland','2) Antarctic Peninsula','3) Antarctica','1) Greenland');
+%     switch answer
+%         case '1) Greenland'
+%             geography = 0;
+%         case '2) Antarctic Peninsula'
+%             geography = 1;
+%         case '3) Antarctica'
             geography = 2;
-    end
+%     end
     
     %loop through each date & adjust volume change estimates
     for k = 1:length(csvs)
@@ -52,6 +52,7 @@ for j = 1:length(region)
         T = readtable(csvs(k).name);
         Tp1 = table2array(T(:,1:15)); Tp2 = table2array(T(:,18:23));
         DEM1.time = csvs(k).name(4:17); DEM2.time = csvs(k).name(19:32);
+        disp(['Date range = [',DEM1.time,',',DEM2.time,']']);
         %fix dates for csvs that contain data from multiple DEMs for the same date range
         if contains(DEM1.time,'X'); DEM1.time = [DEM1.time(1:end-1),'0']; end
         if contains(DEM2.time,'X'); DEM2.time = [DEM2.time(1:end-1),'0']; end
@@ -60,13 +61,10 @@ for j = 1:length(region)
         berg_x = nanmean([table2array(T(:,2)); table2array(T(:,7))]);
         berg_y = nanmean([table2array(T(:,3)); table2array(T(:,8))]);
         berg_dates = [DEM1.time; DEM2.time];
-%         decidate1 = convert_to_decimaldate(DEM1.time(1:8));
-%         decidate2 = convert_to_decimaldate(DEM2.time(1:8));
-%         dt = 365*abs(decidate1-decidate2);
+%         dt = datenum(DEM2.time,'yyyymmddHHMMSS') - datenum(DEM1.time,'yyyymmddHHMMSS');
         
         %extract air temp & firn density info from RACMO
-        [days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(RACMO_path,geography,berg_x,berg_y,berg_dates);
-        fprintf('Days: saved = %3i & updated = %3i \n',round(table2array(T(1,1))),days);
+        [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(RACMO_path,geography,berg_x,berg_y,berg_dates);
         fprintf('Surface melt = %4.3f m \n',surfmelt);
         
         %loop through each iceberg
@@ -106,17 +104,22 @@ for j = 1:length(region)
             fprintf('Previous = %3.1f & Updated = %3.1f \n',365*table2array(T(l,16))./table2array(T(l,22)),365*dVdt_mean./table2array(T(l,22))); %volume change rate (m^3/d)
             
             %replace data dVdt & uncertainty
-            dVdt(l) = dVdt_mean; dVdt_err(l) = dVdt_total_err;
+            dVdt(l,1) = dVdt_mean; dVdt_err(l,1) = dVdt_total_err;
             
             %clear variables for each iceberg
             clear d*_mean d*_stdev rf B creep* d*melt d*_total_err;
         end
+        disp('close figure to advance');
+        fig = figure; plot(365*table2array(T(:,16))./table2array(T(:,22)),365*dVdt'./table2array(T(:,22)),'xk'); hold on;
+        grid on;
+        xlabel('Old melt rate (m/yr)'); ylabel('New melt rate (m/yr)');
+        waitfor(fig);
         
         %remake the table
         clear T;
         T = table(repmat(dt,size(Tp1(:,2))),Tp1(:,2),Tp1(:,3),Tp1(:,4),Tp1(:,5),Tp1(:,6),Tp1(:,7),...
             Tp1(:,8),Tp1(:,9),Tp1(:,10),Tp1(:,11),Tp1(:,12),Tp1(:,13),Tp1(:,14),Tp1(:,15),...
-            dVdt',dVdt_err',Tp2(:,1),Tp2(:,2),Tp2(:,3),Tp2(:,4),Tp2(:,5),Tp2(:,6));
+            dVdt,dVdt_err,Tp2(:,1),Tp2(:,2),Tp2(:,3),Tp2(:,4),Tp2(:,5),Tp2(:,6));
         column_names = ["TimeSeparation", "X_i", "Y_i", "MedianZ_i",...
             "Density_i", "Volume_i", "X_f", "Y_f", "MedianZ_f",...
             "Density_f", "Volume_f", "VerticalAdjustment_i", "VerticalAdjustment_f",...
@@ -131,12 +134,14 @@ for j = 1:length(region)
             "m^2", "m^2"];
         T.Properties.VariableNames = column_names; T.Properties.VariableUnits = column_units;
         writetable(T,[root_dir,char(region(j)),'/',csvs(k).name]);
-        disp('Text file written');
+        disp('Re-exported csv!');
         
         %clear variables
         clear iceberg_avgtemp surfmelt firnair density f ci;
-        clear T* DEM1 DEM2 berg_* dVdt dVdt_err;
+        clear T* DEM1 DEM2 berg_* dVdt dVdt_err dt*;
     end
+    disp('Moving on...');
+    disp(' ');
 end
 
 
