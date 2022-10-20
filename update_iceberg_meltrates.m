@@ -48,37 +48,12 @@ density_levels = [700 750 800 830]; density_depths = [density.sevhun density.sev
 density_levels = [density_levels 917]; density_depths = [density_depths density.nineseventeen];
 cd(dir_iceberg);
 
-%calculate the time separation between DEMs in terms of 
-%decimal years (ddays) & decimal days (days)
+%calculate the time separation between DEMs in terms of decimal days (days)
 to = DEM1.time; tf = DEM2.time;
-if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
-if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
-doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
-if str2num(tf(1:4)) == str2num(to(1:4))
-    ddays = doyf-doyo+1;
-elseif str2num(tf(1:4)) - str2num(to(1:4)) == 1
-    ddays = doyf + (doyso-doyo)+1;
-else
-    years = str2num(to(1:4)):1:str2num(tf(1:4));
-    for k = 1:length(years)
-        if mod(years(k),4)==0
-            doys(k)=366;
-        else
-            doys(k) = 365;
-        end
-    end
-        
-    %calculate the sum of days differently if during a leap year
-    if doyo > sum(modayso(1:2))
-        ddays = doyf + sum(doys(2:end-1)) + (365-doyo)+1;
-    else
-        ddays = doyf + sum(doys(2:end-1)) + (366-doyo)+1;
-    end
-end
-hrs_o = ((str2num(to(13:14))/(60*60*24))+(str2num(to(11:12))/(60*24))+(str2num(to(9:10))/24));
-hrs_f = ((str2num(tf(13:14))/(60*60*24))+(str2num(tf(11:12))/(60*24))+(str2num(tf(9:10))/24));
-dhrs = hrs_f - hrs_o;
-dt = ddays + dhrs;
+dt = datenum(tf,'yyyymmddHHMMSS') - datenum(to,'yyyymmddHHMMSS');
+days = ones(1,ceil(dt)); days(2:end-1) = 1; 
+days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS'); 
+days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));
 
 %extract DEM pixel areas
 DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel_area = abs(DEM2.x(1)-DEM2.x(2)).*abs(DEM2.y(1)-DEM2.y(2)); %square meters
@@ -159,16 +134,28 @@ end
 %extract image pixel areas
 im1_pixel_area = abs(A.x(1)-A.x(2)).*abs(A.y(1)-A.y(2)); im2_pixel_area = abs(B.x(1)-B.x(2)).*abs(B.y(1)-B.y(2)); %square meters
 
+%extract air temp & firn density info from RACMO
+answer = questdlg('Where are you working?',...
+    'Iceberg Location','1) Greenland','2) Antarctica','1) Greenland');
+switch answer
+    case '1) Greenland'
+        geography = 0;
+    case '2) Antarctica'
+        geography = 2;
+end
+to = berg_dates(1,:); tf = berg_dates(2,:);
+[days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
+density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
 %create density profiles
-clear FAC;
-FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-[f,~] = firndensity_curvefit(density_depths,density_levels,firnair.median); ci = confint(f); %create density profile
+clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
 density_z = [0:1:1000];
-density_profile = rho_i-(rho_i-f.a)*exp(-density_z/f.b); mindensity_profile = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); maxdensity_profile = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2));
-%calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (rho_sw-830)
-wetdensity_profile = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(ceil(density.eightthir)+1:end) = density_profile(ceil(density.eightthir)+1:end);
-minwetdensity_profile = 830+((830-mindensity_profile)./830).*(rho_sw-830); minwetdensity_profile(ceil(density.eightthir)+1:end) = mindensity_profile(ceil(density.eightthir)+1:end);
-maxwetdensity_profile = 830+((830-maxdensity_profile)./830).*(rho_sw-830); maxwetdensity_profile(ceil(density.eightthir)+1:end) = maxdensity_profile(ceil(density.eightthir)+1:end);
+density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
+density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
+density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
+%calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
+wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
+wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
+wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
 
 %update iceberg data for the icebergs for which you re-ran volume change calculations
 cd(dir_iceberg);
@@ -293,113 +280,11 @@ for i = 1:length(iceberg_refs)
     clear iceberg_IMmask;
     
     %iteratively estimate bulk density
-    if SL(berg_ref).orientation == 0 %berg is a fragment or overturned so assume the full firn is saturated
-        for k = 1:3 %k=1 is the best guess, k=[2,3] constraints uncertainties
-            j=1;
-            Hberg(j) = (rho_sw/(rho_sw-rho_i))*SL(berg_ref).initial.z_median;
-            Hberg_err(j) = abs(Hberg(j)).*sqrt((rho_sw_err/rho_sw)^2 + ((1.4826*SL(berg_ref).initial.z_mad)/SL(berg_ref).initial.z_median)^2 + ((rho_sw_err^2 + rho_i_err^2)/(rho_sw-rho_i)^2));
-            wet_ref = find(density_z<=density.eightthir,1,'last');
-            if Hberg(j) > density_z(wet_ref)
-                rho_prof = [wetdensity_profile(1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [minwetdensity_profile(1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxwetdensity_profile(1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-            else
-                rho_prof = [wetdensity_profile(1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [minwetdensity_profile(1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxwetdensity_profile(1:ceil(Hberg(j))+1)];
-            end
-            rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-            rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-            clear rho_prof*;
-            
-            while j
-                Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(berg_ref).initial.z_median;
-                Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(berg_ref).initial.z_mad)/SL(berg_ref).initial.z_median)^2);
-                if Hberg(j+1) > density_z(wet_ref)
-                    rho_prof = [wetdensity_profile(1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [minwetdensity_profile(1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxwetdensity_profile(1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                else
-                    rho_prof = [wetdensity_profile(1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [minwetdensity_profile(1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxwetdensity_profile(1:ceil(Hberg(j+1))+1)];
-                end
-                rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-                rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-                clear rho_prof*;
-                
-                if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
-                    if k == 1
-                        SL(berg_ref).density_type = 'wet';
-                        SL(berg_ref).initial.density = rho_f(j+1);
-                        %propagated density uncertainty
-                        SL(berg_ref).initial.density_uncert = rho_f_err(j);
-                    else
-                        %density uncertainty using FAC uncertainty bounds to iterate thickness & rho_f estimates
-                        SL(berg_ref).initial_range.density(k-1) = rho_f(j+1);
-                    end
-                    clear Hberg rho_f* dry_ref wet_ref;
-                    break
-                else
-                    j = j+1;
-                end
-                %                 clear Hice Vice;
-            end
-        end
-    else %berg is upright so only wet the firn below the waterline
-        for k = 1:3 %k=1 is the best guess, k=[2,3] constraints uncertainties
-            j=1;
-            Hberg(j) = (rho_sw/(rho_sw-rho_i))*SL(berg_ref).initial.z_median;
-            Hberg_err(j) = abs(Hberg(j)).*sqrt((rho_sw_err/rho_sw)^2 + ((1.4826*SL(berg_ref).initial.z_mad)/SL(berg_ref).initial.z_median)^2 + ((rho_sw_err^2 + rho_i_err^2)/(rho_sw-rho_i)^2));
-            dry_ref = find(density_z<=SL(berg_ref).initial.z_median,1,'last'); wet_ref = find(density_z<=density.eightthir,1,'last');
-            if Hberg(j) > density_z(wet_ref)
-                rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-            else
-                rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:ceil(Hberg(j))+1)];
-            end
-            rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-            rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-            clear rho_prof*;
-            
-            while j
-                Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(berg_ref).initial.z_median;
-                Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(berg_ref).initial.z_mad)/SL(berg_ref).initial.z_median)^2);
-                if Hberg(j+1) > density_z(wet_ref)
-                    rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                else
-                    rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:ceil(Hberg(j+1))+1)];
-                end
-                rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-                rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-                clear rho_prof*;
-                
-                if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
-                    if k == 1
-                        SL(berg_ref).density_type = 'dry';
-                        SL(berg_ref).initial.density = rho_f(j+1);
-                        %propagated density uncertainty
-                        SL(berg_ref).initial.density_uncert = rho_f_err(j);
-                    else
-                        %density uncertainty using FAC uncertainty bounds to iterate thickness & rho_f estimates
-                        SL(berg_ref).initial_range.density(k-1) = rho_f(j+1);
-                    end
-                    clear Hberg rho_f* dry_ref wet_ref;
-                    break
-                else
-                    j = j+1;
-                end
-                %                 clear Hice Vice;
-            end
-        end
-    end
+    disp('estimating density');
+    berg_densities = estimate_iceberg_density(SL(berg_ref).orientation,SL(berg_ref).final.z_median,SL(berg_ref).final.z_mad,density_z,density,density_profile,wetdensity_profile);
+    SL(berg_ref).final.density = berg_densities(1); %SL(i).initial.density_uncert = berg_densities_uncert(1);
+    SL(berg_ref).final_range.density = [berg_densities(2) berg_densities(3)];
+    clear berg_densities;
     
     %estimate the iceberg depth & submerged area using densities from the Ligtenberg FDM
     disp('Estimating thickness & volume');
@@ -527,113 +412,11 @@ for i = 1:length(iceberg_refs)
     clear iceberg_IMmask;
     
     %iteratively estimate bulk density
-    if SL(berg_ref).orientation == 0 %berg is a fragment or overturned so assume firn is totally saturated
-        for k = 1:3 %k=1 is the best guess, k=[2,3] constraints uncertainties
-            j=1;
-            Hberg(j) = (rho_sw/(rho_sw-rho_i))*SL(berg_ref).final.z_median;
-            Hberg_err(j) = abs(Hberg(j)).*sqrt((rho_sw_err/rho_sw)^2 + ((1.4826*SL(berg_ref).final.z_mad)/SL(berg_ref).final.z_median)^2 + ((rho_sw_err^2 + rho_i_err^2)/(rho_sw-rho_i)^2));
-            wet_ref = find(density_z<=density.eightthir,1,'last');
-            if Hberg(j) > density_z(wet_ref)
-                rho_prof = [wetdensity_profile(1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [minwetdensity_profile(1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxwetdensity_profile(1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-            else
-                rho_prof = [wetdensity_profile(1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [minwetdensity_profile(1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxwetdensity_profile(1:ceil(Hberg(j))+1)];
-            end
-            rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-            rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-            clear rho_prof*;
-
-            while j
-                Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(berg_ref).final.z_median;
-                Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(berg_ref).final.z_mad)/SL(berg_ref).final.z_median)^2);
-                if Hberg(j+1) > density_z(wet_ref)
-                    rho_prof = [wetdensity_profile(1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [minwetdensity_profile(1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxwetdensity_profile(1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                else
-                    rho_prof = [wetdensity_profile(1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [minwetdensity_profile(1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxwetdensity_profile(1:ceil(Hberg(j+1))+1)];
-                end
-                rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-                rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-                clear rho_prof*;
-
-                if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
-                    if k == 1
-                        SL(berg_ref).density_type = 'wet';
-                        SL(berg_ref).final.density = rho_f(j+1);
-                        %propagated density uncertainty
-                        SL(berg_ref).final.density_uncert = rho_f_err(j);
-                    else
-                        %density uncertainty using FAC uncertainty bounds to iterate thickness & rho_f estimates
-                        SL(berg_ref).final_range.density(k-1) = rho_f(j+1);
-                    end
-                    clear Hberg rho_f* dry_ref wet_ref;
-                    break
-                else
-                    j = j+1;
-                end
-%                 clear Hice Vice;
-            end
-        end
-    else %berg is upright so only wet the firn below the waterline
-        for k = 1:3 %k=1 is the best guess, k=[2,3] constraints uncertainties
-            j=1;
-            Hberg(j) = (rho_sw/(rho_sw-rho_i))*SL(berg_ref).final.z_median;
-            Hberg_err(j) = abs(Hberg(j)).*sqrt((rho_sw_err/rho_sw)^2 + ((1.4826*SL(berg_ref).final.z_mad)/SL(berg_ref).final.z_median)^2 + ((rho_sw_err^2 + rho_i_err^2)/(rho_sw-rho_i)^2));
-            dry_ref = find(density_z<=SL(berg_ref).final.z_median,1,'last'); wet_ref = find(density_z<=density.eightthir,1,'last');
-            if Hberg(j) > density_z(wet_ref)
-                rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j))+1)];
-            else
-                rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:ceil(Hberg(j))+1)];
-                rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:ceil(Hberg(j))+1)];
-            end
-            rho_f(j) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-            rho_f_err(j) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-            clear rho_prof*;
-
-            while j
-                Hberg(j+1) = (rho_sw/(rho_sw-rho_f(j)))*SL(berg_ref).final.z_median;
-                Hberg_err(j+1) = abs(Hberg(j+1)).*sqrt(((abs(rho_sw/(rho_sw-rho_f(j)))*sqrt((rho_sw_err/rho_sw)^2 + (sqrt(rho_sw_err^2+rho_f_err(j)^2)/(rho_sw-rho_f(j)))^2))/(rho_sw/(rho_sw-rho_f(j))))^2 + ((1.4826*SL(berg_ref).final.z_mad)/SL(berg_ref).final.z_median)^2);
-                if Hberg(j+1) > density_z(wet_ref)
-                    rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:wet_ref) density_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:wet_ref) mindensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:wet_ref) maxdensity_profile(wet_ref+1:ceil(Hberg(j+1))+1)];
-                else
-                    rho_prof = [density_profile(1:dry_ref) wetdensity_profile(dry_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(1,:) = [mindensity_profile(1:dry_ref) minwetdensity_profile(dry_ref+1:ceil(Hberg(j+1))+1)];
-                    rho_profrange(2,:) = [maxdensity_profile(1:dry_ref) maxwetdensity_profile(dry_ref+1:ceil(Hberg(j+1))+1)];
-                end
-                rho_f(j+1) =  nanmean(rho_prof); %rho_f(j) = rho_i+(f.b*(rho_i-f.a)*(exp(-Hberg(j)/f.b)-1))/Hberg(j); %commented equation is average of the exponential equation for the dry density profile
-                rho_f_err(j+1) = max(abs([nanmean(rho_profrange(1,:))-rho_f(j) nanmean(rho_profrange(2,:))-rho_f(j)]));
-                clear rho_prof*;
-
-                if abs(rho_f(j+1)-rho_f(j)) < 0.25*rho_f_err(j+1)
-                    if k == 1
-                        SL(berg_ref).density_type = 'dry';
-                        SL(berg_ref).final.density = rho_f(j+1);
-                        %propagated density uncertainty
-                        SL(berg_ref).final.density_uncert = rho_f_err(j);
-                    else
-                        %density uncertainty using FAC uncertainty bounds to iterate thickness & rho_f estimates
-                        SL(berg_ref).final_range.density(k-1) = rho_f(j+1);
-                    end
-                    clear Hberg rho_f* dry_ref wet_ref;
-                    break
-                else
-                    j = j+1;
-                end
-%                 clear Hice Vice;
-            end
-        end
-    end
+    disp('estimating density');
+    berg_densities = estimate_iceberg_density(SL(berg_ref).orientation,SL(berg_ref).final.z_median,SL(berg_ref).final.z_mad,density_z,density,density_profile,wetdensity_profile);
+    SL(berg_ref).final.density = berg_densities(1); %SL(i).initial.density_uncert = berg_densities_uncert(1);
+    SL(berg_ref).final_range.density = [berg_densities(2) berg_densities(3)];
+    clear berg_densities;
     
     %estimate the iceberg depth & submerged area using densities from the Ligtenberg FDM
     disp('Estimating thickness & volume');

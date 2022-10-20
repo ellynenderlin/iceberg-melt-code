@@ -5,37 +5,48 @@ cd([dir_code,'RACMO2.3_Antarctica/']);
 if geography == 0
     disp('Need to modify to add in Greenland data!');
 elseif geography == 1
-    AP=1;
+    %check if the data fall within the RACMO AP model domain (preferred
+    %over the AIS model b/c the spatial resolutions are 5.5 km & 27 km respectively)
     [berg_lon,berg_lat] = ps2wgs(berg_x,berg_y,'StandardParallel',-71,'StandardMeridian',0);
     runoff_lat = ncread('RACMO2.3p2_XPEN055_runoff_daily_2011_2016.nc','lat');
     runoff_lon = ncread('RACMO2.3p2_XPEN055_runoff_daily_2011_2016.nc','lon');
-    runoff = ncread('RACMO2.3p2_XPEN055_runoff_daily_2011_2016.nc','runoff'); runoff(runoff==-9999)=NaN;
-    snowmelt = ncread('RACMO2.3p2_XPEN055_snowmelt_daily_2011_2016.nc','snowmelt'); snowmelt(snowmelt==-9999)=NaN;
-    airtemp = ncread('RACMO2.3p2_XPEN055_T2m_daily_2011_2016.nc','t2m'); airtemp(airtemp==-9999)=NaN;
-    icetemp = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','t2m'); icetemp(icetemp==-9999)=NaN; %assume the ice temp matches the avg long-term temp (for creep estimates)
-    smb = [];
-    runoff_time = ncread('RACMO2.3p2_XPEN055_runoff_daily_2011_2016.nc','time');
     for i = 1:size(runoff_lat,1)
         for j = 1:size(runoff_lat,2)
             [runoff_x(i,j),runoff_y(i,j)] = wgs2ps(runoff_lon(i,j),runoff_lat(i,j),'StandardParallel',-71,'StandardMeridian',0);
         end
     end
-elseif geography == 2
-    AP=0;
-    [berg_lon,berg_lat] = ps2wgs(berg_x,berg_y,'StandardParallel',-71,'StandardMeridian',0);
-    runoff_lat = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','lat');
-    runoff_lon = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','lon');
-    runoff = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','runoff'); runoff(runoff==-9999)=NaN;
-    snowmelt = [];
-    airtemp = ncread('RACMO2.3p2_ANT27_T2m_daily_2011_2016.nc','t2m'); airtemp(airtemp==-9999)=NaN;
-    icetemp = ncread('RACMO2.3p2_ANT27_T2m_monthly_1979_2016.nc','t2m'); icetemp(icetemp==-9999)=NaN; %assume the ice temp matches the avg long-term temp (for creep estimates)
-    smb = ncread('RACMO2.3p2_ANT27_smb_daily_2011_2016.nc','smb'); smb(smb==-9999)=NaN;
-    runoff_time = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','time');
-    for i = 1:size(runoff_lat,1)
-        for j = 1:size(runoff_lat,2)
-            [runoff_x(i,j),runoff_y(i,j)] = wgs2ps(runoff_lon(i,j),runoff_lat(i,j),'StandardParallel',-71,'StandardMeridian',0);
+    in = inpolygon(berg_x,berg_y,[runoff_x(1,1) runoff_x(1,end) runoff_x(end,end) runoff_x(end,1) runoff_x(1,1)],...
+        [runoff_y(1,1) runoff_y(1,end) runoff_y(end,end) runoff_y(end,1) runoff_y(1,1)]);
+    %if the site is in RACMO AP, use those data
+    if sum(in) >= 1
+        AP=1;
+        %load SMB params
+        runoff = ncread('RACMO2.3p2_XPEN055_runoff_daily_2011_2016.nc','runoff'); runoff(runoff==-9999)=NaN;
+        snowmelt = ncread('RACMO2.3p2_XPEN055_snowmelt_daily_2011_2016.nc','snowmelt'); snowmelt(snowmelt==-9999)=NaN;
+        airtemp = ncread('RACMO2.3p2_XPEN055_T2m_daily_2011_2016.nc','t2m'); airtemp(airtemp==-9999)=NaN;
+        icetemp = ncread('RACMO2.3p2_XPEN055_T2m_monthly_1979_2016.nc','t2m'); icetemp(icetemp==-9999)=NaN; %assume the ice temp matches the avg long-term temp (for creep estimates)
+        smb = [];
+        runoff_time = ncread('RACMO2.3p2_XPEN055_runoff_daily_2011_2016.nc','time');
+    else %otherwise use RACMO Antarctica
+        clear runoff_lat runoff_lon runoff_x runoff_y;
+        AP=0;
+        runoff_lat = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','lat');
+        runoff_lon = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','lon');
+        for i = 1:size(runoff_lat,1)
+            for j = 1:size(runoff_lat,2)
+                [runoff_x(i,j),runoff_y(i,j)] = wgs2ps(runoff_lon(i,j),runoff_lat(i,j),'StandardParallel',-71,'StandardMeridian',0);
+            end
         end
+        %load SMB params
+        runoff = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','runoff'); runoff(runoff==-9999)=NaN;
+        snowmelt = [];
+        airtemp = ncread('RACMO2.3p2_ANT27_T2m_daily_2011_2016.nc','t2m'); airtemp(airtemp==-9999)=NaN;
+        icetemp = ncread('RACMO2.3p2_ANT27_T2m_monthly_1979_2016.nc','t2m'); icetemp(icetemp==-9999)=NaN; %assume the ice temp matches the avg long-term temp (for creep estimates)
+        smb = ncread('RACMO2.3p2_ANT27_smb_daily_2011_2016.nc','smb'); smb(smb==-9999)=NaN;
+        runoff_time = ncread('RACMO2.3p2_ANT27_runoff_daily_2011_2016.nc','time');
+        
     end
+    clear in;
 end
 runoff_days = runoff_time-runoff_time(1); %days since 20110101
 
@@ -114,10 +125,10 @@ else
         end
     end
 end
-if length(days)~=length(melt)
-    clear days;
-    days = ones(1,length(melt)); days(1) = 1-hrs_o; days(2:end-1) = 1; days(end) = hrs_f;
-end
+% if length(days)~=length(melt)
+%     clear days;
+%     days = ones(1,length(melt)); days(1) = 1-hrs_o; days(2:end-1) = 1; days(end) = hrs_f;
+% end
 berg_runoff = nansum(days'.*melt)/1000; %surface meltwater that runs off (mm w.e. per day)
 %estimate the ice temperature as the average long-term air temperature (doesn't account for advection of colder ice and melt/refreezing at the surface and/or submarine interface)
 berg_T = nanmean(squeeze(icetemp(RACMOy,RACMOx,:))); % air temp (Kelvin)

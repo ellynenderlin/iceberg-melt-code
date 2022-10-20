@@ -5,7 +5,7 @@
 %% Initialize
 clearvars; close all;
 addpath('/Users/ellynenderlin/Research/miscellaneous/general-code','/Users/ellynenderlin/Research/miscellaneous/general-code/cmocean');
-addpath('/Users/ellynenderlin/Research/miscellaneous/general-code/AntarcticMappingTools');
+% addpath('/Users/ellynenderlin/Research/miscellaneous/general-code/AntarcticMappingTools');
 
 %specify paths & file names for data
 CTD_path = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/CTD_Antarctica/';

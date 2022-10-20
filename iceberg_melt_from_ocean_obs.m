@@ -77,11 +77,7 @@ clear A S;
 cd(iceberg_path);
 close all;
 
-%% organize ocean data & pair with remotely-sensed iceberg melt data (run once to create Antarctic-icebergmelt-comparison.mat)
-% If you rerun this section, you will overwrite
-% Antarctic-icebergmelt-comparison.mat... rerun if you want to change the
-% size of the "buffer" search window for ocean data
-disp('Compiling iceberg melt & nearby ocean observations for each site');
+%% load the datasets
 
 %load the compiled ocean data
 load(CTD_data);
@@ -98,6 +94,13 @@ RACMO_time = ncread('RACMO2.3p2_XPEN055_T2m_daily_2011_2016.nc','time');
 RACMO_days = RACMO_time-RACMO_time(1); %days since 20110101
 for i = 1:size(AP_lat,1); for j = 1:size(AP_lat,2); [AP_x(i,j),AP_y(i,j)] = wgs2ps(AP_lon(i,j),AP_lat(i,j),'StandardParallel',-71,'StandardMeridian',0); end; end
 for i = 1:size(AIS_lat,1); for j = 1:size(AIS_lat,2); [AIS_x(i,j),AIS_y(i,j)] = wgs2ps(AIS_lon(i,j),AIS_lat(i,j),'StandardParallel',-71,'StandardMeridian',0); end; end
+
+
+%% organize ocean data & pair with remotely-sensed iceberg melt data (run once to create Antarctic-icebergmelt-comparison.mat)
+% If you rerun this section, you will overwrite
+% Antarctic-icebergmelt-comparison.mat... rerun if you want to change the
+% size of the "buffer" search window for ocean data
+disp('Compiling iceberg melt & nearby ocean observations for each site');
 
 %create figures to check RACMO data are correctly identified
 RACMO_fig = figure('position',[50 550 800 400]); APsub = subplot(1,2,1); AISsub = subplot(1,2,2);
@@ -169,7 +172,8 @@ for i = 1:length(region) %loop through the regions
     
     %extract RACMO-estimated air temperatures from the nearest grid cell &
     %average over the full record to estimate iceberg temperature
-    if i <= 3 || i >= 9
+    in = inpolygon(nanmean(melt(i).x),nanmean(melt(i).y),[AP_x(1,1) AP_x(1,end) AP_x(end,end) AP_x(end,1) AP_x(1,1)],[AP_y(1,1) AP_y(1,end) AP_y(end,end) AP_y(end,1) AP_y(1,1)]);
+    if in >= 1
         lat_diff = abs(repmat(nanmean(melt(i).y),size(AP_y)) - AP_y);
         lon_diff = abs(repmat(nanmean(melt(i).x),size(AP_x)) - AP_x);
         diff_map = sqrt(lat_diff.^2+lon_diff.^2); diff_map(isnan(squeeze(nanmean(AP_airtemp(:,:,1,270:450),4)))) = NaN; %solve for the distance vector using the x&y distances
@@ -186,7 +190,7 @@ for i = 1:length(region) %loop through the regions
         melt(i).bergT = squeeze(nanmean(AIS_airtemp(RACMOy,RACMOx,1,:),4))-273.15;
         subplot(AISsub); plot(RACMOx,RACMOy,'xk','markersize',36,'linewidth',2); hold on;
     end
-    clear *diff* RACMOy RACMOx;
+    clear *diff* RACMOy RACMOx in;
     disp(['Iceberg temp ~= ',num2str(melt(i).bergT),' deg C']);
     
     %crop the CTD, APB, & ARGO data to within the specified buffer distance of the icebergs
@@ -522,4 +526,4 @@ end
 
 %resave the data structure
 save([iceberg_path,'Antarctic-icebergmelt-comparison.mat'],'melt','-v7.3');
-
+disp('Saved ocean observation data to same structure as remotely-sensed iceberg melt estimates');

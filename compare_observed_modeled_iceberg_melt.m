@@ -15,7 +15,9 @@
 %%%
 %% initiate
 clearvars; close all;
-addpath('/users/ellynenderlin/Research/miscellaneous/general-code','/users/ellynenderlin/Research/miscellaneous/general-code/cmocean');
+addpath('/users/ellynenderlin/Research/miscellaneous/general-code',...
+    '/users/ellynenderlin/Research/miscellaneous/general-code/cmocean',...
+    '/users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code/');
 
 %specify paths
 iceberg_path = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/';
@@ -495,32 +497,37 @@ for i = 1:length(melt)
     xlabel('SOSE-derived melt rate (m yr^{-1})','fontsize',16);
     ylabel('DEM-derived melt rate (m yr^{-1})','fontsize',16);
     pcleg = legend(pc,'Holland-Jenkins','Weeks-Campbell'); set(pcleg,'location','northeast'); clear pc;
-    %add to the scatterplot subplots figure
+    
+    %add meltrate comparison data to the scatterplot subplots figure
     figure(fig3); subpl = subplot(8,2,plot_loc(i));
     plot([0 210],[0 210],'-k'); hold on;
     %Holland-Jenkins parameterized melt rates, flagging
     %estimates from time-averaged SOSE data with +s
     pc(1) = scatter(melt(i).mWC,365*melt(i).m,20,[1 1 1],'filled','d','markeredgecolor','k'); hold on; 
-%     scatter(melt(i).mWC(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
-%     scatter(melt(i).mWC(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
     %Weeks-Campbell parameterized melt rates, flagging
     %estimates from time-averaged SOSE data with +s
     pc(2) = scatter(melt(i).mHJ,365*melt(i).m,28,[0.5 0.5 0.5],'filled','h','markeredgecolor','k'); hold on;
-%     pc(3) = scatter(melt(i).mHJ(melt(i).tf<2013),365*melt(i).m(melt(i).tf<2013),20,'k','+'); hold on; 
-%     scatter(melt(i).mHJ(melt(i).to>2020),365*melt(i).m(melt(i).to>2020),20,'k','+'); hold on; 
     %set the axis limits
-    if ~isempty(strmatch(melt(i).dispname,'Ferrigno')) || ~isempty(strmatch(melt(i).dispname,'Thwaites'))
-        set(gca,'xlim',[0 150],'xtick',[0:60:150],'xticklabel',[0:60:150],...
-            'ylim',[0 150],'ytick',[0:60:150],'yticklabel',[0:60:150],'box','on','fontsize',16);
-    elseif ~isempty(strmatch(melt(i).dispname,'Totten')) || ~isempty(strmatch(melt(i).dispname,'Polar Times'))...
-            || ~isempty(strmatch(melt(i).dispname,'Filchner')) || ~isempty(strmatch(melt(i).dispname,'Ronne'))...
-            || ~isempty(strmatch(melt(i).dispname,'Crane')) || ~isempty(strmatch(melt(i).dispname,'Edgeworth'))
-        set(gca,'xlim',[0 25],'xtick',[0:10:25],'xticklabel',[0:10:25],...
-            'ylim',[0 25],'ytick',[0:10:25],'yticklabel',[0:10:25],'box','on','fontsize',16);
-    else 
-        set(gca,'xlim',[0 75],'xtick',[0:30:75],'xticklabel',[0:30:75],...
-            'ylim',[0 75],'ytick',[0:30:75],'yticklabel',[0:30:75],'box','on','fontsize',16);
-    end
+    %option (1): scale each site independently
+    tickno = 3;
+    set(gca,'xlim',[0 ceil(ceil(max([max(melt(i).mWC) max(melt(i).mHJ) max(365*melt(i).m)]))/tickno)*tickno],...
+        'xtick',[0:ceil(ceil(max([max(melt(i).mWC) max(melt(i).mHJ) max(365*melt(i).m)]))/tickno):ceil(ceil(max([max(melt(i).mWC) max(melt(i).mHJ) max(365*melt(i).m)]))/tickno)*tickno],...
+        'ylim',[0 ceil(ceil(max([max(melt(i).mWC) max(melt(i).mHJ) max(365*melt(i).m)]))/tickno)*tickno],...
+        'ytick',[0:ceil(ceil(max([max(melt(i).mWC) max(melt(i).mHJ) max(365*melt(i).m)]))/tickno):ceil(ceil(max([max(melt(i).mWC) max(melt(i).mHJ) max(365*melt(i).m)]))/tickno)*tickno],...
+        'box','on','fontsize',16);
+    %option (2): apply a few standard axis scales
+%     if ~isempty(strmatch(melt(i).dispname,'Ferrigno')) || ~isempty(strmatch(melt(i).dispname,'Thwaites'))
+%         set(gca,'xlim',[0 150],'xtick',[0:60:150],'xticklabel',[0:60:150],...
+%             'ylim',[0 150],'ytick',[0:60:150],'yticklabel',[0:60:150],'box','on','fontsize',16);
+%     elseif ~isempty(strmatch(melt(i).dispname,'Totten')) || ~isempty(strmatch(melt(i).dispname,'Polar Times'))...
+%             || ~isempty(strmatch(melt(i).dispname,'Filchner')) || ~isempty(strmatch(melt(i).dispname,'Ronne'))...
+%             || ~isempty(strmatch(melt(i).dispname,'Crane')) || ~isempty(strmatch(melt(i).dispname,'Edgeworth'))
+%         set(gca,'xlim',[0 25],'xtick',[0:10:25],'xticklabel',[0:10:25],...
+%             'ylim',[0 25],'ytick',[0:10:25],'yticklabel',[0:10:25],'box','on','fontsize',16);
+%     else 
+%         set(gca,'xlim',[0 75],'xtick',[0:30:75],'xticklabel',[0:30:75],...
+%             'ylim',[0 75],'ytick',[0:30:75],'yticklabel',[0:30:75],'box','on','fontsize',16);
+%     end
     grid on;
     %label
     text(0.62*max(get(gca,'xlim')),0.20*max(get(gca,'ylim')),[char(plot_names(i)),' ',char(melt(i).dispname)],'fontsize',16);
