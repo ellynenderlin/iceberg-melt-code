@@ -895,3 +895,41 @@ saveas(Tm_mapplot_TG,[figure_path,'TG_iceberg-oceandata-map.eps'],'epsc'); savea
 saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.png'],'png');
 saveas(Tm_mapplot_TI,[figure_path,'TI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_TI,[figure_path,'TI_iceberg-oceandata-map.png'],'png');
 saveas(Tm_mapplot_FI,[figure_path,'FI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_FI,[figure_path,'FI_iceberg-oceandata-map.png'],'png');
+
+
+%% export summary data on iceberg melt rates & ocean observations to tables
+
+for j = 1:length(melt)
+    date_pairs = [melt(j).to,melt(j).tf];
+    [unique_dates,unique_inds] = unique(date_pairs,'rows');
+    for k = 1:length(unique_dates)
+        to(k,:) = convert_from_decimaldate(melt(j).to(unique_inds(k)));
+        tf(k,:) = convert_from_decimaldate(melt(j).tf(unique_inds(k)));
+        if k < length(unique_dates)
+            x_range(k,:) = [min(melt(j).x(unique_inds(k):unique_inds(k+1)-1)),max(melt(j).x(unique_inds(k):unique_inds(k+1)-1))];
+            y_range(k,:) = [min(melt(j).y(unique_inds(k):unique_inds(k+1)-1)),max(melt(j).y(unique_inds(k):unique_inds(k+1)-1))];
+            obs(k,1) = unique_inds(k+1)-unique_inds(k);
+            draft(k,1) = nanmedian(melt(j).d(unique_inds(k):unique_inds(k+1)-1));
+            draft_range(k,:) = [min(melt(j).d(unique_inds(k):unique_inds(k+1)-1)),max(melt(j).d(unique_inds(k):unique_inds(k+1)-1))];
+            meltrate(k,1) = 365*nanmedian(melt(j).m(unique_inds(k):unique_inds(k+1)-1));
+            meltrate_range(k,:) = 365*[min(melt(j).m(unique_inds(k):unique_inds(k+1)-1)),max(melt(j).m(unique_inds(k):unique_inds(k+1)-1))];
+        else
+            x_range(k,:) = [min(melt(j).x(unique_inds(k):end)),max(melt(j).x(unique_inds(k):end))];
+            y_range(k,:) = [min(melt(j).y(unique_inds(k):end)),max(melt(j).y(unique_inds(k):end))];
+            obs(k,1) = length(melt(j).to)-unique_inds(k);
+            draft(k,1) = nanmedian(melt(j).d(unique_inds(k):end));
+            draft_range(k,:) = [min(melt(j).d(unique_inds(k):end)),max(melt(j).d(unique_inds(k):end))];
+            meltrate(k,1) = 365*nanmedian(melt(j).m(unique_inds(k):end));
+            meltrate_range(k,:) = 365*[min(melt(j).m(unique_inds(k):end)),max(melt(j).m(unique_inds(k):end))];
+        end
+        %edit print string to include for each date pair for each site: 
+        %site name, dates, max x&y, min x&y, number of obs, median draft (min, max), median melt rate (min, max)
+        fprintf('%s, %s, %s, \n',...
+            string(melt(j).dispname),... %site name
+            [to(k,1:4),'/',to(k,5:6),'/',to(k,7:8)],[tf(k,1:4),'/',tf(k,5:6),'/',tf(k,7:8)],... %dates
+            );
+    end
+    
+end
+
+
