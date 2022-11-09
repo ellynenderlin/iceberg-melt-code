@@ -35,7 +35,7 @@ switch answer
     case '1) Greenland'
         geography = 0;
     case '2) Antarctica'
-        geography = 2;
+        geography = 1;
 end
 to = berg_dates(1,:); tf = berg_dates(2,:);
 [days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);

@@ -1,12 +1,13 @@
-function [geoid] = extract_Antarctic_geoid_elevs(ULlat,ULlon,LRlat,LRlon,geography,region_abbrev,dir_output)
-% Function to extract Antarctic geoid elevations over a given region
-% Ellyn Enderlin & Mariama Dryak 
-% Slightly reformatted by Rainey Aberle (Fall 2021)
+function [geoid] = extract_geoid_elevs(ULlat,ULlon,LRlat,LRlon,geography,region_abbrev,dir_output)
+% Function to extract geoid elevations over a given region
+% Ellyn Enderlin (ellynenderlin@boisestate.edu)
+% Last edited: 09 Nov. 2022
 % 
 % INPUTS:   ULlat           latitude of image upper left corner 
 %           ULlon           longitude of image upper left corner
 %           LRlat           latitude of image lower right corner
 %           LRlon           longitude of image lower right corner
+%           geography       binary specification of polar region (0 = Greenland, 1 = Antarctic)
 %           region_abbrev   region abbreviation used in image files
 %           dir_output      directory where all output files will be placed
 %
@@ -16,9 +17,14 @@ function [geoid] = extract_Antarctic_geoid_elevs(ULlat,ULlon,LRlat,LRlon,geograp
 % Calls the following external functions:
 %   - wgs2ps.m
 
+%specify polar projection parameters
+if geography == 0
+    SP = 70; SM = -45; %Greenland PS standard parallel & meridian
+elseif geography == 1
+    SP = -71; SM = 0; %Antarctic PS standard parallel & meridian
+end
+
 %create a mat-file containing geoid elevations over the ROI containing your DEMs on a 500 m-resolution grid
-%cd_root_dir = ['cd ',root_dir,region_name]; eval(cd_root_dir);
-SP = -71; SM = 0; %Antarctic Polar Stereo standard parallel & meridian
 if ULlon < 0
     ULlon = 360+ULlon; LRlon = 360+LRlon;
 end

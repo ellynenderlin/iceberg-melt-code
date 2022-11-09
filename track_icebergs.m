@@ -1,8 +1,8 @@
 function [PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,IM2,dir_output)
 % Function to identify the identifiable icebergs in both DEMs and save the 
 % coordinates as .txt files.
-% Ellyn Enderlin & Mariama Dryak
-% Slightly reformatted by Rainey Aberle, Fall 2021
+% Ellyn Enderlin (ellynenderlin@boisestate.edu)
+% Reformatted by Rainey Aberle, Fall 2021
 %
 % INPUTS:   DEM1            structure variable containing earlier DEM info
 %           DEM2            structure variable containing later DEM info

@@ -880,7 +880,7 @@ text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_ysh
 text(max(xlims)-(temp_xshift-(xspan/10)+0.025)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-(xspan/10)+0.02)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
 
-save regional maps
+%save regional maps
 saveas(Tm_mapplot_AP,[figure_path,'AP_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_AP,[figure_path,'AP_iceberg-oceandata-map.png'],'png');
 saveas(Tm_mapplot_TG,[figure_path,'TG_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_TG,[figure_path,'TG_iceberg-oceandata-map.png'],'png');
 saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.png'],'png');

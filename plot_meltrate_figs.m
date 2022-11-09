@@ -317,11 +317,20 @@ for i = [8:1:length(region) 7:-1:1]
             set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
                 'ylim',[0 22],'ytick',[0:10:22],'yticklabel',[0:10:22],'fontsize',16); grid on;
         else
-            set(gca,'xlim',[0 800],'xtick',[0:200:800],'xticklabel',[],...
-                'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'fontsize',16); grid on;
+            if strcmp(cellstr(leg_names(i)),'Thwaites')
+                set(gca,'xlim',[0 800],'xtick',[0:200:800],'xticklabel',[],...
+                    'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'fontsize',16); grid on;
+                figpos = get(gca,'position'); set(gca,'position',[figpos(1) figpos(2)-0.02 figpos(3) figpos(4)]);
+            else
+                set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
+                    'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'fontsize',16); grid on;
+            end
         end
     end
     %add axes labels
+    if plot_loc(i) == 13
+        set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[0:100:400]); grid on;
+    end
     if plot_loc(i) == 14
         legsub = legend(yrpl,num2str(yrs')); set(legsub,'location','southoutside','NumColumns',5,'fontsize',16);
         legpos = get(legsub,'position'); set(legsub,'position',[0.56 0.10 legpos(3) legpos(4)]); clear legpos;

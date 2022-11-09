@@ -1,7 +1,7 @@
-function [DEM1,DEM2] = calculate_DEM_offset(DEM1,DEM2,IM1,IM2,dir_output,dir_TMD,fjord_lon,fjord_lat)
+function [DEM1,DEM2] = calculate_DEM_offset(varargin)
 % Function to vertically co-register iceberg DEMS
-% Ellyn Enderlin & Mariama Dryak 
-% Slightly reformatted by Rainey Aberle, Fall 2021
+% Ellyn Enderlin (ellynenderlin@boisestate.edu)
+% Last edited: 09 Nov. 2022
 % 
 % INPUTS:   DEM1            structure variable containing earlier DEM info
 %           DEM2            structure variable containing later DEM info
@@ -17,8 +17,17 @@ function [DEM1,DEM2] = calculate_DEM_offset(DEM1,DEM2,IM1,IM2,dir_output,dir_TMD
 % OUTPUTS:  DEM1            DEM1 structure variable with new fields
 %           DEM2            DEM2 structure variable with new fields
 %
-% Calls the following external functions:
+% Calls the following external functions if prompted:
 %   - tmd_tide_pred.m
+
+%assign variable names & specify options based on inputs
+DEM1 = varargin{1}; DEM2 = varargin{2};
+IM1 = varargin{3}; IM2 = varargin{4}; 
+dir_output = varargin{5};
+fjord_lon = varargin{6}; fjord_lat = varargin{7};
+if nargin == 8
+    dir_TMD = varargin{8};
+end
 
 %identify over-lapping bedrock regions
 x_overlap = find(DEM2.x > min(DEM1.x) & DEM2.x < max(DEM1.x));
@@ -66,7 +75,6 @@ if isnan(nanmean(z_overlap(z_overlap>0))) || isempty(y_overlap) || isempty(x_ove
     
     % adjust sea level elevations using ice-free fjord elevations
     %Early image
-%     load_image = ['load ',region_abbrev,'_',DEM1.time,'-orthoimage.mat']; eval(load_image);
     disp('Draw a polygon around the ice-free portion of the fjord in each DEM');
     figure1 = figure;
     imagesc(DEM1.x,DEM1.y,DEM1.z_masked); hold on;
@@ -84,7 +92,6 @@ if isnan(nanmean(z_overlap(z_overlap>0))) || isempty(y_overlap) || isempty(x_ove
     clear xv yv; clear IM; 
     %Late image
     disp('Later DEM');
-%     load_image = ['load ',region_abbrev,'_',DEM2.time,'-orthoimage.mat']; eval(load_image);
     figure2 = figure;
     imagesc(DEM2.x,DEM2.y,DEM2.z_masked); hold on;
     colormap(gca,elev_cmap);
@@ -122,15 +129,17 @@ if isnan(nanmean(z_overlap(z_overlap>0))) || isempty(y_overlap) || isempty(x_ove
     fjord.dem_diff.sl_adjust = fjord.dem_diff.median;
     disp(['Sea level offset (sea level adjusted): ',num2str(fjord.dem_diff.median)]);
     
-    % calculate the tidal change between acquistion dates
-    disp('Extract tidal change between acquisition dates');
-    early_time = datenum(DEM1.time,'yyyymmddHHMMSS');
-    late_time = datenum(DEM2.time,'yyyymmddHHMMSS');
-    SD_time = [early_time:(late_time-early_time)/10:late_time];
-    cd([dir_TMD,'DATA/']);
-    [tidal_z,~] = tmd_tide_pred('Model_CATS2008',SD_time,fjord_lat,fjord_lon,'z'); %change in tide at the fjord mouth
-    DEM1.date = SD_time(1); DEM2.date = SD_time(end);
-    fjord.tidal_change = tidal_z(1)-tidal_z(end); %tidal change between image acquisition times
+    % calculate the tidal change between acquistion dates if desired
+    if nargin == 8
+        disp('Extract tidal change between acquisition dates');
+        early_time = datenum(DEM1.time,'yyyymmddHHMMSS');
+        late_time = datenum(DEM2.time,'yyyymmddHHMMSS');
+        SD_time = [early_time:(late_time-early_time)/10:late_time];
+        cd([dir_TMD,'DATA/']);
+        [tidal_z,~] = tmd_tide_pred('Model_CATS2008',SD_time,fjord_lat,fjord_lon,'z'); %change in tide at the fjord mouth
+        DEM1.date = SD_time(1); DEM2.date = SD_time(end);
+        fjord.tidal_change = tidal_z(1)-tidal_z(end); %tidal change between image acquisition times
+    end
     
     %save the fjord offset data
     save([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat'],'fjord');
@@ -146,13 +155,10 @@ if isnan(nanmean(z_overlap(z_overlap>0))) || isempty(y_overlap) || isempty(x_ove
     
     %save the DEMs
     disp('Resaving DEMs with the sea level adjustment info added to their structures');
-    DEM=DEM1; save([dir_output,DEM1.filename,'-DEM.mat'],'DEM','-append');
-    clear DEM; DEM=DEM2; save([dir_output,DEM2.filename,'-DEM.mat'],'DEM','-append');
-    clear DEM
+    DEM=DEM1; save([dir_output,DEM1.filename,'-DEM.mat'],'DEM','-append'); clear DEM; 
+    DEM=DEM2; save([dir_output,DEM2.filename,'-DEM.mat'],'DEM','-append'); clear DEM;
     
 else
-%     load_image = ['load ',region_abbrev,'_',DEM2.time,'-orthoimage.mat']; eval(load_image);
-    
     %find the region of DEM overlap
     minZx = min(DEM1.x); maxZx = max(DEM1.x); minZy = min(DEM1.y); maxZy = max(DEM1.y);
     minYx = min(DEM2.x); maxYx = max(DEM2.x); minYy = min(DEM2.y); maxYy = max(DEM2.y);
@@ -160,8 +166,7 @@ else
     miny = [minZy minYy]; maxy = [maxZy maxYy];
     x_bounds = [max(minx) min(maxx)]; y_bounds = [max(miny) min(maxy)];
     
-    % adjust sea level elevations using bedrock offset & tide change and
-    % ice-free fjord elevayions
+    % adjust sea level elevations using bedrock offset & tide change and ice-free fjord elevations
     figure1 = figure; set(gcf,'position',[50 50 800 800]);
     overlap_elevs = overlap.*DEM2.z_masked; overlap_elevs(isnan(DEM2.z_masked)) = NaN; overlap_elevs(overlap==0) = NaN;
     imagesc(DEM2.x,DEM2.y,overlap_elevs);
@@ -397,29 +402,32 @@ else
         %save the fjord offset data
         save([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat'],'fjord');
         
-        % calculate the tidal change between acquistion dates
-        disp('Extract tidal change between acquisition dates');
-        early_time = datenum(DEM1.time,'yyyymmddHHMMSS');
-        late_time = datenum(DEM2.time,'yyyymmddHHMMSS');
-        SD_time = [early_time:(late_time-early_time)/10:late_time];
-        cd([dir_TMD,'DATA/']);
-        [tidal_z,~] = tmd_tide_pred('Model_CATS2008',SD_time,fjord_lat,fjord_lon,'z'); %change in tide at the fjord mouth
-        DEM1.date = SD_time(1); DEM2.date = SD_time(end);
-        
-        % apply uniform DEM offset to account for tidal change and bedrock offset (coregister DEMs)
-        %for 24062012-29062012 tide = ~1.6 m & bedrock = ~1.9 m
-        fjord.tidal_change = tidal_z(1)-tidal_z(end); %tidal change between image acquisition times
-        if isnan(fjord.tidal_change)
-            fjord.tidal_change = 0;
+        % calculate the sea level adjustment using bedrock to adjust DEM
+        % bias & the tidal model is desired
+        if nargin == 8
+            disp('Extract tidal change between acquisition dates');
+            early_time = datenum(DEM1.time,'yyyymmddHHMMSS');
+            late_time = datenum(DEM2.time,'yyyymmddHHMMSS');
+            SD_time = [early_time:(late_time-early_time)/10:late_time];
+            cd([dir_TMD,'DATA/']);
+            [tidal_z,~] = tmd_tide_pred('Model_CATS2008',SD_time,fjord_lat,fjord_lon,'z'); %change in tide at the fjord mouth
+            DEM1.date = SD_time(1); DEM2.date = SD_time(end);
+            fjord.tidal_change = tidal_z(1)-tidal_z(end); %tidal change between image acquisition times
+            if isnan(fjord.tidal_change)
+                fjord.tidal_change = 0;
+            end
+            
+            %coregister
+            mean_bedrock_offset = (bedrock.reg1.dem_diff.mean+bedrock.reg2.dem_diff.mean)/2;
+            fjord.dem_diff.br_tide_adjust = mean_bedrock_offset + fjord.tidal_change;
+            DEM2.z_masked_br_tide_adjust = DEM2.z_masked + fjord.dem_diff.br_tide_adjust;
+            disp(['Sea level offset (bedrock & tide adjusted): ',num2str(fjord.dem_diff.br_tide_adjust), 'm']);
         end
-        mean_bedrock_offset = (bedrock.reg1.dem_diff.mean+bedrock.reg2.dem_diff.mean)/2;
-        fjord.dem_diff.br_tide_adjust = mean_bedrock_offset + fjord.tidal_change;
-        fjord.dem_diff.sl_adjust = fjord.dem_diff.median;
-        DEM2.z_masked_br_tide_adjust = DEM2.z_masked + fjord.dem_diff.br_tide_adjust;
-        DEM2.z_masked_sl_adjust = DEM2.z_masked + fjord.dem_diff.sl_adjust;
-        close all;
         
-        disp(['Sea level offset (bedrock & tide adjusted): ',num2str(fjord.dem_diff.br_tide_adjust), 'm']);
+        %coregister using the fjord minimum elevations
+        close all;
+        fjord.dem_diff.sl_adjust = fjord.dem_diff.median;
+        DEM2.z_masked_sl_adjust = DEM2.z_masked + fjord.dem_diff.sl_adjust;
         disp(['Sea level offset (sea level adjusted): ',num2str(fjord.dem_diff.sl_adjust), 'm']);
         save([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat'],'fjord');
         
@@ -494,30 +502,33 @@ else
         %save the fjord offset data
         save([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat'],'fjord');
         
-        % calculate the tidal change between acquistion dates
-        disp('Extract tidal change between acquisition dates');
-        early_time = datenum(DEM1.time,'yyyymmddHHMMSS');
-        late_time = datenum(DEM2.time,'yyyymmddHHMMSS');
-        SD_time = [early_time:(late_time-early_time)/10:late_time];
-        cd([dir_TMD,'DATA/']);
-        [tidal_z,~] = tmd_tide_pred('Model_CATS2008',SD_time,fjord_lat,fjord_lon,'z'); %change in tide at the fjord mouth
-        DEM1.date = SD_time(1); DEM2.date = SD_time(end);
-        
-        % apply uniform DEM offset to account for tidal change and bedrock offset (coregister DEMs)
-        %for 24062012-29062012 tide = ~1.6 m & bedrock = ~1.9 m
-        fjord.tidal_change = tidal_z(1)-tidal_z(end); %tidal change between image acquisition times
-        if isnan(fjord.tidal_change)
-            fjord.tidal_change = 0;
+        % calculate the sea level adjustment using bedrock to adjust DEM
+        % bias & the tidal model is desired
+        if nargin == 8
+            disp('Extract tidal change between acquisition dates');
+            early_time = datenum(DEM1.time,'yyyymmddHHMMSS');
+            late_time = datenum(DEM2.time,'yyyymmddHHMMSS');
+            SD_time = [early_time:(late_time-early_time)/10:late_time];
+            cd([dir_TMD,'DATA/']);
+            [tidal_z,~] = tmd_tide_pred('Model_CATS2008',SD_time,fjord_lat,fjord_lon,'z'); %change in tide at the fjord mouth
+            DEM1.date = SD_time(1); DEM2.date = SD_time(end);
+            fjord.tidal_change = tidal_z(1)-tidal_z(end); %tidal change between image acquisition times
+            if isnan(fjord.tidal_change)
+                fjord.tidal_change = 0;
+            end
+            
+            %coregister
+            mean_bedrock_offset = 0; %assume bedrock offset is zero
+            fjord.dem_diff.br_tide_adjust = mean_bedrock_offset + fjord.tidal_change;
+            DEM2.z_masked_br_tide_adjust = DEM2.z_masked + fjord.dem_diff.br_tide_adjust;
+            disp(['Sea level offset (bedrock & tide adjusted): ',num2str(fjord.dem_diff.br_tide_adjust), 'm']);
         end
-        mean_bedrock_offset = 0; %assume bedrock offset is zero
-        fjord.dem_diff.br_tide_adjust = mean_bedrock_offset + fjord.tidal_change;
-        fjord.dem_diff.sl_adjust = fjord.dem_diff.median;
-        DEM2.z_masked_br_tide_adjust = DEM2.z_masked + fjord.dem_diff.br_tide_adjust;
-        DEM2.z_masked_sl_adjust = DEM2.z_masked + fjord.dem_diff.sl_adjust;
-        close all;
         
-        disp(['Sea level offset (bedrock & tide adjusted): ',num2str(fjord.dem_diff.br_tide_adjust)]);
-        disp(['Sea level offset (sea level adjusted): ',num2str(fjord.dem_diff.sl_adjust)]);
+        %coregister using the fjord minimum elevations
+        close all;
+        fjord.dem_diff.sl_adjust = fjord.dem_diff.median;
+        DEM2.z_masked_sl_adjust = DEM2.z_masked + fjord.dem_diff.sl_adjust;
+        disp(['Sea level offset (sea level adjusted): ',num2str(fjord.dem_diff.sl_adjust), 'm']);
         save([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat'],'fjord');
         
     end
