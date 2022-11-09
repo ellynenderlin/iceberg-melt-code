@@ -163,7 +163,7 @@ end
 clear answer;
 
 % estimate iceberg melt rates
-[DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,option_no);
+[DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,geography,region_abbrev,region_name,option_no);
 
 
 %% 5. (As needed) Remove icebergs with unfixable sea level corrections & wonky melt rates

@@ -19,9 +19,9 @@ function [geoid] = extract_geoid_elevs(ULlat,ULlon,LRlat,LRlon,geography,region_
 
 %specify polar projection parameters
 if geography == 0
-    SP = 70; SM = -45; %Greenland PS standard parallel & meridian
+    PSparallel = 70; PSmeridian = -45; %Greenland PS standard parallel & meridian
 elseif geography == 1
-    SP = -71; SM = 0; %Antarctic PS standard parallel & meridian
+    PSparallel = -71; PSmeridian = 0; %Antarctic PS standard parallel & meridian
 end
 
 %create a mat-file containing geoid elevations over the ROI containing your DEMs on a 500 m-resolution grid
@@ -39,7 +39,7 @@ for i = 1:size(ylat,1)
     end
 end
 ylon = ylon-360;
-[psx_grid,psy_grid] = wgs2ps(ylon,ylat,'StandardParallel',SP,'StandardMeridian',SM);
+[psx_grid,psy_grid] = wgs2ps(ylon,ylat,'StandardParallel',PSparallel,'StandardMeridian',PSmeridian);
 
 geoid.x = psx_grid; geoid.y = psy_grid; geoid.z = geoid_z;
 geoid.lon = WGSlon-360; geoid.lat = WGSlat;

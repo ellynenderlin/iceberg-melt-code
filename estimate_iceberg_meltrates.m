@@ -1,6 +1,7 @@
-function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,region_abbrev,region_name,option_no)
+function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,geography,region_abbrev,region_name,option_no)
 % Function to estimate iceberg freshwater fluxes and melt rates
-% Ellyn Enderlin and Rainey Aberle, Fall 2021
+% Ellyn Enderlin (ellynenderlin@boisestate.edu) and Rainey Aberle (raineyaberle@u.boisestate.edu)
+% Last edited: 09 Nov. 2022
 %
 % INPUTS:   DEM1            structure variable containing earlier DEM info
 %           DEM2            structure variable containing later DEM info
@@ -11,6 +12,7 @@ function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,d
 %           dir_output      directory where all output files will be placed
 %           dir_code        directory to the Iceberg-melt-rate code folder
 %                               (including the name of the folder)
+%           geography       binary specification of polar region (0 = Greenland, 1 = Antarctic)
 %           region_abbrev   region abbreviation used in image files
 %           option_no         select which step to execute (1 or 2):
 %                           (1) Estimate elevation change for each iceberg
@@ -23,8 +25,8 @@ function [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,d
 %                               with any new fields
 %
 % Calls the following external functions:
-%   - extract_Antarctic_iceberg_elev_change.m
-%   - convert_Antarctic_iceberg_elev_change_to_meltrates.m
+%   - extract_iceberg_elev_change.m
+%   - convert_iceberg_elev_change_to_meltrates.m
 
 
 % ----------STEP 1: Calculate Elevation Change----------
@@ -51,7 +53,7 @@ if option_no ~= 3
                 %loop
                 for j = iceberg_refs %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
                     if j<10; iceberg_no = ['0',num2str(j)]; else iceberg_no = num2str(j); end
-                    [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
+                    [IB,dz] = extract_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,geography,region_abbrev);
                     clear IB dz;
                 end
             case '2) No'
@@ -60,7 +62,7 @@ if option_no ~= 3
     else
         for j = 1:size(icebergs,1) %size(icebergs,1) %default to loop through all icebergs is j = 1:size(icebergs,1)
             iceberg_no = icebergs(j).name(8:9);
-            [IB,dz] = extract_Antarctic_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,region_abbrev);
+            [IB,dz] = extract_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,geography,region_abbrev);
             clear IB dz;
         end
     end
@@ -81,13 +83,13 @@ if option_no==1 %calculate melt rates for all icebergs
         prompt = 'Do you want/need to redo the conversion to melt rates (y/n)?';
         str = input(prompt,'s');
         if strmatch(str,'y')==1
-            SL = convert_Antarctic_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
+            SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
         else
             disp('reloading meltrate data...');
             load([region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
         end
     else
-        SL = convert_Antarctic_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
+        SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
     end
     
     %plot & export to table
