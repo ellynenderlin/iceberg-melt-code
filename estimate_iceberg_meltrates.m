@@ -83,13 +83,13 @@ if option_no==1 %calculate melt rates for all icebergs
         prompt = 'Do you want/need to redo the conversion to melt rates (y/n)?';
         str = input(prompt,'s');
         if strmatch(str,'y')==1
-            SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
+            SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
         else
             disp('reloading meltrate data...');
             load([region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
         end
     else
-        SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
+        SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock);
     end
     
     %plot & export to table

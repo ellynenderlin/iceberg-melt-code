@@ -1,4 +1,4 @@
-function [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1_date,DEM2_date,IM1,IM2,A,B,S,cmin,cmax,p,DEMo_pos,DEMf_pos,imo_pos,imf_pos)
+function [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1_date,DEM2_date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos)
 % Function to estimate iceberg motion between DEM times
 % Ellyn Enderlin, Mariama Dryak
 % Slightly reformatted by Rainey Aberle, Fall 2021

@@ -6,6 +6,21 @@
 % Run the following codes in order to estimate iceberg melt rates 
 % from digital elevation models.
 %
+% Before trying to use this pipeline, you must have the following
+% independent data downloaded for your region (Greenland or Antarctica):
+% 1) RACMO surface mass balance model ouputs: daily temperature, runoff, &
+% surface mass balance ideally for the full time period (but the code will
+% work, interpolating to fill time gaps, if data available for only part of the time period)
+% NOTE: If focusing on Antarctica, both the 27 km-resolution RACMO outputs
+% for the full continent and the 5.5 km-resolution RACMO outputs for the
+% Antarctic Peninsula can be used together (code auto-selects by coordinates).
+% 2) Polar Stereo EPSG .prj text files: copy proj4 text description of EPSG
+% projection parameters from https://www.spatialreference.org/ 
+% and paste into a plain-text file called EPSG3031.prj for Antarctica or EPSG3413.prg for Greenland
+% 3) (for Antarctica only) Firn Density Model outputs from Ligtenberg et
+% al., 2011 (doi:10.5194/tc-5-809-2011): firn density and air content data
+% produced in conjunction with RACMO datasets necessary for estimation of
+% iceberg density 
 
 %% specify site- and directory-specific information
 

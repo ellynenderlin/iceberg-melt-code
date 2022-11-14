@@ -3,7 +3,7 @@ function [dt,berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extr
 %read the RACMO files & find nearest pixel
 cd([dir_code,'RACMO2.3_Antarctica/']);
 if geography == 0
-    disp('Need to modify to add in Greenland data!');
+    error('Need RACMO data for Greenland!');
 elseif geography == 1
     %check if the data fall within the RACMO AP model domain (preferred
     %over the AIS model b/c the spatial resolutions are 5.5 km & 27 km respectively)
@@ -135,9 +135,7 @@ berg_T = nanmean(squeeze(icetemp(RACMOy,RACMOx,:))); % air temp (Kelvin)
 
 
 %extract firn density estimates if in Antarctica, assume ice in Greenland
-if geography == 0
-    disp('Need to create uniform density profiles for Greenland');
-else
+if geography == 1
     %extract FAC data from the Ligtenberg model output
     cd([dir_code,'FDM_Antarctica/']);
     %FAC = firn air content (H_observed-FAC = H_i)
@@ -260,6 +258,9 @@ else
     density_levels = [700 750 800 830]; density_depths = [firn_density.sevhun firn_density.sevfif firn_density.eighthun firn_density.eightthir];
     %fit a curve to the density-depth profile to estimate the depth of the base of the firn column
     [firn_fit,~] = firndensity_curvefit(density_depths,density_levels,firnair.median); firn_fitci = confint(firn_fit); %empirical, exponential density-depth relation from Schytt (1958) on Cuffey & Paterson p. 19
+    
+else %assume a uniform density for Greenland
+    firnair = 0; firn_density = 900; firn_fit = NaN; firn_fitci = NaN;
 end
 
 

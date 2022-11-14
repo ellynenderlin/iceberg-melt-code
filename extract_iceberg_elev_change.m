@@ -21,13 +21,16 @@ function [IB,dz] = extract_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_
 %   - measure_iceberg_motion.m
 %   - unrotate_untranslate_iceberg.m
 %   - sea_level_adjust.m
+%   - nearestneighbour.m
 
 close all; drawnow;
 %specify polar projection parameters
 if geography == 0
     PSparallel = 70; PSmeridian = -45; %Greenland PS standard parallel & meridian
+    PSprojfile = 'EPSG3413.prj'; %NSIDC Sea Ice Polar Stereographic projection proj4 text description
 elseif geography == 1
     PSparallel = -71; PSmeridian = 0; %Antarctic PS standard parallel & meridian
+    PSprojfile = 'EPSG3031.prj'; %Antarctic Polar Stereographic projection proj4 text description
 end
 disp(['Extracting changes in elevation for iceberg ',iceberg_no]);
 
@@ -53,7 +56,6 @@ date_f = [DEM2.time(1:4),'/',DEM2.time(5:6),'/',DEM2.time(7:8)];
 
 %load the sea level offset file
 fjord = load([dir_output,'fjord_offset_',DEM1.time,'-',DEM2.time,'.mat']).fjord;
-dtide = fjord.tidal_change;
 
 %crop the data domains
 DEM1_dx = abs(DEM1.x(1)-DEM1.x(2)); DEM2_dx = abs(DEM2.x(1)-DEM2.x(2));
@@ -146,78 +148,9 @@ if ~isempty(PScoord_files)
     end  
 else
     disp('No iceberg coordinate files found. Rerun previous step or check directory.');
-%     iceberg_coords = [dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg',num2str(iceberg_no),'_PScoords.txt'];
-%     coords = textscan(fopen(iceberg_coords),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1);
-%     early_lon = sign(coords(1,2)).*(abs(coords(1,2)) + abs(coords(2,2)/60) + abs(coords(3,2)/(60*60)));
-%     late_lon = sign(coords(1,4)).*(abs(coords(1,4)) + abs(coords(2,4)/60) + abs(coords(3,4)/(60*60)));
-%     early_lat = sign(coords(1,1)).*(abs(coords(1,1)) + abs(coords(2,1)/60) + abs(coords(3,1)/(60*60)));
-%     late_lat = sign(coords(1,3)).*(abs(coords(1,3)) + abs(coords(2,3)/60) + abs(coords(3,3)/(60*60)));
-%     [early_x,early_y] = wgs2ps(early_lon,early_lat,'StandardParallel',PSparallel,'StandardMeridian',PSmeridian);
-%     [late_x,late_y] = wgs2ps(late_lon,late_lat,'StandardParallel',PSparallel,'StandardMeridian',PSmeridian);
 end
 
-% %if the iceberg is HUGE, don't crop it down more
-% prompt = 'Is the iceberg more than 1-km across (y/n)?';
-% str = input(prompt,'s');
-% if strmatch(str,'y')==1
-% %     halo1 = round(1000/DEM1_dx); halo2 = round(1000/DEM2_dx);
-%     figure(figureA);
-%     disp('click on the UL & LR corners of a box around the iceberg in the early image');
-%     [a] = ginput(2); %get the UL & LR corner coordinates
-%     xce = nearestneighbour(a(:,1)',IM1.x); yce = nearestneighbour(a(:,2)',IM1.y);
-%     xmine = min(xce); xmaxe = max(xce); ymine = min(yce); ymaxe = max(yce);
-%     xmine(xmine<=1) = 1; xmaxe(xmaxe >= length(IM1.x)) = length(IM1.x);
-%     ymine(ymine<=1) = 1; ymaxe(ymaxe >= length(IM1.y)) = length(IM1.y);
-%     clear a;
-%     figure(figureB);
-%     disp('click on the UL & LR corners of a box around the iceberg in the later image');
-%     [a] = ginput(2); %get the UL & LR corner coordinates
-%     xc = nearestneighbour(a(:,1)',IM2.x); yc = nearestneighbour(a(:,2)',IM2.y);
-%     clear a;
-%     xmin = min(xc); xmax = max(xc); ymin = min(yc); ymax = max(yc);
-%     xmin(xmin<=1) = 1; xmax(xmax >= length(IM2.x)) = length(IM2.x);
-%     ymin(ymin<=1) = 1; ymax(ymax >= length(IM2.y)) = length(IM2.y);
-% else
-%     halo1 = round(500/DEM1_dx); halo2 = round(500/DEM2_dx);
-%     xce = nearestneighbour(early_x,DEM1.x); yce = nearestneighbour(early_y,DEM1.y);
-%     xc = nearestneighbour(late_x,DEM2.x); yc = nearestneighbour(late_y,DEM2.y);
-%     xmine = xce-halo1; xmaxe = xce+halo1; ymine = yce-halo1; ymaxe = yce+halo1;
-%     xmine(xmine<=1) = 1; xmaxe(xmaxe >= length(DEM1.x)) = length(DEM1.x);
-%     ymine(ymine<=1) = 1; ymaxe(ymaxe >= length(DEM1.y)) = length(DEM1.y);
-%     xmin = xc-halo2; xmax = xc+halo2; ymin = yc-halo2; ymax = yc+halo2;
-%     xmin(xmin<=1) = 1; xmax(xmax >= length(DEM2.x)) = length(DEM2.x);
-%     ymin(ymin<=1) = 1; ymax(ymax >= length(DEM2.y)) = length(DEM2.y);
-% end
-% close all; drawnow;
-% 
-% 
-% %crop & plot the panchromatic images
-% xcie = nearestneighbour(early_x,IM1.x); ycie = nearestneighbour(early_y,IM1.y);
-% xminie = xcie-halo1; xmaxie = xcie+halo1; yminie = ycie-halo1; ymaxie = ycie+halo1;
-% xminie(xminie<=1) = 1; xmaxie(xmaxie >= length(IM1.x)) = length(IM1.x);
-% yminie(yminie<=1) = 1; ymaxie(ymaxie >= length(IM1.y)) = length(IM1.y);
-% xci = nearestneighbour(late_x,IM2.x); yci = nearestneighbour(late_y,IM2.y);
-% xmini = xci-halo2; xmaxi = xci+halo2; ymini = yci-halo2; ymaxi = yci+halo2;
-% xmini(xmini<=1) = 1; xmaxi(xmaxi >= length(IM2.x)) = length(IM2.x);
-% ymini(ymini<=1) = 1; ymaxi(ymaxi >= length(IM2.y)) = length(IM2.y);
-% im1.x = IM1.x(1,xminie:xmaxie); im1.y = IM1.y(1,yminie:ymaxie);
-% im2.x = IM2.x(1,xmini:xmaxi); im2.y = IM2.y(1,ymini:ymaxi);
-% im1.z = IM1.z_masked(yminie:ymaxie,xminie:xmaxie);
-% im2.z = IM2.z_masked(ymini:ymaxi,xmini:xmaxi);
-% im1.z_adjust = imadjust(im1.z./max(im1.z(~isnan(im1.z))));
-% im2.z_adjust = imadjust(im2.z./max(im2.z(~isnan(im2.z))));
-% figureA = figure;  set(figureA,'position',imo_pos); %set(figureA,'position',[850 800 800 700]);
-% imagesc(im1.x,im1.y,im1.z_adjust); axis xy equal; colormap gray; hold on;
-% set(gca,'fontsize',14);
-% title(['Early date: ',num2str(datestr(date_o,'yyyy/mm/dd'))],'fontsize',16);
-% figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 50 800 700]);
-% imagesc(im2.x,im2.y,im2.z_adjust); axis xy equal; colormap gray; hold on;
-% set(gca,'fontsize',14);
-% title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16);
-% figure(figureA);
-% clear I1 I2;
-% 
-% %plot the DEMs
+%plot the DEMs
 xmine = nearestneighbour(IM1.x(xminie),DEM1.x); xmaxe = nearestneighbour(IM1.x(xmaxie),DEM1.x);
 ymine = nearestneighbour(IM1.y(yminie),DEM1.y); ymaxe = nearestneighbour(IM1.y(ymaxie),DEM1.y);
 xmine(xmine<=1) = 1; xmaxe(xmaxe >= length(DEM1.x)) = length(DEM1.x);
@@ -300,7 +233,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     S.Name = ['iceberg',iceberg_no];
     shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
     shapewrite(S,shapefile_name);
-    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
+    copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
     clear xm ym;
     figure(figureA);
 %     set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
@@ -318,7 +251,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     SL.Name = ['icefree',iceberg_no];
     shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_icefree',iceberg_no];
     shapewrite(SL,shapefile_name);
-    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',shapefile_name,'.prj']);
+    copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',shapefile_name,'.prj']);
     sl_early.X = SL.X(1:size(SL.X,2)); sl_early.Y = SL.Y(1:size(SL.Y,2)); %truncate last value (NaN)
     clear SL xm ym xmif ymif;
     
@@ -355,7 +288,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     SL.Name = ['icefree',iceberg_no];
     shapefile_name = [region_abbrev,'_',num2str(DEM2.time),'_icefree',iceberg_no];
     shapewrite(SL,shapefile_name);
-    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',shapefile_name,'.prj']);
+    copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',shapefile_name,'.prj']);
     sl_late.X = SL.X(1:size(SL.X,2)); sl_late.Y = SL.Y(1:size(SL.Y,2)); %truncate last value (NaN)
     clear SL xm ym xmif ymif;
     
@@ -378,11 +311,6 @@ else
     figure(figure1);
     plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on;
     drawnow;
-    
-    % %read shape-file for iceberg delineation in the later DEM (if it exists)
-    % iceberg_late_file = [region_abbrev,'_',num2str(DEM2.date),'_iceberg',num2str(iceberg_no),'.shp'];
-    % Sl = shaperead(iceberg_late_file);
-    % Sl.X = Sl.X(1:size(Sl.X,2)-1); Sl.Y = Sl.Y(1:size(Sl.Y,2)-1); %truncate last value (NaN)
     
     %read the shape-file for nearby ice-free pixels in the early DEM
     icefree_early_file = [dir_output,'/',DEM1.time,'-',DEM2.time,'/icefree_rois/',region_abbrev,'_',num2str(DEM1.time),'_icefree',iceberg_no,'.shp'];
@@ -443,7 +371,7 @@ else
         S.X = double(xm'); S.Y = double(ym');
         S.Name = ['iceberg',iceberg_no];
         shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
-        copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
+        copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
         cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
     else
         xmi = nearestneighbour(S.X,DEM1.x); ymi = nearestneighbour(S.Y,DEM1.y);
@@ -489,7 +417,7 @@ if strmatch(str,'y')==1
     S.Name = ['iceberg',iceberg_no];
     shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
     shapewrite(S,shapefile_name);
-    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
+    copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
     cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
 end
 drawnow;
@@ -524,36 +452,38 @@ B.z_elpsd_adjust = DEM2.z_elpsd_adjust(ymin:ymax,xmin:xmax);
 %clear DEM1 & DEM2 structures to speed-up computation time
 %clear DEM1 DEM2;
 
-%load the bedrock offset file (if it exists) & calculate uniform bedrock & tide adjustment
+%estimate fjord offset from regional coregistration
 fjordz_o = fjord.dem1.z(~isnan(fjord.dem1.z)); fjordz_o(fjordz_o>100) = NaN; fjordz_o(fjordz_o<-100) = NaN; 
 fjordz_medo = median(fjord.dem1.z(~isnan(fjord.dem1.z)),'omitnan'); fjordz_mado = mad(fjord.dem1.z(~isnan(fjord.dem1.z)),1);
 fjordz_o(fjordz_o<fjordz_medo-3*(1.4826*fjordz_mado) | fjordz_o>fjordz_medo+3*(1.4826*fjordz_mado)) = NaN;
 fjordz_f = fjord.dem2.z(~isnan(fjord.dem2.z)); fjordz_f(fjordz_f>100) = NaN; fjordz_f(fjordz_f<-100) = NaN; 
 fjordz_medf = median(fjord.dem2.z(~isnan(fjord.dem2.z)),'omitnan'); fjordz_madf = mad(fjord.dem2.z(~isnan(fjord.dem2.z)),1);
 fjordz_f(fjordz_f<fjordz_medf-3*(1.4826*fjordz_madf) | fjordz_f>fjordz_medf+3*(1.4826*fjordz_madf)) = NaN;
-bed_offset_file = dir([dir_output,'bedrock_offset*.mat']);
-if ~isempty(bed_offset_file) %if overlapping bedrock regions were used to adjust DEMs
-    load([dir_output,'bedrock_offset_',num2str(DEM1.time),'-',num2str(DEM2.time),'.mat']);
-    
-    %calculate the median bedrock offset between DEMs
-    reg1_dz = []; reg2_dz = [];
-    for i = 1:size(bedrock.reg1.dem_diff.map,1)
-        for j = 1:size(bedrock.reg1.dem_diff.map,2)
-            reg1_dz(size(reg1_dz,2)+1) = bedrock.reg1.dem_diff.map(i,j);
-        end
-    end
-    for i = 1:size(bedrock.reg2.dem_diff.map,1)
-        for j = 1:size(bedrock.reg2.dem_diff.map,2)
-            reg2_dz(size(reg2_dz,2)+1) = bedrock.reg2.dem_diff.map(i,j);
-        end
-    end
-    bias = nanmedian([reg1_dz(~isnan(reg1_dz)) reg2_dz(~isnan(reg2_dz))]);
-    fjord_offset(1) = nanmedian(min(fjordz_o)) - nanmedian(min(fjordz_f));
-    fjord_offset(2) = bias + dtide;
-    
-else
-    fjord_offset = nanmedian(min(fjordz_o)) - nanmedian(min(fjordz_f));
-end
+fjord_offset = nanmedian(min(fjordz_o)) - nanmedian(min(fjordz_f));
+
+%(not recommended) uncomment below to enable use of bedrock & tide-modelled offset for regional sea level
+%adjustment if tidal model was used & this is desired
+% dtide = fjord.tidal_change;
+% bed_offset_file = dir([dir_output,'bedrock_offset*.mat']);
+% if ~isempty(bed_offset_file) %if overlapping bedrock regions were used to adjust DEMs
+%     load([dir_output,'bedrock_offset_',num2str(DEM1.time),'-',num2str(DEM2.time),'.mat']);
+%     
+%     %calculate the median bedrock offset between DEMs
+%     reg1_dz = []; reg2_dz = [];
+%     for i = 1:size(bedrock.reg1.dem_diff.map,1)
+%         for j = 1:size(bedrock.reg1.dem_diff.map,2)
+%             reg1_dz(size(reg1_dz,2)+1) = bedrock.reg1.dem_diff.map(i,j);
+%         end
+%     end
+%     for i = 1:size(bedrock.reg2.dem_diff.map,1)
+%         for j = 1:size(bedrock.reg2.dem_diff.map,2)
+%             reg2_dz(size(reg2_dz,2)+1) = bedrock.reg2.dem_diff.map(i,j);
+%         end
+%     end
+%     bias = nanmedian([reg1_dz(~isnan(reg1_dz)) reg2_dz(~isnan(reg2_dz))]);
+%     fjord_offset(1) = nanmedian(min(fjordz_o)) - nanmedian(min(fjordz_f));
+%     fjord_offset(2) = bias + dtide;
+% end
 A.z_reg_adjust = A.z_elpsd_adjust - nanmedian(min(fjordz_o)); B.z_reg_adjust = B.z_elpsd_adjust - nanmedian(min(fjordz_f));
 
 %pull max elevation estimate from the iceberg
@@ -573,8 +503,6 @@ if strmatch(ibmask_str,'y')==1
 else
     disp('using regional sea level adjustment for elevation change estimates');
     sl_offset1 = nanmedian(min(fjordz_o)); sl_offset2 = nanmedian(min(fjordz_f));
-%     cmax_early = max(max(A.z_elpsd_adjust)); cmax_late = max(max(B.z_elpsd_adjust));
-%     cmax = max([cmax_early;cmax_late]);
     flag = 1; %note that the adjustment is not reliable
     
     %replot figures with regional elevation adjustments for coregistration
@@ -737,7 +665,7 @@ while p
     end
     
     %determine iceberg translation and rotation between DEM acquisition dates
-    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.date,DEM2.date,IM1,IM2,A,B,S,cmin,cmax,p,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.date,DEM2.date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
     
     %save new vertex coordinates
     disp('Extracting elevation change information from within the iceberg polygon');
@@ -793,14 +721,6 @@ while p
         %find the nearest neighboring elevation from the earlier DEM to difference
         %with the rotated, translated later DEM
         [xgrid,ygrid] = meshgrid(IB(p).xo,IB(p).yo);
-%         for i = 1:size(IB(p).zf.local_adjust.map,1)
-%             for k = 1:size(IB(p).zf.local_adjust.map,2)
-%                 IDX = nearestneighbour(x_rot(i,k),IB(p).xo); IDY = nearestneighbour(y_rot(i,k),IB(p).yo);
-%                 idx(i,k) = IDX; idy(i,k) = IDY;
-%                 IB(p).zo.local_adjust.rotmap(i,k) = IB(p).zo.local_adjust.map(IDY,IDX);
-%                 DEM_diff.local_adjust(i,k) = IB(p).zo.local_adjust.rotmap(i,k) - IB(p).zf.local_adjust.map(i,k);
-%             end
-%         end
         zfreg_rot = griddata(x_rot,y_rot,double(IB(p).zf.reg_adjust.map),xgrid,ygrid);
         zfloc_rot = griddata(x_rot,y_rot,double(IB(p).zf.local_adjust.map),xgrid,ygrid);
         IB(p).zf.reg_adjust.rotmap = zfreg_rot; IB(p).zf.local_adjust.rotmap = zfloc_rot; clear zf*_rot;
@@ -1057,7 +977,7 @@ S.Name = ['iceberg',num2str(iceberg_no)];
 % shapefile_name = [region_abbrev,'_',num2str(DEM2.date),'_iceberg',num2str(iceberg_no)];
 shapefile_name = [region_abbrev,'_',num2str(DEM2.time),'_iceberg',num2str(iceberg_no)];
 shapewrite(S,shapefile_name);
-copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
+copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
 
 %advance to the next iceberg
 disp('Click anywhere on the last histogram figure to advance to the next iceberg...');

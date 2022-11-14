@@ -1,4 +1,4 @@
-function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock)
+function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Fall 2021
 %
@@ -14,10 +14,18 @@ function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_
 %
 % OUTPUTS:  SL 
 
-%set densities: assume steady-state profiles (like the Ligtenberg et al. (2014) paper
-%describing these data), as supported by fairly constant AIS climate over the past ~40 years
+%specify polar projection parameters
+if geography == 0
+    PSparallel = 70; PSmeridian = -45; %Greenland PS standard parallel & meridian
+    PSprojfile = 'EPSG3413.prj'; %NSIDC Sea Ice Polar Stereographic projection proj4 text description
+elseif geography == 1
+    PSparallel = -71; PSmeridian = 0; %Antarctic PS standard parallel & meridian
+    PSprojfile = 'EPSG3031.prj'; %Antarctic Polar Stereographic projection proj4 text description
+end
+
+%set densities (if Antarctica, iceberg densities will differ from rho_i)
 rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
-rho_i = 917; rho_i_err = 10; %kg m^-3 
+rho_i = 900; rho_i_err = 10; %kg m^-3 
 
 coord_files = dir([dir_iceberg,'*PScoords.txt']);
 for j = 1:length(coord_files)
@@ -27,40 +35,31 @@ for j = 1:length(coord_files)
 end
 berg_x = nanmean([PSx_early PSx_late]); berg_y = nanmean([PSy_early PSy_late]);
 berg_dates = [DEM1.time; DEM2.time];
-
-%extract air temp & firn density info from RACMO
-answer = questdlg('Where are you working?',...
-    'Iceberg Location','1) Greenland','2) Antarctica','1) Greenland');
-switch answer
-    case '1) Greenland'
-        geography = 0;
-    case '2) Antarctica'
-        geography = 1;
-end
 to = berg_dates(1,:); tf = berg_dates(2,:);
-[days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
-density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
-%create density profiles
-clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-density_z = [0:1:1000];
-density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
-density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
-density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
-%calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
-wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
-wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
-wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
 
-%save the FAC & density data
-if ~exist([dir_output,'firn_data/'],'dir')
-    mkdir([dir_output,'firn_data/']);
+%extract air temp (& firn density as needed) from model
+density_z = [0:1:1000]; %thickness profile for density curve fitting
+if geography == 1 %surface air temp, runoff, and firn density for Antarctica
+    [days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
+    density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
+    clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
+    density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
+    density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
+    density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
+    %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
+    wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
+    wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
+    wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
+    
+    %save the FAC & density data
+    if ~exist([dir_output,'firn_data/'],'dir')
+        mkdir([dir_output,'firn_data/']);
+    end
+    save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
+    close all; drawnow;
+else %only surface air temp and runoff for Greenland
+    [days,iceberg_avgtemp,surfmelt,~,~,~,~] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
 end
-save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
-close all; drawnow;
-
-%locate the bedrock adjustment file
-bedrock_file = dir([dir_bedrock,'bedrock_offset*.mat']);
-
 
 % %load the saved data if restarting
 % cd(dir_iceberg);
@@ -232,16 +231,6 @@ for i = 1:size(SL,2)
     plot(SL(i).initial.x,SL(i).initial.y,'-k','linewidth',2); hold on; plot(SL(i).initial.x,SL(i).initial.y,'--w','linewidth',2); hold on;
     plot(SL(i).initial.x_perim,SL(i).initial.y_perim,'-w','linewidth',2); hold on; plot(SL(i).initial.x_perim,SL(i).initial.y_perim,'--m','linewidth',2); hold on;
     
-    %flag the iceberg as upright or overturned
-    answer = questdlg('Is the iceberg upright (i.e., does it look like the glacier surface)?',...
-    'Iceberg Upright or Flipped','1) Yes','2) No','1) Yes');
-    switch answer
-        case '1) Yes'
-            SL(i).orientation = 1; SL(i).density_type = 'dry'; %upright
-        case '2) No'
-            SL(i).orientation = 0; SL(i).density_type = 'wet'; %overturned or a fragment of the full thickness
-    end
-    
     %use the mask to extract size & shape info
     disp('Pulling plan-view info');
     for k = 1:size(x,1)-1
@@ -260,26 +249,60 @@ for i = 1:size(SL,2)
     SL(i).initial.radius = perimeter/(2*pi);
     clear iceberg_IMmask;
     
-    %iteratively estimate bulk density
-    disp('estimating density');
-    berg_densities = estimate_iceberg_density(SL(i).orientation,SL(i).initial.z_median,SL(i).initial.z_mad,density_z,density,density_profile,wetdensity_profile);
-    SL(i).initial.density = berg_densities(1); %SL(i).initial.density_uncert = berg_densities_uncert(1);
-    SL(i).initial_range.density = [berg_densities(2) berg_densities(3)];
-    clear berg_densities;
-    
-    %estimate the iceberg depth & submerged area using densities from the Ligtenberg FDM
-    disp('estimating thickness & volume');
-    if SL(i).orientation == 0 %overturned/fragment
-        rho_f = sort([rho_i SL(i).initial.density]); %figure out if bubble-free ice or water-saturated firn has a lower density
-        for l = 1:2
-            draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
-            Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
+    %convert elevations over the iceberg area to a volume
+    if geography == 1 %iteratively converge on best-estimate for density accounting for water saturation as needed
+        %flag the iceberg as upright or overturned
+        answer = questdlg('Is the iceberg upright (i.e., does it look like the glacier surface)?',...
+            'Iceberg Upright or Flipped','1) Yes','2) No','1) Yes');
+        switch answer
+            case '1) Yes'
+                SL(i).orientation = 1; SL(i).density_type = 'dry'; %upright
+            case '2) No'
+                SL(i).orientation = 0; SL(i).density_type = 'wet'; %overturned or a fragment of the full thickness
+        end
+        
+        %iteratively estimate bulk density
+        disp('estimating density');
+        berg_densities = estimate_iceberg_density(SL(i).orientation,SL(i).initial.z_median,SL(i).initial.z_mad,density_z,density,density_profile,wetdensity_profile);
+        SL(i).initial.density = berg_densities(1); %SL(i).initial.density_uncert = berg_densities_uncert(1);
+        SL(i).initial_range.density = [berg_densities(2) berg_densities(3)];
+        clear berg_densities;
+        
+        %estimate the iceberg depth & submerged area using densities from the Ligtenberg FDM
+        disp('estimating thickness & volume');
+        if SL(i).orientation == 0 %overturned/fragment
+            rho_f = sort([rho_i SL(i).initial.density]); %figure out if bubble-free ice or water-saturated firn has a lower density
+            for l = 1:2
+                draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
+                Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
+            end
+        else
+            rho_f = sort(SL(i).initial_range.density); %assume density constrained by model FAC range
+            for l = 1:2
+                draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
+                Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
+            end
         end
     else
-        rho_f = sort(SL(i).initial_range.density); %assume density constrained by model FAC range
+        %flag the iceberg as upright or overturned
+        answer = questdlg('Is the iceberg upright (i.e., does it look like the glacier surface)?',...
+            'Iceberg Upright or Flipped','1) Yes','2) No','1) Yes');
+        switch answer
+            case '1) Yes'
+                SL(i).orientation = 1;
+            case '2) No'
+                SL(i).orientation = 0;
+        end
+        SL(i).density_type = 'N/A'; %no firn to saturate!
+        
+        %add density estimates to structure
+        SL(i).initial.density = rho_i; %SL(i).initial.density_uncert = berg_densities_uncert(1);
+        SL(i).initial_range.density = [rho_i-rho_i_err rho_i+rho_i_err];
+        
+        %estimate draft & thickness range based on density uncertainty
         for l = 1:2
-            draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
-            Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).initial.z_median;
+            draft(l) = (SL(i).initial_range.density(l)/(rho_sw-SL(i).initial_range.density(l)))*SL(i).initial.z_median;
+            Hberg(l) = (rho_sw/(rho_sw-SL(i).initial_range.density(l)))*SL(i).initial.z_median;
         end
     end
     SL(i).initial_range.draft = sort(draft);
@@ -298,7 +321,7 @@ for i = 1:size(SL,2)
     shapefile_name = ['WV_',num2str(to),'_icebergshape',num2str(berg_numbers(i).name(8:9))];
     shapewrite(S,shapefile_name);
     cd_to_site_data = ['cd ',dir_output]; eval(cd_to_site_data);
-    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd_output_dir = ['cd ',dir_output,'/',DEM1.time,'-',DEM2.time,'/']; eval(cd_output_dir);
     clear S;
 
@@ -451,26 +474,39 @@ for i = 1:size(SL,2)
     SL(i).final.radius = perimeter/(2*pi);
     clear iceberg_IMmask;
     
-    %iteratively estimate bulk density
-    disp('estimating density');
-    berg_densities = estimate_iceberg_density(SL(i).orientation,SL(i).final.z_median,SL(i).final.z_mad,density_z,density,density_profile,wetdensity_profile);
-    SL(i).final.density = berg_densities(1); %SL(i).initial.density_uncert = berg_densities_uncert(1);
-    SL(i).final_range.density = [berg_densities(2) berg_densities(3)];
-    clear berg_densities;
-    
-    %estimate the iceberg depth & submerged area using densities from the Ligtenberg FDM
-    disp('Estimating thickness & volume');
-    if SL(i).orientation == 0 %overturned/fragment
-        rho_f = sort([rho_i SL(i).final.density]); %figure out if bubble-free ice or water-saturated firn has a lower density
-        for l = 1:2
-            draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).final.z_median;
-            Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).final.z_median;
+    %convert elevations over the iceberg area to a volume
+    if geography == 1 %iteratively converge on best-estimate for density accounting for water saturation as needed
+        %iteratively estimate bulk density
+        disp('estimating density');
+        berg_densities = estimate_iceberg_density(SL(i).orientation,SL(i).final.z_median,SL(i).final.z_mad,density_z,density,density_profile,wetdensity_profile);
+        SL(i).final.density = berg_densities(1); %SL(i).initial.density_uncert = berg_densities_uncert(1);
+        SL(i).final_range.density = [berg_densities(2) berg_densities(3)];
+        clear berg_densities;
+        
+        %estimate the iceberg depth & submerged area using densities from the Ligtenberg FDM
+        disp('estimating thickness & volume');
+        if SL(i).orientation == 0 %overturned/fragment
+            rho_f = sort([rho_i SL(i).final.density]); %figure out if bubble-free ice or water-saturated firn has a lower density
+            for l = 1:2
+                draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).final.z_median;
+                Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).final.z_median;
+            end
+        else
+            rho_f = sort(SL(i).final_range.density); %assume density constrained by model FAC range
+            for l = 1:2
+                draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).final.z_median;
+                Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).final.z_median;
+            end
         end
     else
-        rho_f = sort(SL(i).final_range.density); %assume density constrained by model FAC range
+        %add density estimates to structure
+        SL(i).final.density = rho_i; %SL(i).initial.density_uncert = berg_densities_uncert(1);
+        SL(i).final_range.density = [rho_i-rho_i_err rho_i+rho_i_err];
+        
+        %estimate draft & thickness range based on density uncertainty
         for l = 1:2
-            draft(l) = (rho_f(l)/(rho_sw-rho_f(l)))*SL(i).final.z_median;
-            Hberg(l) = (rho_sw/(rho_sw-rho_f(l)))*SL(i).final.z_median;
+            draft(l) = (SL(i).final_range.density(l)/(rho_sw-SL(i).final_range.density(l)))*SL(i).final.z_median;
+            Hberg(l) = (rho_sw/(rho_sw-SL(i).final_range.density(l)))*SL(i).final.z_median;
         end
     end
     SL(i).final_range.draft = sort(draft);
@@ -487,7 +523,7 @@ for i = 1:size(SL,2)
     S.Name = ['iceberg',num2str(berg_numbers(i).name(8:9))];
     shapefile_name = ['WV_',num2str(tf),'_icebergshape',num2str(berg_numbers(i).name(8:9))];
     shapewrite(S,shapefile_name);
-    copyfile([dir_code,'antarctic_PSprojection.prj'],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
+    copyfile([dir_code,PSprojfile],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
 
@@ -584,7 +620,7 @@ for i = 1:length(SL)
     
     %%quantify potential bias from systematic errors
     %uncertainty from S1 & S2
-    if SL(i).orientation == 0
+    if strcmp(SL(i).density_type,'wet')
         rho_f = nanmean([SL(i).initial.density SL(i).final.density]);
         rho_f_range = [rho_i SL(i).initial_range.density SL(i).final_range.density];
         rho_f_err = [min(rho_f_range-rho_f) max(rho_f_range-rho_f)];
@@ -640,13 +676,6 @@ for i = 1:length(SL)
     SL(i).mean.dHdt = dHdt_mean; 
     SL(i).range.dHdt(1) = dHdt_mean-3*dHdt_stdev; SL(i).range.dHdt(2) = dHdt_mean+3*dHdt_stdev; 
     SL(i).uncert.dHdt = dHdt_total_err;
-    
-%     %if overlapping bedrock regions were present, add the uniform offset that
-%     %would be applied from bedrock & tidal differences to the structure
-%     if ~isnan(IB(1).dz.br_tide_adjust.mean)
-%         SL(i).elpsd_adjust_o = IB(1).elpsd_adjust_o; SL(i).elpsd_bt_adjust_f = IB(1).elpsd_adjust_f+IB(1).dbedrock_f+IB(1).dtide_f;
-%     end
-    
     
 end
 

@@ -732,7 +732,7 @@ while p
     end
     
     %determine iceberg translation and rotation between DEM acquisition dates
-    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.date,DEM2.date,IM1,IM2,A,B,S,cmin,cmax,p,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.date,DEM2.date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
     
     %save new vertex coordinates
     disp('Extracting elevation change information from within the iceberg polygon');
