@@ -109,7 +109,7 @@ text(-0.75e5,min(ylims),['-180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.
 clear xlims ylims;
 
 %set-up subplots for graphs
-figureB = figure; set(gcf,'position',[50 400 800 600]);
+figureB = figure; set(gcf,'position',[50 400 800 400]);
 sub1b = subplot(1,2,1); sub2b = subplot(1,2,2);
 figureC = figure; set(gcf,'position',[50 50 800 1000]);
 
@@ -456,6 +456,7 @@ set(gca,'xlim',[0 7.0e6],'xtick',[0:1e6:7e6],'xticklabel',[0:1:7],...
 xlabel('Submerged area (km^2)','fontsize',16); ylabel('Meltwater flux (m^3 s^{-1})','fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'a) ','color','k','fontsize',16);
+sub1bpos = get(sub1b,'position'); set(sub1b,'position',[sub1bpos(1) sub1bpos(2)+0.03 sub1bpos(3) sub1bpos(4)]);
 subplot(sub2b);
 leg1 = legend(pl,[{'West Peninsula (WAP)'};{'West Ice Sheet (WAIS)'};{'East Ice Sheet (EAIS)'};{'East Peninsula (EAP)'}]); 
 set(leg1,'location','northeast','fontsize',16,'orientation','vertical'); 
@@ -464,7 +465,7 @@ set(gca,'xlim',[0 850],'xtick',[0:200:850],'xticklabel',[0:200:850],...
 xlabel('Draft (m b.s.l.)','fontsize',16); ylabel('Melt rate (m yr^{-1})','fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'b) ','color','k','fontsize',16);
-set(sub1b,'position',[0.1 0.11 0.38 0.750]); set(sub2b,'position',[0.57 0.11 0.38 0.750]);
+sub2bpos = get(sub2b,'position'); set(sub2b,'position',[sub2bpos(1) sub1bpos(2)+0.03 sub2bpos(3) sub2bpos(4)]);
 saveas(gcf,[figure_path,'Antarctic-iceberg-lumped-plots.eps'],'epsc'); saveas(gcf,[figure_path,'Antarctic-iceberg-lumped-plots.png'],'png');
 
 %save the subplots sorted by study site

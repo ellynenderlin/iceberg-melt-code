@@ -37,8 +37,8 @@ DEM1.time = '20191012101214'; DEM2.time = '20200927092713';
 
 % ----------INITIAL SET-UP----------
 % General DEM filenames (no suffixes) - Ensure filenames match this format
-DEM1.filename = [region_abbrev,'_',DEM1.time];
-DEM2.filename = [region_abbrev,'_',DEM2.time];
+DEM1.filename = [region_abbrev,'_',DEM1.time,'-DEM'];
+DEM2.filename = [region_abbrev,'_',DEM2.time,'-DEM'];
 
 % add paths to necessary functions and datasets
 addpath(dir_repo);
@@ -48,7 +48,7 @@ addpath([dir_TMD,'FUNCTIONS/']);
 addpath([dir_code,'RACMO2.3_Antarctica/']);
 
 %% 1. Convert DEMs & accompanying images to mat-files
-cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
+cd(dir_output);
 
 % create matfiles from geotiffs for the earlier date DEM
 [DEM1,IM1] = convert_ASP_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
@@ -78,7 +78,7 @@ disp('Advance to the next step');
 disp('------------------------');
 
 %% 2. Vertically coregister DEMs to account for satellite uncertainty & tidal change between dates
-cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
+cd(dir_output);
 close all;
 
 % Option to reload MAT files from previous step if previously completed but
@@ -95,7 +95,7 @@ disp('Files loaded');
 [DEM1,DEM2] = coregister_iceberg_DEM_pairs(DEM1,DEM2,IM1,IM2,region_abbrev,dir_TMD,dir_output);
 
 %% 3. Identify and save iceberg coordinates
-cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
+cd(dir_output);
 close all; 
 
 %create a date-specific directory as necessary
@@ -118,7 +118,7 @@ end
 [PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,IM2,dir_output); 
 
 %% 4. Extract elevation change, convert to volume change, then estimate melt rate
-cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
+cd(dir_output);
 close all; 
 
 % Select step to run in estimate_iceberg_meltrates function:
@@ -157,7 +157,7 @@ clear answer;
 
 
 %% 5. (As needed) Remove icebergs with unfixable sea level corrections & wonky melt rates
-cd_to_sitedir = ['cd ',dir_output]; eval(cd_to_sitedir);
+cd(dir_output);
 
 %replace bad melt rate (dHdt) and area (TA) estimates with empty matrices
 disp('Specify the icebergs to remove as "iceberg_refs=[A B C etc]; dbcont"');

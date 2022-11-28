@@ -99,8 +99,8 @@ DEM2.geoid_z = griddata(geoid.x,geoid.y,geoid.z,DEM2.x_grid,DEM2.y_grid);
 DEM1.z_elpsd_adjust = DEM1.z - DEM1.geoid_z; 
 DEM2.z_elpsd_adjust = DEM2.z - DEM2.geoid_z; 
 % resave DEM matfiles with geoid variables
-DEM = DEM1; save([dir_output,DEM1.filename,'-DEM.mat'],'DEM','-v7.3');
-clear DEM; DEM = DEM2; save([dir_output,DEM2.filename,'-DEM.mat'],'DEM','-v7.3');
+DEM = DEM1; save([dir_output,DEM1.filename,'.mat'],'DEM','-v7.3');
+clear DEM; DEM = DEM2; save([dir_output,DEM2.filename,'.mat'],'DEM','-v7.3');
 disp('Resaved DEMs w/ orthometric heights');
 clear DEM geoid;
 

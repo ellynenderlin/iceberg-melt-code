@@ -1,19 +1,26 @@
-function [DEM,IM] = convert_ASP_tifs_to_matfiles(DEM,dir_DEM,dir_output)
-% Function to read the ASP tifs & save as mat-files
-% Ellyn Enderlin & Mariama Dryak 
-% Slightly reformatted by Rainey Aberle, Fall 2021
+function [DEM,IM] = convert_PGC_tifs_to_matfiles(DEM,dir_DEM,dir_output)
+% Function to identify ortho image tifs corresponding to the DEMs produced
+% by quality_check_DEMs.m
+% Ellyn Enderlin (ellynenderlin@boisestate.edu)
+% Fall 2022
 % 
 % INPUTS:   DEM             structure variable containing DEM filename 
-%                           ([region_abbrev]_[image_capture_time]) 
-%                           and image capture time (YYYYMMDDhhssmm)
-%           dir_DEM         directory where DEM .tif files exist
+%                           ([region_abbrev]-[image_capture_time]) 
+%                           and image capture time (YYYYMMDD)
+%           dir_DEM         directory where ortho .tif files exist
 %           dir_output      directory where all output files will be placed
 %
-% OUTPUTS:  DEM             DEM structure variable with new fields
-%           IM              8-bit structure variable of image file
+% OUTPUTS:  IM              8-bit structure variable of image file
+
+%find the geotiffs for the specified date
+datefiles = dir([dir_DEM,'SETSM*',DEM.filename(end-11:end-4),'*.tif']);
 
 %load the DEM
-[A,R] = readgeoraster([dir_DEM,DEM.filename,'.tif']);
+for j = 1:length(datefiles)
+    if contains(datefiles(j).name,'dem')
+        [A,R] = readgeoraster([dir_DEM,datefiles(j).name]);
+    end
+end
 DEM.x = R.XWorldLimits(1)+0.5*R.CellExtentInWorldX:R.CellExtentInWorldX:R.XWorldLimits(2)-0.5*R.CellExtentInWorldX;
 DEM.y = R.YWorldLimits(2)-0.5*R.CellExtentInWorldY:-R.CellExtentInWorldY:R.YWorldLimits(1)+0.5*R.CellExtentInWorldY;
 DEM.z = single(A); DEM.z(DEM.z == -9999) = NaN;
@@ -36,7 +43,12 @@ disp('DEM saved');
 clear A R;
 
 %load the 8-bit image and save as a mat-file
-[A,R] = readgeoraster([dir_DEM,DEM.filename(1:end-3),'orthoimage.tif']); A(A==-9999) = NaN;
+for j = 1:length(datefiles)
+    if contains(datefiles(j).name,'ortho')
+        [A,R] = readgeoraster([dir_DEM,datefiles(j).name]);
+    end
+end
+A(A==-9999) = NaN;
 IM.x = R.XWorldLimits(1)+0.5*R.CellExtentInWorldX:R.CellExtentInWorldX:R.XWorldLimits(2)-0.5*R.CellExtentInWorldX;
 IM.y = R.YWorldLimits(2)-0.5*R.CellExtentInWorldY:-R.CellExtentInWorldY:R.YWorldLimits(1)+0.5*R.CellExtentInWorldY;
 

@@ -155,8 +155,8 @@ if isnan(nanmean(z_overlap(z_overlap>0))) || isempty(y_overlap) || isempty(x_ove
     
     %save the DEMs
     disp('Resaving DEMs with the sea level adjustment info added to their structures');
-    DEM=DEM1; save([dir_output,DEM1.filename,'-DEM.mat'],'DEM','-append'); clear DEM; 
-    DEM=DEM2; save([dir_output,DEM2.filename,'-DEM.mat'],'DEM','-append'); clear DEM;
+    DEM=DEM1; save([dir_output,DEM1.filename,'.mat'],'DEM','-append'); clear DEM; 
+    DEM=DEM2; save([dir_output,DEM2.filename,'.mat'],'DEM','-append'); clear DEM;
     
 else
     %find the region of DEM overlap
@@ -536,8 +536,8 @@ else
     
     %save the DEMs
     disp('Resaving DEMs with the sea level adjustment info added to their structures');
-    DEM=DEM1; save([dir_output,DEM1.filename,'-DEM.mat'],'DEM','-v7.3','-append');
-    clear DEM; DEM=DEM2; save([dir_output,DEM2.filename,'-DEM.mat'],'DEM','-v7.3','-append');
+    DEM=DEM1; save([dir_output,DEM1.filename,'.mat'],'DEM','-v7.3','-append');
+    clear DEM; DEM=DEM2; save([dir_output,DEM2.filename,'.mat'],'DEM','-v7.3','-append');
     clear DEM
     
 end
