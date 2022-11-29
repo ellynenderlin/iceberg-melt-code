@@ -12,12 +12,18 @@ function [DEM,IM] = convert_PGC_tifs_to_matfiles(DEM,dir_DEM,dir_output)
 %
 % OUTPUTS:  IM              8-bit structure variable of image file
 
+%display a few outputs to check code
+disp(['DEM path = ',dir_DEM]);
+disp(['DEM date = ',DEM.filename(end-11:end-4)]);
+
 %find the geotiffs for the specified date
 datefiles = dir([dir_DEM,'SETSM*',DEM.filename(end-11:end-4),'*.tif']);
+disp(['Number of SETSM files for that date: ',num2str(length(datefiles))]);
 
 %load the DEM
 for j = 1:length(datefiles)
     if contains(datefiles(j).name,'dem')
+        disp('loading DEM geotiff');
         [A,R] = readgeoraster([dir_DEM,datefiles(j).name]);
     end
 end
