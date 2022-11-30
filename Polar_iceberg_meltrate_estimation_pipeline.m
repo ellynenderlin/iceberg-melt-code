@@ -102,17 +102,17 @@ end
 %earlier date
 figure(1); set(gcf,'position',[0 200 800 800]);
 ax1 = subplot(2,2,1);
-imagesc(ax1,IM1.x/10^3,IM1.y/10^3,IM1.z); axis xy equal; colormap gray;
+imagesc(ax1,IM1.x/10^3,IM1.y/10^3,IM1.z); axis xy equal; colormap(ax1,'gray');
 ax1.YLabel.String = 'Northing (km)'; ax1.FontSize = 14; title('DEM1');
 ax3 = subplot(2,2,3);
-imagesc(ax3,DEM1.x/10^3,DEM1.y/10^3,DEM1.z); axis xy equal; colormap hot;
+imagesc(ax3,DEM1.x/10^3,DEM1.y/10^3,DEM1.z); axis xy equal; colormap(ax3,'hot');
 ax3.YLabel.String = 'Northing (km)'; ax3.XLabel.String='Easting (km)'; ax3.FontSize = 14;
 %later date
 ax2 = subplot(2,2,2);
-imagesc(ax2,IM2.x./10^3,IM2.y./10^3,IM2.z); axis xy equal; colormap gray;
+imagesc(ax2,IM2.x./10^3,IM2.y./10^3,IM2.z); axis xy equal; colormap(ax2,'gray');
 ax2.YLabel.String = 'Northing (km)'; ax2.FontSize = 14; title('DEM2');
 ax4 = subplot(2,2,4);
-imagesc(ax4, DEM2.x./10^3,DEM2.y./10^3,DEM2.z); axis xy equal; colormap hot;
+imagesc(ax4, DEM2.x./10^3,DEM2.y./10^3,DEM2.z); axis xy equal; colormap(ax4,'hot');
 ax4.YLabel.String = 'Northing (km)'; ax4.XLabel.String='Easting (km)'; ax4.FontSize = 14;
 %colorbar;
 
