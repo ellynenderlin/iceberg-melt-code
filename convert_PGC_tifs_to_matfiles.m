@@ -32,22 +32,26 @@ for j = 1:length(datefiles)
             DEM.z = single(A); DEM.z(DEM.z == -9999) = NaN;
             clear A R;
         else
+            %replace no-data value with NaN
+            A(A == -9999) = NaN;
+            
             %create grids for the DEM mosaic
             [xgrid1,ygrid1] = meshgrid(DEM.x,DEM.y); 
             [xgrid2,ygrid2] = meshgrid(R.XWorldLimits(1)+0.5*R.CellExtentInWorldX:R.CellExtentInWorldX:R.XWorldLimits(2)-0.5*R.CellExtentInWorldX,...
                 R.YWorldLimits(2)-0.5*R.CellExtentInWorldY:-R.CellExtentInWorldY:R.YWorldLimits(1)+0.5*R.CellExtentInWorldY); 
-            demx_lims = [min([DEM.x(1),R.XWorldLimits(1)+0.5*R.CellExtentInWorldX]) max([DEM.x(2),R.XWorldLimits(2)-0.5*R.CellExtentInWorldX])];
-            demy_lims = [min([DEM.y(1),R.YWorldLimits(2)-0.5*R.CellExtentInWorldY]) max([DEM.y(2),R.YWorldLimits(1)+0.5*R.CellExtentInWorldY])];
+            demx_lims = [min([DEM.x(1),R.XWorldLimits(1)+0.5*R.CellExtentInWorldX]) max([DEM.x(end),R.XWorldLimits(2)-0.5*R.CellExtentInWorldX])];
+            demy_lims = [max([DEM.y(1),R.YWorldLimits(2)-0.5*R.CellExtentInWorldY]) min([DEM.y(end),R.YWorldLimits(1)+0.5*R.CellExtentInWorldY])];
             [xgrid_mosaic,ygrid_mosaic] = meshgrid(demx_lims(1):R.CellExtentInWorldX:demx_lims(2),demy_lims(1):-R.CellExtentInWorldY:demy_lims(2));
             
             %create the mosaic
-            dem_mosaic = NaN(size(xgrid));
+            disp('mosaicking DEMs...');
+            dem_mosaic = NaN(size(xgrid_mosaic));
             dem1 = interp2(xgrid1,ygrid1,double(DEM.z),xgrid_mosaic,ygrid_mosaic);
             dem2 = interp2(xgrid2,ygrid2,double(A),xgrid_mosaic,ygrid_mosaic);
             dem_mosaic = mean(cat(3,dem_mosaic,dem1,dem2),3,'omitnan');
             
             %replace original DEM with mosaic
-            clear DEM; 
+            DEM = rmfield(DEM,{'x','y','z'});
             DEM.x = demx_lims(1):R.CellExtentInWorldX:demx_lims(2);
             DEM.y = demy_lims(1):-R.CellExtentInWorldY:demy_lims(2);
             DEM.z = single(dem_mosaic);
@@ -56,8 +60,6 @@ for j = 1:length(datefiles)
         dateref = 1; %flag that there is more than one file for this date
     end
 end
-
-
 
 %create a mask
 data_mask = zeros(size(DEM.z));
@@ -69,7 +71,7 @@ for i = 1:size(DEM.z,1)
     end
     clear startval endval;
 end
-DEM.mask = data_mask; %removed Y.z_masked
+DEM.mask = data_mask;
 
 %save DEM as a mat-file
 save([dir_output,DEM.filename,'.mat'],'DEM','-v7.3'); % re-save the DEM data
@@ -105,18 +107,18 @@ for j = 1:length(datefiles)
             [xgrid1,ygrid1] = meshgrid(IM.x,IM.y);
             [xgrid2,ygrid2] = meshgrid(R.XWorldLimits(1)+0.5*R.CellExtentInWorldX:R.CellExtentInWorldX:R.XWorldLimits(2)-0.5*R.CellExtentInWorldX,...
                 R.YWorldLimits(2)-0.5*R.CellExtentInWorldY:-R.CellExtentInWorldY:R.YWorldLimits(1)+0.5*R.CellExtentInWorldY);
-            imx_lims = [min([IM.x(1),R.XWorldLimits(1)+0.5*R.CellExtentInWorldX]) max([IM.x(2),R.XWorldLimits(2)-0.5*R.CellExtentInWorldX])];
-            imy_lims = [min([IM.y(1),R.YWorldLimits(2)-0.5*R.CellExtentInWorldY]) max([IM.y(2),R.YWorldLimits(1)+0.5*R.CellExtentInWorldY])];
+            imx_lims = [min([IM.x(1),R.XWorldLimits(1)+0.5*R.CellExtentInWorldX]) max([IM.x(end),R.XWorldLimits(2)-0.5*R.CellExtentInWorldX])];
+            imy_lims = [max([IM.y(1),R.YWorldLimits(2)-0.5*R.CellExtentInWorldY]) min([IM.y(end),R.YWorldLimits(1)+0.5*R.CellExtentInWorldY])];
             [xgrid_mosaic,ygrid_mosaic] = meshgrid(imx_lims(1):R.CellExtentInWorldX:imx_lims(2),imy_lims(1):-R.CellExtentInWorldY:imy_lims(2));
             
             %create the mosaic
-            im_mosaic = NaN(size(xgrid));
-            im1 = interp2(xgrid1,ygrid1,double(IM.z),xgrid_mosaic,ygrid_mosaic);
-            im2 = interp2(xgrid2,ygrid2,double(D),xgrid_mosaic,ygrid_mosaic);
+            im_mosaic = NaN(size(xgrid_mosaic));
+            im1 = interp2(xgrid1,ygrid1,double(IM.z),xgrid_mosaic,ygrid_mosaic); im1(im1 ==0) = NaN;
+            im2 = 255*interp2(xgrid2,ygrid2,double(D),xgrid_mosaic,ygrid_mosaic); im2(im2 ==0) = NaN;
             im_mosaic = mean(cat(3,im_mosaic,im1,im2),3,'omitnan');
             
             %replace original DEM with mosaic
-            clear IM;
+            IM = rmfield(IM,{'x','y','z'});
             IM.x = imx_lims(1):R.CellExtentInWorldX:imx_lims(2);
             IM.y = imy_lims(1):-R.CellExtentInWorldY:imy_lims(2);
             IM.z = single(im_mosaic);
@@ -125,7 +127,6 @@ for j = 1:length(datefiles)
         dateref = 1; %flag that there is more than one file for this date
     end
 end
-
 
 %create a mask for the image then infill holes inside data domain
 im_mask = zeros(size(IM.z));
