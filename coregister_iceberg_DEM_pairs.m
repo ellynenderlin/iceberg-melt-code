@@ -30,6 +30,9 @@ geography = varargin{5}; region_abbrev = varargin{6};
 dir_output = varargin{7};
 if nargin == 8
     dir_TMD = varargin{8};
+    tidemodel_flag = 1;
+else
+    tidemodel_flag = 0;
 end
 
 % ----------plot the tidal model map & select the nearest neighboring grid cell----------

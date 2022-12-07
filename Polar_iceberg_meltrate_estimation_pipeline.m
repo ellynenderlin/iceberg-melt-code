@@ -28,17 +28,17 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'Edgeworth-LarsenA'; 
-region_abbrev = 'LA';
+region_name = 'examples'; 
+region_abbrev = 'EX';
 % path to codes
-dir_repo = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code/'; %Github repo containing custom iceberg melt code
+dir_repo = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/'; %Github repo containing custom iceberg melt code
 dir_code = '/Users/ellynenderlin/Research/miscellaneous/general-code/'; %directory containing miscellaneous codes
 % path to DEM files in directory
-dir_DEM = ['/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/',region_name,'/DEMs/'];
+dir_DEM = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/',region_name,'/'];
 % path to outputs folder (where you would like all outputs saved)
-dir_output = ['/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/',region_name,'/'];
+dir_output = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20191012101214'; DEM2.time = '20200927092713';
+DEM1.time = '20210715'; DEM2.time = '20210727';
 
 %----------Specify Region------------
 answer = questdlg('Where are you working?',...
@@ -127,13 +127,19 @@ close all;
 
 % Option to reload MAT files from previous step if previously completed but
 % variables are not in workspace
-reload = input('Would you like to load DEM and IM variables from file (y/n)?','s');
-if strcmp(reload,'y')
-    DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
-    IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
-    DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
-    IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
+answer = questdlg('Would you like to load DEM and IM variables from file?',...
+    'DEM and Image Data Source','1) Yes: load them!','2) No: already in workspace','1) Yes: load them!');
+switch answer
+    case '1) Yes: load them!'
+        DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
+        IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
+        DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
+        IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
+        disp('DEM and IM variables loaded');
+    case '2) No: already in workspace'
+        disp('no need to load!')
 end
+clear answer;
 disp('Files loaded');
 %coregister
 if tidemodel_flag == 0
@@ -154,14 +160,19 @@ end
 
 % Option to reload MAT files from previous step if previously completed but
 % variables are not in workspace
-reload = input('Would you like to load DEM and IM variables from file (y/n)?','s');
-if strcmp(reload,'y')
-    DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
-    IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
-    DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
-    IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
-    disp('files loaded');
+answer = questdlg('Would you like to load DEM and IM variables from file?',...
+    'DEM and Image Data Source','1) Yes: load them!','2) No: already in workspace','1) Yes: load them!');
+switch answer
+    case '1) Yes: load them!'
+        DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
+        IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
+        DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
+        IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
+        disp('DEM and IM variables loaded');
+    case '2) No: already in workspace'
+        disp('no need to load!')
 end
+clear answer;
 
 [PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,IM2,dir_output); 
 
