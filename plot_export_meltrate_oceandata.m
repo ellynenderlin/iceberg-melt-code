@@ -900,9 +900,35 @@ m = []; mmin = []; mmax = [];
 ind = 1;
 
 %loop through the iceberg data, showing info, & exporting to a csv
+disp('printing out stats');
 for j = 1:length(melt)
+%     figure; title(string(melt(j).dispname));
+    %find unique date ranges
     date_pairs = [melt(j).to,melt(j).tf];
     [unique_dates,unique_inds,date_refs] = unique(date_pairs,'rows');
+    
+    %create filters for melt rate vs draft stats
+    %identify outliers as anomalously high values
+    outliers = isoutlier(melt(j).m); 
+    m_filtered = 365*melt(j).m; 
+    filter_ref = find(outliers == 1 & m_filtered > nanmedian(m_filtered)+6*1.4826*mad(m_filtered,1));
+    m_filtered(filter_ref) = NaN;
+    %create geographic filter (for Thwaites & Mertz)
+    region = ones(size(melt(j).m));
+    if strmatch('Thwaites',string(melt(j).dispname))
+        East_daterefs = [1,3,5]; %East_dates = unique_dates(East_daterefs,:)
+        for k = 1:length(East_daterefs); region(date_refs == East_daterefs(k)) = 0; end
+        clear East_date*;
+    elseif strmatch('Mertz',string(melt(j).dispname))
+        East_daterefs = 4; %East_dates = unique_dates(East_daterefs,:)
+        for k = 1:length(East_daterefs); region(date_refs == East_daterefs(k)) = 0; end
+        clear East_date*;
+    end
+%     %plot distributions of meltrate vs draft 
+%     histogram(m_filtered./melt(j).d,'FaceColor','k'); hold on;
+%     histogram(m_filtered(region==1)./melt(j).d(region==1),'FaceColor','w'); hold on;
+    
+    %loop through dates, summarizing data
     for k = 1:max(date_refs)
         to(k,:) = convert_from_decimaldate(melt(j).to(unique_inds(k)));
         tf(k,:) = convert_from_decimaldate(melt(j).tf(unique_inds(k)));
@@ -914,11 +940,14 @@ for j = 1:length(melt)
         meltrate(k,1) = 365*nanmedian(melt(j).m(date_refs == k));
         meltrate_range(k,:) = 365*[min(melt(j).m(date_refs == k)),max(melt(j).m(date_refs == k))];
         %print summary stats to the command window
-        fprintf('%s, %s, %s, %i, (%7.0f:%7.0f), (%7.0f:%7.0f), %4.1f (%4.1f:%4.1f), %3.1f (%3.1f:%3.1f) \n',...
+        fprintf('%s, %s, %s, %i, (%7.0f:%7.0f), (%7.0f:%7.0f), %4.1f (%4.1f:%4.1f), %3.1f (%3.2f:%3.1f) & melt/draft = %4.3f (site median,mad = %4.3f, %4.3f) \n',...
             string(melt(j).dispname),... %site name
             [to(k,1:4),'/',to(k,5:6),'/',to(k,7:8)],[tf(k,1:4),'/',tf(k,5:6),'/',tf(k,7:8)], obs(k),... %dates
             max(x_range(k,:)),min(x_range(k,:)),max(y_range(k,:)),min(y_range(k,:)), draft(k),...
-            min(draft_range(k,:)),max(draft_range(k,:)),meltrate(k),min(meltrate_range(k,:)),max(meltrate_range(k,:)));
+            min(draft_range(k,:)),max(draft_range(k,:)),meltrate(k),min(meltrate_range(k,:)),max(meltrate_range(k,:)),...
+            nanmedian(m_filtered(date_refs == k)./melt(j).d(date_refs == k)),...
+            nanmedian(m_filtered(region==1)./melt(j).d(region==1)),mad(m_filtered(region==1)./melt(j).d(region==1),1));
+%         histogram(m_filtered(date_refs == k)./melt(j).d(date_refs == k)); hold on;
         %add summary stats to variables that will be exported to a csv
         disp_name(ind,1) = melt(j).dispname;
         dateo = [dateo; to(k,1:4),'/',to(k,5:6),'/',to(k,7:8)]; datef = [datef; tf(k,1:4),'/',tf(k,5:6),'/',tf(k,7:8)];
@@ -933,43 +962,41 @@ for j = 1:length(melt)
     end
     
     %advance to the next site
-    clear date_pairs unique_* date_refs;
+    clear date_pairs unique_* date_refs outliers filter_ref m_filtered;
 end
-%save iceberg summary data to a table
-T=table(disp_name, dateo, datef, noobs, xmin, xmax, ymin, ymax, d, dmin, dmax, m, mmin, mmax);
-column_names = ["Site Name", "Early Date", "Late Date", "Iceberg Count",...
-    "X minimum (PS m)", "X maximum (PS m)", "Y minimum (PS m)", "Y maximum (PS m)",...
-    "Draft (m b.s.l.)", "Draft minimum (m b.s.l.)", "Draft maximum (m b.s.l.)",...
-    "Meltrate (m/yr)", "Meltrate minimum (m/yr)", "Meltrate maximum (m/yr)"];
-T.Properties.VariableNames = column_names;
-writetable(T,[figure_path,'/','Antarctic_iceberg_summary-stats.csv']);
-clear T;
-
-%set-up dummy matrices for ocean temp data
-clear disp_name ind; disp_name = {}; 
-ind = 1;
-
-%loop through the ocean data, showing info, & exporting to a csv
-for j = 1:length(melt)
-    if size(melt(j).oceant,1) > 0
-        disp_name(ind,1) = melt(j).dispname;
-        obs_all(ind,1) = size(melt(j).oceant,1);
-        obs_dated(ind,1) = size(melt(j).oceantavg,2);
-        Tmedian(ind,1) = round(nanmedian(melt(j).oceanTavg),1); 
-        Tmin(ind,1) = round(min(melt(j).oceanTavg),1); Tmax(ind,1) = round(max(melt(j).oceanTavg),1);
-        TFmedian(ind,:) = round(nanmedian(melt(j).oceanTavg-melt(j).oceanTfp),1); 
-        TFmin(ind,1) = round(min(melt(j).oceanTavg-melt(j).oceanTfp),1); TFmax(ind,1) = round(max(melt(j).oceanTavg-melt(j).oceanTfp),1);
-        ind = ind + 1;
-    end
-end
-%save iceberg summary data to a table
-T=table(disp_name, obs_all, obs_dated, Tmedian, Tmin, Tmax, TFmedian, TFmin, TFmax);
-column_names = ["Site Name", "Profile Count", "Unique Date Count",...
-    "Temperature (Celsius)", "Temperature minimum (Celsius)", "Temperature maximum (Celsius)",...
-    "Thermal Forcing (Celsius)", "Thermal Forcing minimum (Celsius)", "Thermal Forcing maximum (Celsius)"];
-T.Properties.VariableNames = column_names;
-writetable(T,[figure_path,'/','Antarctic_oceantemp_summary-stats.csv']);
-clear T;
-
-
+% %save iceberg summary data to a table
+% T=table(disp_name, dateo, datef, noobs, xmin, xmax, ymin, ymax, d, dmin, dmax, m, mmin, mmax);
+% column_names = ["Site Name", "Early Date", "Late Date", "Iceberg Count",...
+%     "X minimum (PS m)", "X maximum (PS m)", "Y minimum (PS m)", "Y maximum (PS m)",...
+%     "Draft (m b.s.l.)", "Draft minimum (m b.s.l.)", "Draft maximum (m b.s.l.)",...
+%     "Meltrate (m/yr)", "Meltrate minimum (m/yr)", "Meltrate maximum (m/yr)"];
+% T.Properties.VariableNames = column_names;
+% writetable(T,[figure_path,'/','Antarctic_iceberg_summary-stats.csv']);
+% clear T;
+% 
+% %set-up dummy matrices for ocean temp data
+% clear disp_name ind; disp_name = {}; 
+% ind = 1;
+% 
+% %loop through the ocean data, showing info, & exporting to a csv
+% for j = 1:length(melt)
+%     if size(melt(j).oceant,1) > 0
+%         disp_name(ind,1) = melt(j).dispname;
+%         obs_all(ind,1) = size(melt(j).oceant,1);
+%         obs_dated(ind,1) = size(melt(j).oceantavg,2);
+%         Tmedian(ind,1) = round(nanmedian(melt(j).oceanTavg),1); 
+%         Tmin(ind,1) = round(min(melt(j).oceanTavg),1); Tmax(ind,1) = round(max(melt(j).oceanTavg),1);
+%         TFmedian(ind,:) = round(nanmedian(melt(j).oceanTavg-melt(j).oceanTfp),1); 
+%         TFmin(ind,1) = round(min(melt(j).oceanTavg-melt(j).oceanTfp),1); TFmax(ind,1) = round(max(melt(j).oceanTavg-melt(j).oceanTfp),1);
+%         ind = ind + 1;
+%     end
+% end
+% %save iceberg summary data to a table
+% T=table(disp_name, obs_all, obs_dated, Tmedian, Tmin, Tmax, TFmedian, TFmin, TFmax);
+% column_names = ["Site Name", "Profile Count", "Unique Date Count",...
+%     "Temperature (Celsius)", "Temperature minimum (Celsius)", "Temperature maximum (Celsius)",...
+%     "Thermal Forcing (Celsius)", "Thermal Forcing minimum (Celsius)", "Thermal Forcing maximum (Celsius)"];
+% T.Properties.VariableNames = column_names;
+% writetable(T,[figure_path,'/','Antarctic_oceantemp_summary-stats.csv']);
+% clear T;
 

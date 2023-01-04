@@ -59,16 +59,30 @@ else %assume REMA
 end
 clear A S;
 
+%load IBSCO Southern Ocean Bathymetric Map
+[B,S] = readgeoraster('/Users/ellynenderlin/Research/miscellaneous/Antarctic-IBSCO/IBCSO_v2_bed.tif');
+IBSCO.x = S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
+IBSCO.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
+IBSCO.z = B;
+clear B S;
+[B,~] = readgeoraster('/Users/ellynenderlin/Research/miscellaneous/Antarctic-IBSCO/IBCSO_v2_ice-surface.tif');
+IBSCO.h = B;
+
 close all;
 
 %% set-up plots
 close all; drawnow;
 
-%set-up location maps: (1) alphabetical labeling & (2) site abbreviation labeling
+%set-up location maps: (1) alphabetical labeling for paper & (2) site abbreviation labeling for USAPDC
+disp('Plotting LIMA with IBSCO ocean contours... this may take a few minutes!');
 %(1) alphabetical labeling
 figureA1=figure; set(gcf,'position',[450 50 800 800]);
-im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1];
-imagesc(IM.x,IM.y,IM.z); colormap(gca,im_cmap); hold on; axis xy equal
+im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1]; 
+imagesc(IM.x,IM.y,IM.z); colormap(gca,im_cmap); hold on; axis xy equal; drawnow;
+% %add slightly colored ocean floor contours
+% cont_cmap = colormap(bone); ocean_floor = IBSCO.z; ocean_floor(IBSCO.h>0) = NaN;
+% contour(IBSCO.x,IBSCO.y,ocean_floor,[-2000:200:-200]); hold on; axis xy equal; drawnow;
+%set geographic limits
 xlims = [-26.5e5 27.5e5]; ylims = [-22.5e5 22.5e5];
 set(gca,'xlim',xlims,'xtick',[-30e5:6e5:30e5],'xticklabel',[-3000:600:3000],...
     'ylim',ylims,'ytick',[-24e5:6e5:24e5],'yticklabel',[-2400:600:2400],'fontsize',16); grid off;
@@ -86,6 +100,7 @@ text(0.75e5,min(ylims)+4.25e5,['180',char(176),'E'],'fontsize',16,'color',[0.5 0
 text(min(xlims)+0.5e5,0.75e5,['-90',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',0);
 text(-0.75e5,min(ylims),['-180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',90);
 clear xlims ylims;
+drawnow;
 %(2) site abbreviation labelling (for USAP-DC overview fig)
 figureA2=figure; set(gcf,'position',[450 50 800 800]);
 im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1];
@@ -107,6 +122,7 @@ text(0.75e5,min(ylims)+4.25e5,['180',char(176),'E'],'fontsize',16,'color',[0.5 0
 text(min(xlims)+0.5e5,0.75e5,['-90',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',0);
 text(-0.75e5,min(ylims),['-180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',90);
 clear xlims ylims;
+drawnow;
 
 %set-up subplots for graphs
 figureB = figure; set(gcf,'position',[50 400 800 400]);
@@ -116,7 +132,7 @@ figureC = figure; set(gcf,'position',[50 50 800 1000]);
 %create dummy matrices to fill with meltwater flux & submerged area for E
 %vs W Antarctica in order to fit trendlines to the 2 datasets
 WdVdt = []; WAsub = []; EdVdt = []; EAsub = [];
-disp('Created figure templates');
+disp('Created figure templates, move on to next section');
 
 %% create subplots & add site info to the map
 cd(iceberg_path);
@@ -130,8 +146,10 @@ xcoord_o = []; ycoord_o = [];
 xcoord_f = []; ycoord_f = [];
 
 %plot
+disp('Looping through sites...');
 for i = [8:1:length(region) 7:-1:1]
     cd(char(region(i))); disp_names(i) = {strjoin([cellstr(plot_letters(i)),' ',cellstr(leg_names(i))])};
+    disp(string(leg_names(i)));
     abbrev_legend(i) = {strjoin([cellstr(leg_abbrevs(i)),' (',cellstr(leg_names(i)),')'])};
     meltinfo = dir('*iceberg_meltinfo.csv'); landsats = dir('LC*PS.TIF');
     avgx = []; avgy = []; meltrate_v_draft = [];
@@ -154,6 +172,7 @@ for i = [8:1:length(region) 7:-1:1]
     for j = 1:length(meltinfo)
 %         load_data = ['M=dlmread(''',meltinfo(j).name,''');']; eval(load_data);
         M=readtable(meltinfo(j).name); %table exported using plot_export_iceberg_melt_data.m
+        disp(['date: ',meltinfo(j).name(4:11),'-',meltinfo(j).name(19:26)]);
 %         disp(M.Properties.VariableNames); %uncomment to display table headers prior to array conversion
         M = table2array(M); %convert to array to enable easier indexing
         
@@ -175,6 +194,7 @@ for i = [8:1:length(region) 7:-1:1]
         lat_area = M(:,22) - Asurf; perim = lat_area./draft; clear lat_area; lat_area = perim.*draft; Asub = lat_area + Asurf; clear lat_area perim; %Asub = M(:,22); 
         Asub_uncert = M(:,23); 
         m = dVdt./Asub; %melt rate variable for plotting
+        disp(['average increase in melt rate with draft: ',num2str(round(nanmean(365*m./draft),4)),' m/yr per m depth']);
 
 %         date_o = [date_o; repmat(str2num(meltinfo(j).name(4:11)),size(xo))]; xcoord_o = [xcoord_o; xo]; ycoord_o = [ycoord_o; yo];
 %         date_f = [date_f; repmat(str2num(meltinfo(j).name(13:20)),size(xf))]; xcoord_f = [xcoord_f; xf]; ycoord_f = [ycoord_f; yf];
@@ -248,9 +268,9 @@ for i = [8:1:length(region) 7:-1:1]
         plotpos = get(gca,'position');
         if j == 1
             if mod(plot_loc(i),2) ~= 0
-                set(gca,'position',[plotpos(1)-0.03 plotpos(2)+0.04/(plot_loc(i)+1) 1.1*plotpos(3) 1.1*plotpos(4)]);
+                set(gca,'position',[plotpos(1)-0.03 plotpos(2)+0.04/(plot_loc(i)+1)-0.02 1.1*plotpos(3) 1.1*plotpos(4)]);
             else
-                set(gca,'position',[plotpos(1) plotpos(2)+0.04/(plot_loc(i)) 1.1*plotpos(3) 1.1*plotpos(4)]);
+                set(gca,'position',[plotpos(1) plotpos(2)+0.04/(plot_loc(i))-0.02 1.1*plotpos(3) 1.1*plotpos(4)]);
             end
         end
         clear plotpos;
@@ -314,8 +334,10 @@ for i = [8:1:length(region) 7:-1:1]
             'ylim',[0 9],'ytick',[0:4:9],'yticklabel',[0:4:9],'fontsize',16); grid on;
     else
         if nanmean(avgx) > -2.45e6 && nanmean(avgy) > 1.2e6
+%             set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
+%                 'ylim',[0 22],'ytick',[0:10:22],'yticklabel',[0:10:22],'fontsize',16); grid on;
             set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
-                'ylim',[0 22],'ytick',[0:10:22],'yticklabel',[0:10:22],'fontsize',16); grid on;
+                'ylim',[0 9],'ytick',[0:4:9],'yticklabel',[0:4:9],'fontsize',16); grid on;
         else
             if strcmp(cellstr(leg_names(i)),'Thwaites')
                 set(gca,'xlim',[0 800],'xtick',[0:200:800],'xticklabel',[],...
@@ -333,7 +355,7 @@ for i = [8:1:length(region) 7:-1:1]
     end
     if plot_loc(i) == 14
         legsub = legend(yrpl,num2str(yrs')); set(legsub,'location','southoutside','NumColumns',5,'fontsize',16);
-        legpos = get(legsub,'position'); set(legsub,'position',[0.56 0.10 legpos(3) legpos(4)]); clear legpos;
+        legpos = get(legsub,'position'); set(legsub,'position',[0.56 0.07 legpos(3) legpos(4)]); clear legpos;
         set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[0:100:400]); grid on;
         xlabel('Draft (m b.s.l.)','fontsize',16);
     end
@@ -456,8 +478,8 @@ set(gca,'xlim',[0 7.0e6],'xtick',[0:1e6:7e6],'xticklabel',[0:1:7],...
 xlabel('Submerged area (km^2)','fontsize',16); ylabel('Meltwater flux (m^3 s^{-1})','fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'a) ','color','k','fontsize',16);
-sub1bpos = get(sub1b,'position'); set(sub1b,'position',[sub1bpos(1) sub1bpos(2)+0.03 sub1bpos(3) sub1bpos(4)]);
-subplot(sub2b);
+sub1bpos = get(sub1b,'position'); set(sub1b,'position',[sub1bpos(1)-0.02 sub1bpos(2)+0.03 sub1bpos(3)+0.05 sub1bpos(4)]);
+subplot(sub2b); sub2bpos = get(sub2b,'position'); 
 leg1 = legend(pl,[{'West Peninsula (WAP)'};{'West Ice Sheet (WAIS)'};{'East Ice Sheet (EAIS)'};{'East Peninsula (EAP)'}]); 
 set(leg1,'location','northeast','fontsize',16,'orientation','vertical'); 
 set(gca,'xlim',[0 850],'xtick',[0:200:850],'xticklabel',[0:200:850],...
@@ -465,7 +487,7 @@ set(gca,'xlim',[0 850],'xtick',[0:200:850],'xticklabel',[0:200:850],...
 xlabel('Draft (m b.s.l.)','fontsize',16); ylabel('Melt rate (m yr^{-1})','fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'b) ','color','k','fontsize',16);
-sub2bpos = get(sub2b,'position'); set(sub2b,'position',[sub2bpos(1) sub1bpos(2)+0.03 sub2bpos(3) sub2bpos(4)]);
+set(sub2b,'position',[sub2bpos(1) sub1bpos(2)+0.03 sub2bpos(3)+0.05 sub2bpos(4)]);
 saveas(gcf,[figure_path,'Antarctic-iceberg-lumped-plots.eps'],'epsc'); saveas(gcf,[figure_path,'Antarctic-iceberg-lumped-plots.png'],'png');
 
 %save the subplots sorted by study site
