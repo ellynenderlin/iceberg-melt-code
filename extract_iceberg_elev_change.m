@@ -499,7 +499,7 @@ figure(figure2); set(gca,'clim',[0 cmax]);
 %remove DEM bias using local ice-free regions
 prompt = 'Are there good water/sea ice elevations around the iceberg in both DEMs (y/n)?'; ibmask_str = input(prompt,'s');
 if strmatch(ibmask_str,'y')==1
-    [A,B,sl_offset1,sl_offset2,cmin_early,cmin_late,flag] = sea_level_adjust(DEM1.time,DEM1.date,DEM2.time,DEM2.date,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+    [A,B,sl_offset1,sl_offset2,cmin_early,cmin_late,flag] = sea_level_adjust(DEM1.time,DEM2.time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
 else
     disp('using regional sea level adjustment for elevation change estimates');
     sl_offset1 = nanmedian(min(fjordz_o)); sl_offset2 = nanmedian(min(fjordz_f));
@@ -797,7 +797,7 @@ while p
                     flag = 1;
                 else
                     disp('...then re-extract local sea level elevations from the DEMs');
-                    [A,B,sl_offset1,sl_offset2,~,~,flag] = sea_level_adjust(DEM1.time,DEM1.date,DEM2.time,DEM2.date,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+                    [A,B,sl_offset1,sl_offset2,~,~,flag] = sea_level_adjust(DEM1.time,DEM2.time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
                 end
                 p = 1;
             else

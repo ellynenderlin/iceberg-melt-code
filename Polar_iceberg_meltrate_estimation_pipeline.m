@@ -41,13 +41,16 @@ dir_output = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/
 DEM1.time = '20210715'; DEM2.time = '20210727';
 
 %----------Specify Region------------
+%NOTE: RACMO data are by default in the "dir_code" directory within their
+%own directory, as specified for each geographic region below
 answer = questdlg('Where are you working?',...
     'Iceberg Location','1) Greenland','2) Antarctica','1) Greenland');
 switch answer
     case '1) Greenland'
-        geography = 0;
+        geography = 0; dir_RACMO = [dir_code,'RACMO2.3_Greenland/'];
+%         dir_RACMO = ['/Users/ellynenderlin/Research/miscellaneous/RACMO2.3_Greenland/']; %for Ellyn testing on laptop
     case '2) Antarctica'
-        geography = 1;
+        geography = 1; dir_RACMO = [dir_code,'RACMO2.3_Antarctica/'];
 end
 
 % ----------INITIAL SET-UP----------
@@ -55,7 +58,7 @@ end
 % add paths to necessary functions and datasets
 addpath(dir_repo);
 addpath(dir_code);
-addpath([dir_code,'RACMO2.3_Antarctica/']);
+addpath(RACMO_path);
 
 %decide if you want to estimate fjord surface elevation differences with the TMD tidal model (not recommended)
 tidemodel_flag = 0; %specifies whether you want to attempt to correct sea level using a tidal model: 0 = no (default), 1 = yes

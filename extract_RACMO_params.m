@@ -64,11 +64,11 @@ figure; set(gcf,'position',[100 100 700 700]);
 runoff_cmap = colormap(jet(10001)); runoff_cmap(1,:) = [1 1 1];
 if ~isempty(snowmelt)
     snowmelt_map = max(snowmelt(:,:,270:450),[],3).*86500./1000; snowmelt_map(isnan(snowmelt_map)) = min(snowmelt_map(~isnan(snowmelt_map)))-1;
-    imagesc(snowmelt_map); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); %plot coordinates on average melt from peak summer melt rates in the big 2012 melt season
+    imagesc(snowmelt_map); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); 
     disp(['snowmelt at RACMO pixel = ',num2str(max(snowmelt(RACMOy,RACMOx,270:450)).*86500./1000),' mm w.e.']);
 else
     smb_map = max(smb(:,:,270:450),[],3).*86500./1000; smb_map(isnan(smb_map)) = min(smb_map(~isnan(smb_map)))-1;
-    imagesc(smb_map); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); %plot coordinates on average melt from peak summer melt rates in the big 2012 melt season
+    imagesc(smb_map); colormap(gca,runoff_cmap); hold on; set(gca,'ydir','reverse'); 
     disp(['surface mass balance at RACMO pixel = ',num2str(max(smb(RACMOy,RACMOx,270:450)).*86500./1000),' mm w.e.']);
 end
 set(gca,'clim',[0 0.05]); cbar = colorbar; set(get(cbar,'ylabel'),'string','Runoff (m w.e. per day');
