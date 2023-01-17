@@ -510,13 +510,13 @@ else
     A.z_local_adjust = A.z_elpsd_adjust - sl_offset1;
     imagesc(A.x,A.y,A.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
     cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-    title(['Early date: ',num2str(DEM1.date)],'fontsize',16);
+    title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
     plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; %iceberg ROI
     B.z_local_adjust = B.z_elpsd_adjust - sl_offset2;
     clf(figure2); figure(figure2);
     imagesc(B.x,B.y,B.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
     cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-    title(['Late date: ',num2str(DEM2.date)],'fontsize',16);
+    title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
     
     zmins2 = min(A.z_local_adjust); ymins2 = min(B.z_local_adjust);
     zmins2(zmins2<-100 | zmins2>100) = NaN; ymins2(ymins2<-100 | ymins2>100) = NaN;
@@ -541,7 +541,7 @@ figure1 = figure; set(figure1,'position',DEMo_pos); %set(figure1,'position',[50 
 clear a;
 imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
 cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-title(['Early date: ',num2str(DEM1.date)],'fontsize',16);
+title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
 plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on;
 [a] = ginput(2); %get the UL & LR corner coordinates
 xref = nearestneighbour(a(:,1)',A.x); yref = nearestneighbour(a(:,2)',A.y);
@@ -554,7 +554,7 @@ clear A; A = C; clear C;
 clf(figure1); figure(figure1);
 imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
 cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-title(['Early date: ',num2str(DEM1.date)],'fontsize',16);
+title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
 plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; drawnow;
 drawnow;
 
@@ -564,7 +564,7 @@ figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[850
 clear a xref yref;
 imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
 cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-title(['Late date: ',num2str(DEM2.date)],'fontsize',16);
+title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
 [a] = ginput(2);
 xref = nearestneighbour(a(:,1)',B.x); yref = nearestneighbour(a(:,2)',B.y);
 C.x = B.x(1,min(xref):max(xref)); C.y = B.y(1,min(yref):max(yref));
@@ -576,7 +576,7 @@ clear B; B = C; clear C;
 clf(figure2); figure(figure2);
 imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
 cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-title(['Late date: ',num2str(DEM2.date)],'fontsize',16);
+title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
 drawnow;
 
 %plot contours over the iceberg surface to help with feature ID
@@ -605,7 +605,7 @@ while p
         A.z_local_adjust = anom_z_mask1.*A.z_local_adjust; A.z_local_adjust(anom_z_mask1==0) = NaN;
         imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
         cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-        title(['Early date: ',num2str(DEM1.date)],'fontsize',16);
+        title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
         plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; 
         [cont,conth] = contour(A.x,A.y,A.z_local_adjust,[0:1:round(cmax)]);
         conth.LineColor = 'k';
@@ -634,7 +634,7 @@ while p
         B.z_local_adjust = anom_z_mask2.*B.z_local_adjust; B.z_local_adjust(anom_z_mask2==0) = NaN;
         imagesc(B.x,B.y,B.z_local_adjust); hold on; hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
         cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-        title(['Late date: ',num2str(DEM2.date)],'fontsize',16);
+        title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
         [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
         conth.LineColor = 'k';
         drawnow;
@@ -665,7 +665,7 @@ while p
     end
     
     %determine iceberg translation and rotation between DEM acquisition dates
-    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.date,DEM2.date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.time,DEM2.time,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
     
     %save new vertex coordinates
     disp('Extracting elevation change information from within the iceberg polygon');
@@ -974,7 +974,7 @@ S.BoundingBox = [min(mean_xf) min(mean_yf); max(mean_xf) max(mean_yf)];
 S.X = double(mean_xf);
 S.Y = double(mean_yf);
 S.Name = ['iceberg',num2str(iceberg_no)];
-% shapefile_name = [region_abbrev,'_',num2str(DEM2.date),'_iceberg',num2str(iceberg_no)];
+% shapefile_name = [region_abbrev,'_',num2str(DEM2.time),'_iceberg',num2str(iceberg_no)];
 shapefile_name = [region_abbrev,'_',num2str(DEM2.time),'_iceberg',num2str(iceberg_no)];
 shapewrite(S,shapefile_name);
 copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);

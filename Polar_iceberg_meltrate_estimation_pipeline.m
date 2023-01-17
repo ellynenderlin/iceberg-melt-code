@@ -1,6 +1,6 @@
 %% Polar (Arctic or Antarctic) Iceberg Meltrate Estimation Pipeline
 % Ellyn Enderlin (ellynenderlin@boisestate.edu)
-% Last edited: 09 Nov. 2022
+% Last edited: 17 Jan. 2023
 % 
 % This file serves as a wrapper for the iceberg melt estimation codes.
 % Run the following codes in order to estimate iceberg melt rates 
@@ -23,7 +23,8 @@
 % iceberg density 
 
 %% specify site- and directory-specific information
-
+disp([]);
+disp('Running iceberg melt estimation pipeline...')
 clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
@@ -58,7 +59,7 @@ end
 % add paths to necessary functions and datasets
 addpath(dir_repo);
 addpath(dir_code);
-addpath(RACMO_path);
+addpath(dir_RACMO);
 
 %decide if you want to estimate fjord surface elevation differences with the TMD tidal model (not recommended)
 tidemodel_flag = 0; %specifies whether you want to attempt to correct sea level using a tidal model: 0 = no (default), 1 = yes
@@ -75,29 +76,36 @@ cd(dir_output);
 DEM1.filename = [region_abbrev,'_',DEM1.time,'-DEM'];
 DEM2.filename = [region_abbrev,'_',DEM2.time,'-DEM'];
 
-%handle DEMs differently if they were made in-house with NASA Ames Stereo
-%Pipeline (both DEM and ortho image tifs have file names with the region
-%abbreviation and YYYYMMDD separated by a _) or provided by PGC
-%and checked/filtered/masked with quality_check_DEMs.m (DEM matfile has the
-%region abbreviation and YYYYMMDD separated by a - and the ortho image has
-%a totally different name)
-DEMsource = questdlg('Were the DEMs made in-house or provided by PGC & quality-checked?',...
-    'DEM Source','1) In-House','2) PGC w/ check','1) In-House');
-switch DEMsource
-    case '1) In-House'
-        % create matfiles from geotiffs for the earlier date DEM
-        [DEM1,IM1] = convert_ASP_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
-        
-        % create matfiles from geotiffs for the earlier date DEM
-        [DEM2,IM2] = convert_ASP_tifs_to_matfiles(DEM2,dir_DEM,dir_output);
-        
-    case '2) PGC w/ check'
-        % create matfiles from geotiffs for the earlier date DEM
-        [DEM1,IM1] = convert_PGC_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
-        
-        % create matfiles from geotiffs for the earlier date DEM
-        [DEM2,IM2] = convert_PGC_tifs_to_matfiles(DEM2,dir_DEM,dir_output);
-        
+
+%create matfiles if they do not already exist
+if ~exist([DEM1.filename,'.mat'])
+    %handle DEMs differently if they were made in-house with NASA Ames Stereo
+    %Pipeline (both DEM and ortho image tifs have file names with the region
+    %abbreviation and YYYYMMDD separated by a _) or provided by PGC
+    %and checked/filtered/masked with quality_check_DEMs.m (DEM matfile has the
+    %region abbreviation and YYYYMMDD separated by a - and the ortho image has a totally different name)
+    DEMsource = questdlg('Were the DEMs made in-house or provided by PGC & quality-checked?',...
+        'DEM Source','1) In-House','2) PGC w/ check','1) In-House');
+    switch DEMsource
+        case '1) In-House'
+            % create matfiles from geotiffs for the earlier date DEM
+            [DEM1,IM1] = convert_ASP_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
+            
+            % create matfiles from geotiffs for the earlier date DEM
+            [DEM2,IM2] = convert_ASP_tifs_to_matfiles(DEM2,dir_DEM,dir_output);
+        case '2) PGC w/ check'
+            % create matfiles from geotiffs for the earlier date DEM
+            [DEM1,IM1] = convert_PGC_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
+            
+            % create matfiles from geotiffs for the earlier date DEM
+            [DEM2,IM2] = convert_PGC_tifs_to_matfiles(DEM2,dir_DEM,dir_output); 
+    end
+else
+    DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
+    IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
+    DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
+    IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
+    disp('DEM and IM variables loaded');
 end
 
 
@@ -128,7 +136,7 @@ disp('------------------------');
 cd(dir_output);
 close all;
 
-% Option to reload MAT files from previous step if previously completed but
+% Option to reload matfiles from previous step if previously completed but
 % variables are not in workspace
 answer = questdlg('Would you like to load DEM and IM variables from file?',...
     'DEM and Image Data Source','1) Yes: load them!','2) No: already in workspace','1) Yes: load them!');
@@ -143,12 +151,14 @@ switch answer
         disp('no need to load!')
 end
 clear answer;
-disp('Files loaded');
-%coregister
-if tidemodel_flag == 0
-    [DEM1,DEM2] = coregister_iceberg_DEM_pairs(DEM1,DEM2,IM1,IM2,geography,region_abbrev,dir_output);
-else
-    [DEM1,DEM2] = coregister_iceberg_DEM_pairs(DEM1,DEM2,IM1,IM2,geography,region_abbrev,dir_output,dir_TMD);
+
+%coregister (if not already executed)
+if ~isfield(DEM1,'geoid_z')
+    if tidemodel_flag == 0
+        [DEM1,DEM2] = coregister_iceberg_DEM_pairs(DEM1,DEM2,IM1,IM2,geography,region_abbrev,dir_output);
+    else
+        [DEM1,DEM2] = coregister_iceberg_DEM_pairs(DEM1,DEM2,IM1,IM2,geography,region_abbrev,dir_output,dir_TMD);
+    end
 end
 
 %% 3. Identify and save iceberg coordinates
@@ -161,23 +171,32 @@ if not(isfolder([dir_output,'/',DEM1.time,'-',DEM2.time,'/']))
     disp('date-specific folder created.');
 end
 
-% Option to reload MAT files from previous step if previously completed but
+% Option to reload matfiles from previous step if previously completed but
 % variables are not in workspace
-answer = questdlg('Would you like to load DEM and IM variables from file?',...
-    'DEM and Image Data Source','1) Yes: load them!','2) No: already in workspace','1) Yes: load them!');
+answer = questdlg('Would you like to load DEM and IM variables from file then track icebergs?',...
+    'DEM and Image Data Source','1) Yes: load & track!','2) Just track','3) Neither','1) Yes: load & track!');
 switch answer
-    case '1) Yes: load them!'
+    case '1) Yes: load & track!'
         DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
         IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
         DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
         IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
         disp('DEM and IM variables loaded');
-    case '2) No: already in workspace'
-        disp('no need to load!')
+        
+        %run iceberg tracking code
+        disp('identify icebergs in repeat images')
+        [PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,IM2,dir_output);
+        
+    case '2) Just track'
+        %run iceberg tracking code
+        disp('identify icebergs in repeat images')
+        [PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,IM2,dir_output);
+        
+    case '3) Neither'
+        disp('no need to load or track!')
 end
 clear answer;
 
-[PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,IM2,dir_output); 
 
 %% 4. Extract elevation change, convert to volume change, then estimate melt rate
 cd(dir_output);
@@ -198,24 +217,32 @@ switch answer
 end
 clear answer;
 
-% Option to reload MAT files from previous step if previously completed but
+% Option to reload matfiles from previous step if previously completed but
 % variables are not in workspace
-answer = questdlg('Would you like to load DEM and IM variables from file?',...
-    'DEM and Image Data Source','1) Yes: load them!','2) No: already in workspace','1) Yes: load them!');
+answer = questdlg('Estimate iceberg melt rates?',...
+    'Melt Estimation','1) Load DEMs & images then estimate melt.','2) Data already loaded. Estimate melt.',...
+    '3) Neither. Move on.','1) Load DEMs & images then estimate melt.');
 switch answer
-    case '1) Yes: load them!'
+    case '1) Load DEMs & images then estimate melt.'
         DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
         IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
         DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
         IM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-orthoimage.mat']).IM;
         disp('DEM and IM variables loaded');
-    case '2) No: already in workspace'
-        disp('no need to load!')
+        
+        % estimate iceberg melt rates
+        disp('Running melt estimation codes...');
+        [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,geography,region_abbrev,region_name,option_no);
+        
+    case '2) Data already loaded. Estimate melt.'
+        % estimate iceberg melt rates
+        disp('Running melt estimation codes...');
+        [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,geography,region_abbrev,region_name,option_no);
+        
+    case '3) Neither. Move on.'
+        disp('Skipping melt estimation!')
 end
 clear answer;
-
-% estimate iceberg melt rates
-[DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,geography,region_abbrev,region_name,option_no);
 
 
 %% 5. (As needed) Remove icebergs with unfixable sea level corrections & wonky melt rates
