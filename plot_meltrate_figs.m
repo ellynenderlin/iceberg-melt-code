@@ -69,6 +69,7 @@ clear B S;
 IBSCO.h = B;
 
 close all;
+disp('Ready to create iceberg melt figures');
 
 %% set-up plots
 close all; drawnow;
@@ -286,9 +287,16 @@ for i = [8:1:length(region) 7:-1:1]
         %add data to the site map-view figure
         figure(figureD);
         for k = 1:length(m)
-            symbol_color = ceil(2*(m(k))*365);
-            if symbol_color > length(highmelt_cmap); symbol_color = length(highmelt_cmap); end
-            plot(nanmean([xo(k) xf(k)]),nanmean([yo(k) yf(k)]),[map_marker,'k'],'markerfacecolor',highmelt_cmap(symbol_color,:),'markersize',round(draft(k)/30)+10); hold on;
+            %sort by geography (HARD CODED... NEED TO CHANGE INDICES IF SITES CHANGE)
+            if i <=7 %East
+                symbol_color = ceil(4*(m(k))*365); %4 = saturates at 25 m/yr
+                if symbol_color > length(highmelt_cmap); symbol_color = length(highmelt_cmap); end
+                plot(nanmean([xo(k) xf(k)]),nanmean([yo(k) yf(k)]),[map_marker,'k'],'markerfacecolor',highmelt_cmap(symbol_color,:),'markersize',round(draft(k)/30)+10); hold on;
+            else %West
+                symbol_color = ceil(2*(m(k))*365); %2 = saturates at 50 m/yr
+                if symbol_color > length(highmelt_cmap); symbol_color = length(highmelt_cmap); end
+                plot(nanmean([xo(k) xf(k)]),nanmean([yo(k) yf(k)]),[map_marker,'k'],'markerfacecolor',highmelt_cmap(symbol_color,:),'markersize',round(draft(k)/30)+10); hold on;
+            end
             clear symbol_color;
         end
         
@@ -331,21 +339,21 @@ for i = [8:1:length(region) 7:-1:1]
     figure(figureC);
     if nanmean(avgx) > -1.5e6
         set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
-            'ylim',[0 9],'ytick',[0:4:9],'yticklabel',[0:4:9],'fontsize',16); grid on;
+            'ylim',[0 12],'ytick',[0:5:10],'yticklabel',[0:5:10],'fontsize',16); grid on;
     else
         if nanmean(avgx) > -2.45e6 && nanmean(avgy) > 1.2e6
 %             set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
 %                 'ylim',[0 22],'ytick',[0:10:22],'yticklabel',[0:10:22],'fontsize',16); grid on;
             set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
-                'ylim',[0 9],'ytick',[0:4:9],'yticklabel',[0:4:9],'fontsize',16); grid on;
+                'ylim',[0 12],'ytick',[0:5:10],'yticklabel',[0:5:10],'fontsize',16); grid on;
         else
             if strcmp(cellstr(leg_names(i)),'Thwaites')
                 set(gca,'xlim',[0 800],'xtick',[0:200:800],'xticklabel',[],...
-                    'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'fontsize',16); grid on;
+                    'ylim',[0 72],'ytick',[0:30:60],'yticklabel',[0:30:60],'fontsize',16); grid on;
                 figpos = get(gca,'position'); set(gca,'position',[figpos(1) figpos(2)-0.02 figpos(3) figpos(4)]);
             else
                 set(gca,'xlim',[0 400],'xtick',[0:100:400],'xticklabel',[],...
-                    'ylim',[0 70],'ytick',[0:30:70],'yticklabel',[0:30:70],'fontsize',16); grid on;
+                    'ylim',[0 72],'ytick',[0:30:60],'yticklabel',[0:30:60],'fontsize',16); grid on;
             end
         end
     end
@@ -393,7 +401,7 @@ for i = [8:1:length(region) 7:-1:1]
             plot([min(xlims)+0.60*(max(xlims)-min(xlims)) min(xlims)+0.64*(max(xlims)-min(xlims))],...
                 [min(ylims)+0.945*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)) min(ylims)+0.945*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap))],'-','linewidth',2*((max(ylims)-min(ylims))/(max(xlims)-min(xlims))),'color',highmelt_cmap(k,:));
         end
-        text(min(xlims)+0.65*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'1 m yr^{-1}','fontsize',16);
+        text(min(xlims)+0.65*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'<1 m yr^{-1}','fontsize',16);
         text(min(xlims)+0.65*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.04*(max(ylims)-min(ylims)))),'10 m yr^{-1}','fontsize',16);
         text(min(xlims)+0.65*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
     elseif ~isempty(strmatch('Mertz',char(region(i))))
@@ -407,23 +415,29 @@ for i = [8:1:length(region) 7:-1:1]
             plot([min(xlims)+0.05*(max(xlims)-min(xlims)) min(xlims)+0.09*(max(xlims)-min(xlims))],...
                 [min(ylims)+0.945*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)) min(ylims)+0.945*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap))],'-','linewidth',2*((max(ylims)-min(ylims))/(max(xlims)-min(xlims))),'color',highmelt_cmap(k,:));
         end
-        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'1 m yr^{-1}','fontsize',16);
-        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.04*(max(ylims)-min(ylims)))),'10 m yr^{-1}','fontsize',16);
-        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
+        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'<1 m yr^{-1}','fontsize',16);
+        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.04*(max(ylims)-min(ylims)))),'5 m yr^{-1}','fontsize',16);
+        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.95*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'25 m yr^{-1}','fontsize',16);
     else
-        rectangle('position',[min(xlims)+0.25*(max(xlims)-min(xlims)) min(ylims)+0.020*(max(ylims)-min(ylims)) 0.15*(max(xlims)-min(xlims)) 2800],'curvature',[0,0],'facecolor','w','linewidth',2); %scaling height = 0.175*(max(ylims)-min(ylims))
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,[map_marker,'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,'50 m','fontsize',16); %scaling y-offset = 0.16*(max(ylims)-min(ylims))
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,[map_marker,'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,'150 m','fontsize',16); %scaling y-offset = 0.11*(max(ylims)-min(ylims))
-        plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,[map_marker,'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,'300 m','fontsize',16); %scaling y-offset = 0.05*(max(ylims)-min(ylims))
-        rectangle('position',[min(xlims)+0.025*(max(xlims)-min(xlims)) min(ylims)+0.020*(max(ylims)-min(ylims)) 0.20*(max(xlims)-min(xlims)) 0.255*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
-        %             symbol_color = round(([0.001 0.01 0.1])*1000)+1; symbol_color(symbol_color>length(highmelt_cmap)) = length(highmelt_cmap);
-        for k = 1:length(highmelt_cmap)
-            plot([min(xlims)+0.05*(max(xlims)-min(xlims)) min(xlims)+0.09*(max(xlims)-min(xlims))],...
-                [min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)) min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap))],'-','linewidth',2*((max(ylims)-min(ylims))/(max(xlims)-min(xlims))),'color',highmelt_cmap(k,:));
-        end
-        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'1 m yr^{-1}','fontsize',16);
-        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.04*(max(ylims)-min(ylims)))),'10 m yr^{-1}','fontsize',16);
-        text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
+            rectangle('position',[min(xlims)+0.25*(max(xlims)-min(xlims)) min(ylims)+0.020*(max(ylims)-min(ylims)) 0.15*(max(xlims)-min(xlims)) 2800],'curvature',[0,0],'facecolor','w','linewidth',2); %scaling height = 0.175*(max(ylims)-min(ylims))
+            plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,[map_marker,'k'],'markersize',round(50/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+2260,'50 m','fontsize',16); %scaling y-offset = 0.16*(max(ylims)-min(ylims))
+            plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,[map_marker,'k'],'markersize',round(150/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+1460,'150 m','fontsize',16); %scaling y-offset = 0.11*(max(ylims)-min(ylims))
+            plot(min(xlims)+0.275*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,[map_marker,'k'],'markersize',round(300/30+10),'markerfacecolor','w'); text(min(xlims)+0.30*(max(xlims)-min(xlims)),min(ylims)+0.020*(max(ylims)-min(ylims))+500,'300 m','fontsize',16); %scaling y-offset = 0.05*(max(ylims)-min(ylims))
+            rectangle('position',[min(xlims)+0.025*(max(xlims)-min(xlims)) min(ylims)+0.020*(max(ylims)-min(ylims)) 0.20*(max(xlims)-min(xlims)) 0.255*(max(ylims)-min(ylims))],'curvature',[0,0],'facecolor','w','linewidth',2);
+            %             symbol_color = round(([0.001 0.01 0.1])*1000)+1; symbol_color(symbol_color>length(highmelt_cmap)) = length(highmelt_cmap);
+            for k = 1:length(highmelt_cmap)
+                plot([min(xlims)+0.05*(max(xlims)-min(xlims)) min(xlims)+0.09*(max(xlims)-min(xlims))],...
+                    [min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap)) min(ylims)+0.245*(max(ylims)-min(ylims))-k*((0.20*(max(ylims)-min(ylims)))/length(highmelt_cmap))],'-','linewidth',2*((max(ylims)-min(ylims))/(max(xlims)-min(xlims))),'color',highmelt_cmap(k,:));
+            end
+            if i <= 7 %East
+                text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'<1 m yr^{-1}','fontsize',16);
+                text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.04*(max(ylims)-min(ylims)))),'5 m yr^{-1}','fontsize',16);
+                text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'25 m yr^{-1}','fontsize',16);
+            else %West
+                text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.004*(max(ylims)-min(ylims)))),'<1 m yr^{-1}','fontsize',16);
+                text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.04*(max(ylims)-min(ylims)))),'10 m yr^{-1}','fontsize',16);
+                text(min(xlims)+0.10*(max(xlims)-min(xlims)),min(ylims)+0.25*(max(ylims)-min(ylims))-((0.20*(max(ylims)-min(ylims)))),'50 m yr^{-1}','fontsize',16);
+            end
     end
     clear im;
     saveas(figureD,[figure_path,char(region(i)),'_melt-map.eps'],'epsc'); saveas(figureD,[figure_path,char(region(i)),'_melt-map.png'],'png');
@@ -483,7 +497,7 @@ subplot(sub2b); sub2bpos = get(sub2b,'position');
 leg1 = legend(pl,[{'West Peninsula (WAP)'};{'West Ice Sheet (WAIS)'};{'East Ice Sheet (EAIS)'};{'East Peninsula (EAP)'}]); 
 set(leg1,'location','northeast','fontsize',16,'orientation','vertical'); 
 set(gca,'xlim',[0 850],'xtick',[0:200:850],'xticklabel',[0:200:850],...
-    'ylim',[0 70],'ytick',[0:10:70],'yticklabel',[0:10:70],'fontsize',16); grid on;
+    'ylim',[0 72],'ytick',[0:10:70],'yticklabel',[0:10:70],'fontsize',16); grid on;
 xlabel('Draft (m b.s.l.)','fontsize',16); ylabel('Melt rate (m yr^{-1})','fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 text(0.05*max(xlims),0.95*max(ylims),'b) ','color','k','fontsize',16);

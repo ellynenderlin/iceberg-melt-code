@@ -68,6 +68,22 @@ else %assume REMA
 end
 clear A S;
 
+%specify E & W Thwaites and Mertz date indices to fit separate lines to 
+%each side of the ice tongues
+Thwaites_dates = [melt(strmatch('Thwaites',leg_names)).to melt(strmatch('Thwaites',leg_names)).tf];
+[~,~,Thwaites_inds] = unique(Thwaites_dates,'rows');
+ThwaitesE = [1,3,5]; ThwaitesW = [2,4,6,7]; %date indices
+Thwaites_Erefs = []; Thwaites_Wrefs = [];
+for j = ThwaitesE; Thwaites_Erefs = [Thwaites_Erefs; find(Thwaites_inds==j)]; end
+for j = ThwaitesW; Thwaites_Wrefs = [Thwaites_Wrefs; find(Thwaites_inds==j)]; end
+Mertz_dates = [melt(strmatch('Mertz',leg_names)).to melt(strmatch('Mertz',leg_names)).tf];
+[~,~,Mertz_inds] = unique(Mertz_dates,'rows');
+MertzE = [4]; MertzW = [1,2,3]; %date indices
+Mertz_Erefs = []; Mertz_Wrefs = [];
+for j = MertzE; Mertz_Erefs = [Mertz_Erefs; find(Mertz_inds==j)]; end
+for j = MertzW; Mertz_Wrefs = [Mertz_Wrefs; find(Mertz_inds==j)]; end
+% clear Thwaites_inds ThwaitesE ThwaitesW Mertz_inds MertzE MertzW;
+
 %navigate to the iceberg directory as the default workspace
 cd(iceberg_path);
 close all;
@@ -235,22 +251,65 @@ disp('iceberg and ocean temp depth profiles saved');
 
 %% Plot maps and scatterplots of melt rate and ocean thermal forcing
 close all; drawnow;
-disp('Solving for thermal forcing & plotting figures to show iceberg melt rates vs thermal forcing');
+disp('Plotting figures to show iceberg melt rates vs thermal forcing');
 
-%set-up the scatterplot
-Tm_scatterplot = figure; set(gcf,'position',[850 50 800 400]); 
-%knowing the Thwaites data are comprehensive, plot the trendline for those
-%data in the background
-[f,gof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp,365*melt(strmatch('Thwaites',leg_names)).m,'poly1');
-ci = confint(f,0.95);
-plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10],...
-    feval(f,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10]),...
+%set-up the scatterplots of meltrate vs thermal forcing
+Tm_scatterplot = figure; set(gcf,'position',[850 50 800 500]); %observation-based thermal forcing
+% TmSOSE_scatterplot = figure; set(gcf,'position',[850 550 800 400]); %observation-based thermal forcing
+%knowing the Thwaites data are comprehensive, plot the trendline for those data in the background
+figure(Tm_scatterplot); TF_sub = subplot(1,2,1); TFSOSE_sub = subplot(1,2,2);
+disp('Thwaites melt vs. thermal forcing:');
+%trendlines using observed ocean data
+subplot(TF_sub);
+%Thwaites East
+[TEf,TEgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Erefs),'poly1');
+TEci = confint(TEf,0.95); %disp('Thwaites East'); disp(['observed R^2 = ',num2str(round(TEgof.rsquare,2)),' & RMSE = ',num2str(round(TEgof.rmse,1))]);
+% plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs))*10)/10],...
+%     feval(TEf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs))*10)/10]),...
+%     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
+% fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs))*10)/10,...
+%     fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs))*10)/10])],...
+%     [(TEci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs))*10)/10]+TEci(1,2)),...
+%     (TEci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs))*10)/10])+TEci(2,2))],...
+%     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
+%Thwaites West
+[TWf,TWgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Wrefs),'poly1');
+TWci = confint(TWf,0.95); %disp('Thwaites West'); disp(['observed R^2 = ',num2str(round(TWgof.rsquare,2)),' & RMSE = ',num2str(round(TWgof.rmse,1))]);
+fprintf('Thwaites W iceberg melt vs observed thermal forcing: %i m/yr per degree (R^2 = %3.2f, RMSE = %3.1f) \n',round(TWf.p1),TWgof.rsquare,TWgof.rmse);
+plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10],...
+    feval(TWf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10]),...
     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
-fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10,...
-    fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10])],...
-    [(ci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10]+ci(1,2)),...
-    (ci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg-melt(strmatch('Thwaites',leg_names)).oceanTfp)*10)/10])+ci(2,2))],...
+fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10,...
+    fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10])],...
+    [(TWci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10]+TWci(1,2)),...
+    (TWci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10])+TWci(2,2))],...
     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
+%trendlines using SOSE data
+subplot(TFSOSE_sub);
+newer = find(melt(strmatch('Thwaites',leg_names)).to>=2020);
+%Thwaites East
+[TEf,TEgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs(Thwaites_Erefs < min(newer)))-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs(Thwaites_Erefs < min(newer))),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Erefs(Thwaites_Erefs < min(newer))),'poly1');
+TEci = confint(TEf,0.95); %disp('Thwaites East'); disp(['modeled R^2 = ',num2str(round(TEgof.rsquare,2)),' & RMSE = ',num2str(round(TEgof.rmse,1))]);
+% plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10],...
+%     feval(TEf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10]),...
+%     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
+% fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10,...
+%     fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10])],...
+%     [(TEci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10]+TEci(1,2)),...
+%     (TEci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10])+TEci(2,2))],...
+%     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
+%Thwaites West
+[TWf,TWgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs(Thwaites_Wrefs < min(newer)))-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs(Thwaites_Wrefs < min(newer))),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Wrefs(Thwaites_Wrefs < min(newer))),'poly1');
+TWci = confint(TWf,0.95); %disp('Thwaites West'); disp(['modeled R^2 = ',num2str(round(TWgof.rsquare,2)),' & RMSE = ',num2str(round(TWgof.rmse,1))]);
+% plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10],...
+%     feval(TWf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10]),...
+%     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
+% fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10,...
+%     fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10])],...
+%     [(TWci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10]+TWci(1,2)),...
+%     (TWci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10])+TWci(2,2))],...
+%     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
+clear newer;
 
 %set-up full Antarctic map
 Tm_mapplot = figure; set(gcf,'position',[50 50 800 800]);
@@ -517,7 +576,7 @@ for i = 1:length(melt)
         %         end
         %         sitex = [sitex; unique_coords(sum(temp_map,2)~=3,1)]; sitey = [sitey; unique_coords(sum(temp_map,2)~=3,2)]; 
         %         scatter(unique_coords(sum(temp_map,2)~=3,1),unique_coords(sum(temp_map,2)~=3,2),16,temp_map((sum(temp_map,2)~=3),:),'filled','o'); hold on;
-        %MEDIAN THERMAL FORCING OVER MAXIMUM ICEBERG DRAFT
+        %MEDIAN THERMAL FORCING OVER MAXIMUM ICEBERG DRAFT FOR MAP VISUALIZATION ONLY
         for k = 1:size(melt(i).oceanT,2)
             %calculate the average temperature for the profile
             if 0.9*max(melt(i).oceand(~isnan(melt(i).oceanT(:,k)),k)) > melt(i).d(max_ind) & min(melt(i).oceand(~isnan(melt(i).oceanT(:,k)),k)) < 50
@@ -569,7 +628,7 @@ for i = 1:length(melt)
         drawnow; clear temp_map;
         
         
-        %create an individual plot of temp vs meltrate for the study site
+        %create an individual plot of thermal forcing vs meltrate for the study site
         site_scatter = figure; set(gcf,'position',[850 650 800 400]);
         scatter(melt(i).oceanTavg-melt(i).oceanTfp,100*melt(i).m,2*draft_size,region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
         set(gca,'fontsize',16); grid on;
@@ -581,8 +640,8 @@ for i = 1:length(melt)
         end
         close(site_scatter); clear gof;
         
-        %add temp vs meltrate data to composite scatterplot
-        figure(Tm_scatterplot);
+        %add observation-based thermal forcing vs meltrate data to composite scatterplot
+        figure(Tm_scatterplot); subplot(TF_sub)
         if ~isempty(strmatch('Edgeworth',char(leg_names(i)))) %only create a handle for one study site from each region (EAP,EAIS,WAIS,WAP)
             sp(1) = scatter(melt(i).oceanTavg-melt(i).oceanTfp,365*melt(i).m,draft_size,region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
         elseif ~isempty(strmatch('Mertz',char(leg_names(i))))
@@ -620,7 +679,23 @@ for i = 1:length(melt)
         scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         drawnow;
     end
-    clear draft_size;
+
+    %add SOSE modeled-thermal forcing vs meltrate to scatterplot
+%     figure(TmSOSE_scatterplot);
+    older = find(melt(i).to<2023);
+    figure(Tm_scatterplot); subplot(TFSOSE_sub);
+    if ~isempty(strmatch('Edgeworth',char(leg_names(i)))) %only create a handle for one study site from each region (EAP,EAIS,WAIS,WAP)
+        spS(1) = scatter(melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older),365*melt(i).m(older),draft_size(older),region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
+    elseif ~isempty(strmatch('Mertz',char(leg_names(i))))
+        spS(2) = scatter(melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older),365*melt(i).m(older),draft_size(older),region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
+    elseif ~isempty(strmatch('Thwaites',char(leg_names(i))))
+        spS(3) = scatter(melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older),365*melt(i).m(older),draft_size(older),region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
+    elseif ~isempty(strmatch('Cadman',char(leg_names(i))))
+        spS(4) = scatter(melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older),365*melt(i).m(older),draft_size(older),region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
+    else
+        scatter(melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older),365*melt(i).m(older),draft_size(older),region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
+    end
+    clear draft_size; clear older;
     
     %add data to the overview map
     figure(Tm_mapplot);
@@ -682,8 +757,10 @@ saveas(Tm_mapplot,[figure_path,'Antarctic-iceberg-oceandata-map.eps'],'epsc'); s
 
 
 %label the scatterplot & save
-figure(Tm_scatterplot);
+figure(Tm_scatterplot); subplot(TF_sub);
 set(gca,'fontsize',16); grid on;
+set(gca,'xlim',[-0.25 2.25],'ylim',[0 70]); text(2.1,67.5,'a)','fontsize',16);
+set(TF_sub,'position',[0.11 0.11 0.40 0.8150]);
 %uncomment next 4 lines if you use the plot function to specify symbol colors as a function of draft
 % for k = 1:length(depth_cmap)
 %     plot([0.1 0.25],[47.5-(k/100) 47.5-(k/100)],'-','color',depth_cmap(k,:)); hold on;
@@ -691,17 +768,64 @@ set(gca,'fontsize',16); grid on;
 % text(0.275,47,'0 m','fontsize',16); text(0.275,45,'200 m','fontsize',16); text(0.275,39.5,'750 m','fontsize',16);
 %next 9 lines should be used if scatterplot function specifies symbol colors as a function of region & symbol size as a function of draft
 ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
-rectangle('position',[0.425 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.3 0.05*((depth_cutoff-50)/150*1.05)*(range(ylims))],'facecolor','w','edgecolor','k');
+rectangle('position',[0.45 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.525 0.05*((depth_cutoff-50)/150*1.075)*(range(ylims))],'facecolor','w','edgecolor','k');
 for j = 1:1:(depth_cutoff-50)/150
     draft_size(j) = round((50+((j-1)*150))*draft_mult)+draft_add;
-    yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.01*(range(ylims));
-    text(0.525,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
+    yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.005*(range(ylims));
+    text(0.6,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
 end
-scatter(repmat(0.475,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
+scatter(repmat(0.525,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
 sp_leg = legend(sp,'EAP','EAIS','WAIS','WAP'); set(sp_leg,'location','northwest');
-xlabel(['Thermal forcing (',char(176),'C above freezing)'],'fontsize',16); ylabel('Melt rate (m/yr)','fontsize',16);
-saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
+xlabel(['Observed thermal forcing (',char(176),'C)'],'fontsize',16); ylabel('Melt rate (m/yr)','fontsize',16);
+% saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
 clear ylims yloc draft_size;
+%label and save the SOSE thermal forcing scatterplot
+% figure(TmSOSE_scatterplot); 
+subplot(TFSOSE_sub);
+set(gca,'fontsize',16,'box','on'); grid on;
+set(gca,'xlim',[-0.25 2.25],'ylim',[0 70],'yticklabel',[]); text(2.1,67.5,'b)','fontsize',16);
+set(TFSOSE_sub,'position',[0.54 0.11 0.40 0.8150]);
+% plot ellipses to bound the data
+t = linspace(0, 360,1001);
+%steeper relationship
+xAmplitude = 0.4; yAmplitude = 32; xCenter = 0.15; yCenter = yAmplitude; rotationAngle = -0.6; 
+xOriginal = xAmplitude * sind(t) + xCenter; yOriginal = yAmplitude * cosd(t) + yCenter;
+transformMatrix = [cosd(rotationAngle), sind(rotationAngle);...
+  -sind(rotationAngle), cosd(rotationAngle)];
+xyAligned = [xOriginal; yOriginal]'; xyRotated = xyAligned * transformMatrix;
+xRotated = xyRotated(:, 1); yRotated = xyRotated(:, 2);
+%calculate end points of a line fit to the long axis
+xyline = [xOriginal(1),yOriginal(1);xOriginal(501),yOriginal(501)];
+xylineRotated = xyline * transformMatrix;
+steep_slope = (xylineRotated(1,2) - xylineRotated(2,2))./(xylineRotated(1,1) - xylineRotated(2,1));
+fprintf('Approx. increase in melt rate with thermal forcing: %i m/yr per degree C \n',round(steep_slope));
+plot(xRotated, yRotated, 'k-.', 'LineWidth', 2,'color',[0.5 0.5 0.5]);
+%gradual relationship
+xAmplitude = 0.65; yAmplitude = 16; xCenter = 0.70; yCenter = yAmplitude; rotationAngle = -2.25; 
+xOriginal = xAmplitude * sind(t) + xCenter; yOriginal = yAmplitude * cosd(t) + yCenter;
+transformMatrix = [cosd(rotationAngle), sind(rotationAngle);...
+  -sind(rotationAngle), cosd(rotationAngle)];
+xyAligned = [xOriginal; yOriginal]'; xyRotated = xyAligned * transformMatrix;
+xRotated = xyRotated(:, 1); yRotated = xyRotated(:, 2);
+%calculate end points of a line fit to the long axis
+xyline = [xOriginal(1),yOriginal(1);xOriginal(501),yOriginal(501)];
+xylineRotated = xyline * transformMatrix;
+shallow_slope = (xylineRotated(1,2) - xylineRotated(2,2))./(xylineRotated(1,1) - xylineRotated(2,1));
+fprintf('Approx. increase in melt rate with thermal forcing: %i m/yr per degree C \n',round(shallow_slope));
+plot(xRotated, yRotated, 'k--', 'LineWidth', 2,'color',[0.5 0.5 0.5]);
+% ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
+% rectangle('position',[0.175 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.3 0.05*((depth_cutoff-50)/150*1.05)*(range(ylims))],'facecolor','w','edgecolor','k');
+% for j = 1:1:(depth_cutoff-50)/150
+%     draft_size(j) = round((50+((j-1)*150))*draft_mult)+draft_add;
+%     yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.01*(range(ylims));
+%     text(0.275,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
+% end
+% scatter(repmat(0.225,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
+% spS_leg = legend(spS,'EAP','EAIS','WAIS','WAP'); set(spS_leg,'location','northwest');
+xlabel(['Modeled thermal forcing (',char(176),'C)'],'fontsize',16); %ylabel('Melt rate (m/yr)','fontsize',16);
+% saveas(TmSOSE_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-SOSEtemp-depth-scatterplots.eps'],'epsc'); saveas(TmSOSE_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-SOSEtemp-depth-scatterplots.png'],'png');
+clear ylims yloc draft_size;
+saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
 
 %add legends to regional maps
 %AP
@@ -887,6 +1011,7 @@ saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.eps'],'epsc'); savea
 saveas(Tm_mapplot_TI,[figure_path,'TI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_TI,[figure_path,'TI_iceberg-oceandata-map.png'],'png');
 saveas(Tm_mapplot_FI,[figure_path,'FI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_FI,[figure_path,'FI_iceberg-oceandata-map.png'],'png');
 
+disp('plots completed!');
 
 %% export summary data on iceberg melt rates & ocean observations to tables
 
@@ -964,39 +1089,39 @@ for j = 1:length(melt)
     %advance to the next site
     clear date_pairs unique_* date_refs outliers filter_ref m_filtered;
 end
-% %save iceberg summary data to a table
-% T=table(disp_name, dateo, datef, noobs, xmin, xmax, ymin, ymax, d, dmin, dmax, m, mmin, mmax);
-% column_names = ["Site Name", "Early Date", "Late Date", "Iceberg Count",...
-%     "X minimum (PS m)", "X maximum (PS m)", "Y minimum (PS m)", "Y maximum (PS m)",...
-%     "Draft (m b.s.l.)", "Draft minimum (m b.s.l.)", "Draft maximum (m b.s.l.)",...
-%     "Meltrate (m/yr)", "Meltrate minimum (m/yr)", "Meltrate maximum (m/yr)"];
-% T.Properties.VariableNames = column_names;
-% writetable(T,[figure_path,'/','Antarctic_iceberg_summary-stats.csv']);
-% clear T;
-% 
-% %set-up dummy matrices for ocean temp data
-% clear disp_name ind; disp_name = {}; 
-% ind = 1;
-% 
-% %loop through the ocean data, showing info, & exporting to a csv
-% for j = 1:length(melt)
-%     if size(melt(j).oceant,1) > 0
-%         disp_name(ind,1) = melt(j).dispname;
-%         obs_all(ind,1) = size(melt(j).oceant,1);
-%         obs_dated(ind,1) = size(melt(j).oceantavg,2);
-%         Tmedian(ind,1) = round(nanmedian(melt(j).oceanTavg),1); 
-%         Tmin(ind,1) = round(min(melt(j).oceanTavg),1); Tmax(ind,1) = round(max(melt(j).oceanTavg),1);
-%         TFmedian(ind,:) = round(nanmedian(melt(j).oceanTavg-melt(j).oceanTfp),1); 
-%         TFmin(ind,1) = round(min(melt(j).oceanTavg-melt(j).oceanTfp),1); TFmax(ind,1) = round(max(melt(j).oceanTavg-melt(j).oceanTfp),1);
-%         ind = ind + 1;
-%     end
-% end
-% %save iceberg summary data to a table
-% T=table(disp_name, obs_all, obs_dated, Tmedian, Tmin, Tmax, TFmedian, TFmin, TFmax);
-% column_names = ["Site Name", "Profile Count", "Unique Date Count",...
-%     "Temperature (Celsius)", "Temperature minimum (Celsius)", "Temperature maximum (Celsius)",...
-%     "Thermal Forcing (Celsius)", "Thermal Forcing minimum (Celsius)", "Thermal Forcing maximum (Celsius)"];
-% T.Properties.VariableNames = column_names;
-% writetable(T,[figure_path,'/','Antarctic_oceantemp_summary-stats.csv']);
-% clear T;
+%save iceberg summary data to a table
+T=table(disp_name, dateo, datef, noobs, xmin, xmax, ymin, ymax, d, dmin, dmax, m, mmin, mmax);
+column_names = ["Site Name", "Early Date", "Late Date", "Iceberg Count",...
+    "X minimum (PS m)", "X maximum (PS m)", "Y minimum (PS m)", "Y maximum (PS m)",...
+    "Draft (m b.s.l.)", "Draft minimum (m b.s.l.)", "Draft maximum (m b.s.l.)",...
+    "Meltrate (m/yr)", "Meltrate minimum (m/yr)", "Meltrate maximum (m/yr)"];
+T.Properties.VariableNames = column_names;
+writetable(T,[figure_path,'/','Antarctic_iceberg_summary-stats.csv']);
+clear T;
+
+%set-up dummy matrices for ocean temp data
+clear disp_name ind; disp_name = {}; 
+ind = 1;
+
+%loop through the ocean data, showing info, & exporting to a csv
+for j = 1:length(melt)
+    if size(melt(j).oceant,1) > 0
+        disp_name(ind,1) = melt(j).dispname;
+        obs_all(ind,1) = size(melt(j).oceant,1);
+        obs_dated(ind,1) = size(melt(j).oceantavg,2);
+        Tmedian(ind,1) = round(nanmedian(melt(j).oceanTavg),1); 
+        Tmin(ind,1) = round(min(melt(j).oceanTavg),1); Tmax(ind,1) = round(max(melt(j).oceanTavg),1);
+        TFmedian(ind,:) = round(nanmedian(melt(j).oceanTavg-melt(j).oceanTfp),1); 
+        TFmin(ind,1) = round(min(melt(j).oceanTavg-melt(j).oceanTfp),1); TFmax(ind,1) = round(max(melt(j).oceanTavg-melt(j).oceanTfp),1);
+        ind = ind + 1;
+    end
+end
+%save iceberg summary data to a table
+T=table(disp_name, obs_all, obs_dated, Tmedian, Tmin, Tmax, TFmedian, TFmin, TFmax);
+column_names = ["Site Name", "Profile Count", "Unique Date Count",...
+    "Temperature (Celsius)", "Temperature minimum (Celsius)", "Temperature maximum (Celsius)",...
+    "Thermal Forcing (Celsius)", "Thermal Forcing minimum (Celsius)", "Thermal Forcing maximum (Celsius)"];
+T.Properties.VariableNames = column_names;
+writetable(T,[figure_path,'/','Antarctic_oceantemp_summary-stats.csv']);
+clear T;
 

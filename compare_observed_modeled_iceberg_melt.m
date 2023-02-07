@@ -48,7 +48,7 @@ close all;
 
 %reload compiled data as needed
 load([iceberg_path,'Antarctic-icebergmelt-comparison.mat']);
-
+disp('Loaded Antarctic iceberg melt and ocean observation data.')
 
 %% read-in SOSE data (T,S,U&V) & observed ocean T&S
 
@@ -121,7 +121,7 @@ combined_filename = fullfile(pwd,'Antarctic-icebergs-summary-data.txt');
 fid = fopen(combined_filename,'wt');
 fprintf(fid,'%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n','x (PS E)','y (PS N)','first year','last year','median draft (m)','MAD draft (m)',...
     'iceberg temp. (C)','median density (kg/m^3)','MAD density (kg/m^3)','median obs. meltrate (m/yr)','MAD obs. meltrate (m/yr)','median param. meltrate (m/yr)','MAD param. meltrate (m/yr)',...
-    'median HJ-WC param. meltrates (m/yr)','median obs.-SOSE temp. (C)','median Urelative (m/s)','MAD Urelative (m/s)');
+    'median HJ-WC param. meltrates (m/yr)','median obs.temp. (C)','median SOSE temp. (C)','median SOSE speed (m/s)');
 fclose(fid);
 
 %estimate melt rates for each iceberg using SOSE data
@@ -302,6 +302,10 @@ for i = 1:length(melt)
         Tavg(Savg==0) = []; Uavg(Savg==0) = []; Vavg(Savg==0) = []; davg(Savg==0) = []; Savg(Savg==0) = []; 
         clear *profs;
         
+        %calculate the freezing/melting temp
+        Tfpavg = vertmean2(-davg,(((-5.73*10^-2).*Savg) + (8.32*10^-2) - ((7.61*10^-4).*davg)),-melt(i).d(j));
+        
+        
         %determine the draft range that gives iceberg velocities that
         %minimize the difference between observed and modeled melt rates
 %         for k = 1:length(Tavg)
@@ -340,12 +344,15 @@ for i = 1:length(melt)
         [Mhj, T_sh, T_fp,a] = melt_forcedwater(Tavg,Savg,davg,sqrt((Uavg-U_weighted(j)).^2 + (Vavg-V_weighted(j)).^2), abs(melt(i).bergT));
         %calculate the average melt rate, weighting according to lateral & basal areas
         lat_area = melt(i).Asub(j)-melt(i).Asurf(j); bas_area = melt(i).Asurf(j);
-        Mhj_weighted = vertmean2(-davg,Mhj);
+        Mhj_weighted = vertmean2(-davg,Mhj,-melt(i).d(j));
+        melt(i).oceanTavgSOSE(j,1) = vertmean2(-davg,Tavg,-melt(i).d(j));
+        melt(i).oceanUavgSOSE(j,1) = vertmean2(-davg,sqrt(Uavg.^2 + Vavg.^2),-melt(i).d(j));
+        melt(i).oceanTfpSOSE(j,1) = Tfpavg;
         melt(i).mHJ(j,1) = 31536000*((Mhj_weighted*lat_area)+(Mhj(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
         %estimate melt rate using the Weeks & Campbell melt equation
 %         Mwc = 0.037*kappa*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*((sqrt(Uavg.^2 + Vavg.^2).^(0.8).*(Tavg-T_fp))./((2*sqrt(melt(i).Asurf(j)/pi)).^0.2));
         Mwc = 0.037*kappa*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*((sqrt((Uavg-U_weighted(j)).^2 + (Vavg-V_weighted(j)).^2).^(0.8).*(Tavg-T_fp))./((2*sqrt(melt(i).Asurf(j)/pi)).^0.2));
-        Mwc_weighted = vertmean2(-davg,Mwc);
+        Mwc_weighted = vertmean2(-davg,Mwc,-melt(i).d(j));
         melt(i).mWC(j,1) = 31536000*((Mwc_weighted*lat_area)+(Mwc(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
         clear Mhj* Mwc*;
         
@@ -410,13 +417,13 @@ for i = 1:length(melt)
 %                     [Mhj,~,~,~] = melt_forcedwater(Tobs,Sobs,davg,sqrt(Uavg.^2 + Vavg.^2), abs(melt(i).bergT));
                     [Mhj,~,~,~] = melt_forcedwater(Tobs,Sobs,davg,sqrt((Uavg-U_weighted(j)).^2 + (Vavg-V_weighted(j)).^2), abs(melt(i).bergT));
                     %calculate the average melt rate, weighting according to lateral & basal areas
-                    Mhj_weighted = vertmean2(-davg,Mhj);
+                    Mhj_weighted = vertmean2(-davg,Mhj,-melt(i).d(j));
                     melt(i).mHJ_TSobs(j,k) = 31536000*((Mhj_weighted*lat_area)+(Mhj(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
                     %estimate melt rate using the Weeks & Campbell melt equation
                     %             T_fp = a(1).*melt(i).oceanSavg(j) + a(2) + a(3).*melt(i).d(j)/2; % fp temp
 %                     Mwc = 0.037*kappa*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*((sqrt(Uavg.^2 + Vavg.^2).^(4/5).*(Tobs-T_fp))./((Lobs).^(1/5)));
                     Mwc = 0.037*kappa*((rho_sw/melt(i).rho(j))*diffM^(-7/15)*diffT^(2/3)*(c/L))*((sqrt((Uavg-U_weighted(j)).^2 + (Vavg-V_weighted(j)).^2).^(4/5).*(Tobs-T_fp))./((Lobs).^(1/5)));
-                    Mwc_weighted = vertmean2(-davg,Mwc);
+                    Mwc_weighted = vertmean2(-davg,Mwc,-melt(i).d(j));
                     melt(i).mWC_TSobs(j,k) = 31536000*((Mwc_weighted*lat_area)+(Mwc(end)*bas_area))./(lat_area+bas_area); %area-averaged melt rate (m yr^{-1})
                     
 %                     %calculate the relative velocity needed to match observed melt rates
@@ -440,7 +447,7 @@ for i = 1:length(melt)
 %         figure(fig3); subplot(subpl);
 %         plT(1) = plot(((vertmean2(-davg,Tavg)*lat_area)+(Tavg(end)*bas_area))./(lat_area+bas_area),365*melt(i).m(j),'^','markerfacecolor','none','color',[0.25 0.25 0.25],'linewidth',1.5); hold on;
         
-        clear T_fp *_ind *profs M* T_*; 
+        clear T_fp *_ind *profs M* T_* Tfpavg; 
     end
     
 
@@ -585,13 +592,13 @@ for i = 1:length(melt)
     meltdata(1,9) = mad(melt(i).rho(~isnan(melt(i).m)),1); %mad iceberg density
     meltdata(1,10) = 365*nanmedian(melt(i).m); %median observed melt rate
     meltdata(1,11) = 365*mad(melt(i).m(~isnan(melt(i).m)),1); %mad observed melt rate
-    meltdata(1,12) = nanmedian(nanmean([melt(i).mHJ; melt(i).mWC],1)); %median parameterized melt rate
-    meltdata(1,13) = mad(nanmean([melt(i).mHJ; melt(i).mWC],1),1); %mad parameterized melt rate
-    meltdata(1,14) = nanmedian(melt(i).mHJ - melt(i).mWC); %median difference between HJ & WC melt rates
+%     meltdata(1,12) = nanmedian(nanmean([melt(i).mHJ; melt(i).mWC],1)); %median parameterized melt rate
+%     meltdata(1,13) = mad(nanmean([melt(i).mHJ; melt(i).mWC],1),1); %mad parameterized melt rate
+%     meltdata(1,14) = nanmedian(melt(i).mHJ - melt(i).mWC); %median difference between HJ & WC melt rates
     if ~isempty(melt(i).oceanTavg)
-        meltdata(1,15) = nanmedian(melt(i).oceanTavg - nanmean(temp_weighted,2)); %median difference between observed & SOSE temps
-%         meltdata(1,16) = nanmedian(nanmean([melt(i).oceanUWC_est; melt(i).oceanUHJ_est],1)); %median parameterized water speed
-%         meltdata(1,17) = mad(nanmean([melt(i).oceanUWC_est(~isnan(melt(i).m)); melt(i).oceanUHJ_est(~isnan(melt(i).m))],1),1); %mad parameterized water speed
+        meltdata(1,12) = nanmedian(melt(i).oceanTavg); %median observed water temp
+        meltdata(1,13) = nanmedian(melt(i).oceanTavgSOSE); %median modeled water temp
+        meltdata(1,14) = nanmedian(melt(i).oceanUavgSOSE); %median modeled water velocity
         
         %display summary data
         disp(['Observed - Modeled temperature = ',num2str(round(nanmedian(melt(i).oceanTavg - nanmean(temp_weighted,2)),3)),' +/- ',num2str(round(mad(melt(i).oceanTavg - nanmean(temp_weighted,2),1),3))]);
