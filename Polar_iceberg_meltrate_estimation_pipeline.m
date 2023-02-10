@@ -78,7 +78,7 @@ DEM2.filename = [region_abbrev,'_',DEM2.time,'-DEM'];
 
 
 %create matfiles if they do not already exist
-if ~exist([DEM1.filename,'.mat'])
+if ~exist([DEM1.filename,'.mat']) | ~exist([DEM2.filename,'.mat'])
     %handle DEMs differently if they were made in-house with NASA Ames Stereo
     %Pipeline (both DEM and ortho image tifs have file names with the region
     %abbreviation and YYYYMMDD separated by a _) or provided by PGC

@@ -124,21 +124,25 @@ close all;
 % plot DEMs
 DEM1.z_elpsd_adjust(DEM1.z_elpsd_adjust<0) = 0; DEM2.z_elpsd_adjust(DEM2.z_elpsd_adjust<0) = 0; %remove elevations < 0 for plotting purposes
 figure1 = figure; set(figure1,'position',[0 600 700 400]);
-imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust); axis xy equal; set(gca,'clim',[min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust))) min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust)))+40]); colormap(gca,'jet'); colorbar; grid on; hold on;
+imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust); axis xy equal; grid on; 
+set(gca,'clim',[min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust))) min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust)))+40]); colormap(gca,'hot'); colorbar; hold on;
 set(gca,'xtick',[min(DEM1.x):500:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:0.5:max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):500:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:0.5:max(DEM1.y)/1000]);
 figure2 = figure; set(figure2,'position',[675 600 700 400]);
-imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust); axis xy equal; set(gca,'clim',[min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust))) min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust)))+40]); colormap(gca,'jet'); colorbar; grid on; hold on;
+imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust); axis xy equal; grid on; 
+set(gca,'clim',[min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust))) min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust)))+40]); colormap(gca,'hot'); colorbar; hold on;
 set(gca,'xtick',[min(DEM1.x):500:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:0.5:max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):500:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:0.5:max(DEM1.y)/1000]);
 
 % plot images
 figure3 = figure; set(figure3,'position',[0 100 700 400]);
-imagesc(IM1.x,IM1.y,IM1.z); axis xy equal; colormap(gca,'gray'); grid on; set(gca,'clim',[0 200]); hold on;
+imagesc(IM1.x,IM1.y,IM1.z); axis xy equal; colormap(gca,'gray'); grid on; 
+set(gca,'clim',[0 200]); hold on;
 set(gca,'xtick',[min(DEM1.x):500:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:0.5:max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):500:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:0.5:max(DEM1.y)/1000]);
 figure4 = figure; set(figure4,'position',[675 100 700 400]);
-L = imagesc(IM2.x,IM2.y,IM2.z); axis xy equal; colormap(gca,'gray'); grid on; set(gca,'clim',[0 200]); hold on;
+L = imagesc(IM2.x,IM2.y,IM2.z); axis xy equal; colormap(gca,'gray'); grid on; 
+set(gca,'clim',[0 200]); hold on;
 set(gca,'xtick',[min(DEM1.x):500:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:0.5:max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):500:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:0.5:max(DEM1.y)/1000]);
 
