@@ -21,19 +21,22 @@ function [PSx_early,PSy_early,PSx_late,PSy_late] = track_icebergs(DEM1,DEM2,IM1,
 %           PSy_late        y coordinates (Antarctic Polar Stereo) of
 %                           icebergs in the later DEM
 
+%specify reasonable iceberg height above ocean surface for color-scaling
+maxelev = 20;
+
 %navigate to the date-specific directory
 cd_to_datefolder = ['cd ',dir_output,'/',DEM1.time,'-',DEM2.time,'/']; eval(cd_to_datefolder);
 
 %plot co-registered DEMs
-DEM1.z_elpsd_adjust(DEM1.z_elpsd_adjust<0) = 0; DEM2.z_elpsd_adjust(DEM2.z_elpsd_adjust<0) = 0; %remove elevations less than zero for plotting purposes
+% DEM1.z_elpsd_adjust(DEM1.z_elpsd_adjust<0) = 0; DEM2.z_elpsd_adjust(DEM2.z_elpsd_adjust<0) = 0; %remove elevations less than zero for plotting purposes
 figure1 = figure; set(figure1,'position',[0 600 800 600]);
-imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust); axis xy equal; grid on;
-set(gca,'clim',[min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust))) min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust)))+40]); colormap(gca,'hot'); colorbar; 
+imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust); axis xy equal; grid on; hold on;
+set(gca,'clim',[min(nanmedian(DEM1.z_elpsd_adjust)) min(nanmedian(DEM1.z_elpsd_adjust))+maxelev]); colormap(gca,'hot'); colorbar; 
 set(gca,'xtick',[min(DEM1.x):round(range(DEM1.x)/10000)*1000:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:round(range(DEM1.x)/10000):max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):round(range(DEM1.y)/10000)*1000:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:round(range(DEM1.y)/10000):max(DEM1.y)/1000]);
 figure2 = figure; set(figure2,'position',[975 600 800 600]);
-imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust); axis xy equal; grid on;
-set(gca,'clim',[min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust))) min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust)))+40]); colormap(gca,'hot'); colorbar; 
+imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust); axis xy equal; grid on; hold on;
+set(gca,'clim',[min(nanmedian(DEM2.z_elpsd_adjust)) min(nanmedian(DEM2.z_elpsd_adjust))+maxelev]); colormap(gca,'hot'); colorbar; 
 set(gca,'xtick',[min(DEM2.x):round(range(DEM2.x)/10000)*1000:max(DEM2.x)],'xticklabel',[min(DEM2.x)/1000:round(range(DEM2.x)/10000):max(DEM2.x)/1000],...
     'ytick',[min(DEM2.y):round(range(DEM2.y)/10000)*1000:max(DEM2.y)],'yticklabel',[min(DEM2.y)/1000:round(range(DEM2.y)/10000):max(DEM2.y)/1000]);
 
@@ -70,11 +73,15 @@ while q
                 disp('Click on UL & LR corners of a box bounding a region where you want to look at icebergs to zoom in'); % Upper left, lower right.
                 [a] = ginput(2);
                 set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
+                figure(figure3);
+                set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
                 drawnow; clear a;
                 disp('later DEM');
                 figure(figure2);
                 disp('Click on UL & LR corners of a box bounding a region where you want to look at icebergs to zoom in'); % Upper left, lower right.
                 [a] = ginput(2);
+                set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
+                figure(figure4);
                 set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
                 drawnow; clear a;
                 
@@ -82,20 +89,24 @@ while q
                 disp('earlier DEM');
                 figure(figure1);
                 [PSx_early(q),PSy_early(q)] = ginput(1);
-                plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','y');
+                plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','c');
+                figure(figure3);
+                plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','c');
                 drawnow;
                 disp('later DEM');
                 figure(figure2);
                 [PSx_late(q),PSy_late(q)] = ginput(1);
-                plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','y');
+                plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','c');
+                figure(figure4);
+                plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','c');
                 drawnow;
                 
                 %zoom back out & advance
                 q = q+1;
-                figure(figure1);
-                set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
-                figure(figure2);
-                set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
+                figure(figure1); set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
+                figure(figure3); set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
+                figure(figure2); set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
+                figure(figure4); set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
                 drawnow;
             case '2) No!'
                 disp('Move on!')
