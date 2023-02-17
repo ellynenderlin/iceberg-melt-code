@@ -1,7 +1,7 @@
 function [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1_date,DEM2_date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos)
 % Function to estimate iceberg motion between DEM times
-% Ellyn Enderlin, Mariama Dryak
-% Slightly reformatted by Rainey Aberle, Fall 2021
+% Ellyn Enderlin and Rainey Aberle
+% Last edit: 17 Feb. 2023
 %
 % INPUTS:   DEM1_date       DEM1 mean image capture date
 %           DEM2_date       DEM2 mean image capture date
@@ -30,12 +30,13 @@ function [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = me
 %           berg_xoffset    x-direction offset between the selected feature
 %           berg_yoffset    y-direction offset between the selected feature
 %           k               rotation angle (degrees)
+elev_cmap = cmocean('thermal',10001); elev_cmap(1,:) = [1 1 1]; 
 
 
 %plot DEMs & images to guide polygon rotation
 figure1 = figure; set(figure1,'position',DEMo_pos); %set(figure1,'position',[50 800 800 700]);
 imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
-cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
 plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on;
 [cont,conth] = contour(A.x,A.y,A.z_local_adjust,[0:1:round(cmax)]);
 conth.LineColor = 'k';
@@ -48,7 +49,7 @@ set(gca,'xlim',xlims,'ylim',ylims);
 title(['Early date: ',num2str(DEM1_date)],'fontsize',16);
 figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[850 800 800 700]);
 imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
-cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
 [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
 conth.LineColor = 'k';
 title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
@@ -127,7 +128,7 @@ disp('Calculating iceberg rotation');
         
         figure2 = figure;
         imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
-        cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+        colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
         [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
         conth.LineColor = 'k';
         title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
@@ -163,7 +164,7 @@ disp('Calculating iceberg rotation');
     %     %specify a narrower range of rotation by comparing rotated polygons
     %     figure2 = figure;
     %     imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
-    %     cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+    %     colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
     %     [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
     %     conth.LineColor = 'k';
     %     title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
@@ -192,7 +193,7 @@ disp('Calculating iceberg rotation');
 % close(figure2);
 % figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[850 800 800 700]);
 % imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
-% cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+% colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
 % [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
 % conth.LineColor = 'k';
 % title(['Late date: ',num2str(DEM2_date)],'fontsize',16);

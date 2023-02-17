@@ -1,6 +1,7 @@
 function [A,B,sl_offset1,sl_offset2,cmin_early,cmin_late,flag] = sea_level_adjust(DEM1_time,DEM2_time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos)
 % Function to adjust elevations using the estimated sea level around icebergs
-% Ellyn Enderlin & Rainey Aberle, Fall 2021
+% Ellyn Enderlin & Rainey Aberle
+% Last edit: 17 Feb. 2023
 %
 % INPUTS:   DEM1_time       DEM1 mean image capture time
 %           DEM2_time       DEM2 mean image capture time
@@ -32,6 +33,7 @@ function [A,B,sl_offset1,sl_offset2,cmin_early,cmin_late,flag] = sea_level_adjus
 %           cmin_early      median vertical bias in earlier image
 %           cmin_late       median vertical bias in later image
 %           flag            flag for adjustment values (0=good, 1=unreliable)
+elev_cmap = cmocean('thermal',10001); elev_cmap(1,:) = [1 1 1]; 
 
 disp('Use nearby ice-free regions to estimate vertical bias between DEMs. Avoid shadows!!!');
 close all; drawnow;
@@ -66,7 +68,7 @@ while q %use ice-free polygons to remove DEM bias (pick twice)
     %use ice-free regions to adjust sea level
     figure1 = figure; set(figure1,'position',DEMo_pos); %set(figure1,'position',[50 800 800 700]);
     imagesc(A.x,A.y,A.z_elpsd_adjust-cmin_early); hold on; axis xy equal; set(gca,'clim',sort([0 cmax-cmin_early]),'fontsize',14);
-    cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+    colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
     title(['Early date: ',num2str(DEM1_time(1:8))],'fontsize',16);
     xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; %iceberg ROI
@@ -80,7 +82,7 @@ while q %use ice-free polygons to remove DEM bias (pick twice)
     title(['Early date: ',num2str(DEM1_time(1:8))],'fontsize',16);
     figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[50 50 800 700]);
     imagesc(B.x,B.y,B.z_elpsd_adjust-cmin_late); hold on; axis xy equal; set(gca,'clim',sort([0 cmax-cmin_late]),'fontsize',14);
-    cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+    colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
     title(['Late date: ',num2str(DEM2_time(1:8))],'fontsize',16);
     xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     plot(sl_late.X,sl_late.Y,'--y','linewidth',2,'markersize',2); hold on; %ice-free guide ROI
@@ -118,13 +120,13 @@ while q %use ice-free polygons to remove DEM bias (pick twice)
     disp('Re-plotting DEMs coregistered with local sea level pixels');
     clf(figure1); figure(figure1);
     imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
-    cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+    colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
     title(['Early date: ',num2str(DEM1_time(1:8))],'fontsize',16);
     plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; %iceberg ROI
     B.z_local_adjust = B.z_elpsd_adjust - sl_offset2;
     clf(figure2); figure(figure2);
     imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
-    cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+    colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
     title(['Late date: ',num2str(DEM2_time(1:8))],'fontsize',16);
     drawnow;
     
@@ -204,13 +206,13 @@ while q %use ice-free polygons to remove DEM bias (pick twice)
             clf(figure1); figure(figure1);
             A.z_local_adjust = A.z_elpsd_adjust - sl_offset1;
             imagesc(A.x,A.y,A.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
-            cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+            colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
             title(['Early date: ',num2str(DEM1_time(1:8))],'fontsize',16);
             plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; %iceberg ROI
             B.z_local_adjust = B.z_elpsd_adjust - sl_offset2;
             clf(figure2); figure(figure2);
             imagesc(B.x,B.y,B.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
-            cmap = colormap(gca,jet(1001)); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+            colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
             title(['Late date: ',num2str(DEM2_time(1:8))],'fontsize',16);
             
             zmins2 = min(A.z_local_adjust); ymins2 = min(B.z_local_adjust);
