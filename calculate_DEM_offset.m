@@ -28,11 +28,12 @@ fjord_lon = varargin{6}; fjord_lat = varargin{7};
 if nargin == 8
     dir_TMD = varargin{8};
 end
+elev_cmap = cmocean('thermal',10001); elev_cmap(1,:) = [1 1 1];
 
 %identify over-lapping bedrock regions
 x_overlap = find(DEM2.x > min(DEM1.x) & DEM2.x < max(DEM1.x));
 y_overlap = find(DEM2.y > min(DEM1.y) & DEM2.y < max(DEM1.y));
-figure1 = figure; elev_cmap = colormap(hot(10001)); elev_cmap(1,:) = [1 1 1];
+figure1 = figure; 
 DEM1.z_masked = DEM1.z_elpsd_adjust; DEM1.z_masked(DEM1.mask==0)=NaN;
 imagesc(DEM1.x,DEM1.y,DEM1.z_masked); hold on;
 set(gca,'ydir','normal'); colormap(gca,elev_cmap); set(gca,'clim',[min(min(DEM1.z_masked)) min(min(DEM1.z_masked))+300]);
@@ -251,20 +252,20 @@ else
             clf(figure1); %clf(figure1b);
             subset1_elevmax = max(max(bedrock.reg1.dem1.z)); subset2_elevmax = max(max(bedrock.reg2.dem1.z));
             figure(figure1);
-            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem1.z)
+            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem1.z); colormap(gca,elev_cmap);
             set(gca,'ydir','normal','clim',[0 min([subset1_elevmax 1000])]); colorbar;
             set(figure1,'position',[50 550 500 500]);
             figure2 = figure;
-            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem2.z_interp)
+            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem2.z_interp); colormap(gca,elev_cmap);
             set(gca,'ydir','normal','clim',[0 min([subset1_elevmax 1000])]); colorbar;
             set(figure2,'position',[550 550 500 500]);
             %Region 2
             figure3 = figure;
-            imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem1.z)
+            imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem1.z); colormap(gca,elev_cmap);
             set(gca,'ydir','normal','clim',[0 min([subset2_elevmax 1000])]); colorbar;
             set(figure3,'position',[50 0 500 500]);
             figure4 = figure;
-            imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem2.z_interp)
+            imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem2.z_interp); colormap(gca,elev_cmap);
             set(gca,'ydir','normal','clim',[0 min([subset2_elevmax 1000])]); colorbar;
             set(figure4,'position',[550 0 500 500]);
             
@@ -282,13 +283,13 @@ else
             reg2_mean = nanmean(bedrock.reg2.dem_diff.map(~isnan(bedrock.reg2.dem_diff.map)));
             avg_offset = (reg1_mean + reg2_mean)/2;
             figure5 = figure;
-            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem_diff.map);
+            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem_diff.map); colormap('jet');
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[avg_offset-5 avg_offset+5]);
             set(figure5,'position',[1050 550 500 500]);
             %Region 2
             figure6 = figure;
-            imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem_diff.map);
+            imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem_diff.map); colormap('jet');
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[avg_offset-5 avg_offset+5]);
             set(figure6,'position',[1050 0 500 500]);
@@ -324,12 +325,12 @@ else
             %plot filtered data
             avg_offset = (bedrock.reg1.dem_diff.mean + bedrock.reg2.dem_diff.mean)/2;
             figure(figure5);
-            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem_diff.map);
+            imagesc(bedrock.reg1.dem1.x,bedrock.reg1.dem1.y,bedrock.reg1.dem_diff.map); colormap('jet');
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[avg_offset-5 avg_offset+5]);
             %Region 2
             figure(figure6);
-            h = imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem_diff.map);
+            h = imagesc(bedrock.reg2.dem1.x,bedrock.reg2.dem1.y,bedrock.reg2.dem_diff.map); colormap('jet');
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[avg_offset-5 avg_offset+5]);
             
@@ -342,7 +343,7 @@ else
             close(figure1); close(figure2); close(figure3); close(figure4); close(figure5); drawnow;
             figure1 = figure;
             set(figure1,'position',[50 50 800 800]);
-            imagesc(DEM2.x,DEM2.y,overlap.*DEM2.z_masked); hold on;
+            imagesc(DEM2.x,DEM2.y,overlap.*DEM2.z_masked); hold on; colormap(gca,elev_cmap);
             set(gca,'ydir','normal'); set(gca,'clim',[0,500]); colorbar;
             set(gca,'xlim',x_bounds,'ylim',y_bounds);
             %         figure1b = figure; set(gcf,'position',[850 50 800 800]);
@@ -371,14 +372,15 @@ else
             
             %plot the fjord data
             close all; drawnow;
-            cmin = nanmedian(min(fjord.dem2.z(fjord.dem2.z>0)));
+            cmin = nanmedian(min(fjord.dem1.z));
             figure7 = figure;
-            imagesc(fjord.dem2.x,fjord.dem2.y,fjord.dem1.z_interp);
+            imagesc(fjord.dem2.x,fjord.dem2.y,fjord.dem1.z_interp); colormap(gca,elev_cmap);
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[cmin, cmin+60]);
             set(figure7,'position',[50 550 500 500]);
+            cmin = nanmedian(min(fjord.dem2.z));
             figure8 = figure;
-            imagesc(fjord.dem2.x,fjord.dem2.y,fjord.dem2.z);
+            imagesc(fjord.dem2.x,fjord.dem2.y,fjord.dem2.z); colormap(gca,elev_cmap);
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[cmin, cmin+60]);
             set(figure8,'position',[550 550 500 500]);
@@ -470,12 +472,13 @@ else
             
             %plot the fjord data
             close all; drawnow;
-            cmin = nanmedian(min(fjord.dem2.z));
+            cmin = nanmedian(min(fjord.dem1.z));
             figure7 = figure;
             imagesc(fjord.dem2.x,fjord.dem2.y,fjord.dem1.z_interp);
             set(gca,'ydir','normal'); colorbar;
             set(gca,'clim',[cmin, cmin+60]);
             set(figure7,'position',[50 550 500 500]);
+            cmin = nanmedian(min(fjord.dem2.z));
             figure8 = figure;
             imagesc(fjord.dem2.x,fjord.dem2.y,fjord.dem2.z);
             set(gca,'ydir','normal'); colorbar;

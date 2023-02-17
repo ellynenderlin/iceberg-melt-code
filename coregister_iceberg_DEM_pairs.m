@@ -34,6 +34,7 @@ if nargin == 8
 else
     tidemodel_flag = 0;
 end
+elev_cmap = cmocean('thermal',1001);
 
 % ----------plot the tidal model map & select the nearest neighboring grid cell----------
 disp('Creating a text file specifying the area over which geoid elevations (& optional tidal heights) should be pulled...');
@@ -64,7 +65,7 @@ if tidemodel_flag == 1 && ~isfile([dir_output,region_abbrev,'_tidal_coords.txt']
     figure(2); clf;
     hold on; set(gcf,'position',[50 50 700 700]);
     imagesc(lonvec,latvec,TS);
-    axis xy equal; colormap jet; colorbar; set(gca,'fontsize',14,'linewidth',2);
+    axis xy equal; colormap(gca,elev_cmap); colorbar; set(gca,'fontsize',14,'linewidth',2);
     xlabel('lon'); ylabel('lat');
     %overlay DEM outlines
     plot([ROIlon;ROIlon(1)],[ROIlat;ROIlat(1)],'-w','linewidth',3);
@@ -125,12 +126,12 @@ close all;
 DEM1.z_elpsd_adjust(DEM1.z_elpsd_adjust<0) = 0; DEM2.z_elpsd_adjust(DEM2.z_elpsd_adjust<0) = 0; %remove elevations < 0 for plotting purposes
 figure1 = figure; set(figure1,'position',[0 600 700 400]);
 imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust); axis xy equal; grid on; 
-set(gca,'clim',[min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust))) min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust)))+40]); colormap(gca,'hot'); colorbar; hold on;
+set(gca,'clim',[min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust))) min(DEM1.z_elpsd_adjust(~isnan(DEM1.z_elpsd_adjust)))+40]); colormap(gca,elev_cmap); colorbar; hold on;
 set(gca,'xtick',[min(DEM1.x):500:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:0.5:max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):500:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:0.5:max(DEM1.y)/1000]);
 figure2 = figure; set(figure2,'position',[675 600 700 400]);
 imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust); axis xy equal; grid on; 
-set(gca,'clim',[min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust))) min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust)))+40]); colormap(gca,'hot'); colorbar; hold on;
+set(gca,'clim',[min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust))) min(DEM2.z_elpsd_adjust(~isnan(DEM2.z_elpsd_adjust)))+40]); colormap(gca,elev_cmap); colorbar; hold on;
 set(gca,'xtick',[min(DEM1.x):500:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:0.5:max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):500:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:0.5:max(DEM1.y)/1000]);
 
