@@ -57,8 +57,36 @@ set(gca,'xtick',[min(DEM2.x):round(range(DEM2.x)/10000)*1000:max(DEM2.x)],'xtick
 disp('Follow prompts to Zoom in & out on the images & select icebergs for analysis.')
 disp('Try to focus on big icebergs. Max icebergs = 30!');
 
+%check for existing coordinates
+PScoord_files = dir([dir_output,DEM1.time,'-',DEM2.time,'/','*PScoords.txt']);
+if ~isempty(PScoord_files)
+    disp(['Already matched ',num2str(length(PScoord_files)),' icebergs']);
+    for q = 1:length(PScoord_files)
+        %read in the coordinates
+        iceberg_coords = [PScoord_files(q).folder,'/',PScoord_files(q).name];
+        coords = cell2mat(textscan(fopen(iceberg_coords),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1));
+        PSy_early(q) = coords(1); PSx_early(q) = coords(2);
+        PSy_late(q) = coords(3); PSx_late(q) = coords(4);
+
+        %plot coordinates
+        figure(figure3);
+        plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','c');
+        figure(figure1);
+        plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','c');
+        drawnow;
+        disp('later image');
+        figure(figure4);
+        plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','c');
+        figure(figure2);
+        plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','c');
+        clear coords;
+    end
+    q = length(PScoord_files)+1;
+else
+    q=1;
+end
+
 %iterative iceberg selection
-q=1;
 while q
     ID_question = questdlg('Are there matching icebergs?',...
         'Iceberg Pairing','1) Yes!','2) No!','1) Yes!');
@@ -168,7 +196,7 @@ for j = 1:length(PSx_early)
     end
     coords = [PSy_early(j)  PSx_early(j) PSy_late(j) PSx_late(j)];
     coords_table = array2table(coords,...
-        'VariableNames',{'DEM1: Y (m)','DEM1: X (m)','DEM2: X (m)','DEM2: Y (m)'});
+        'VariableNames',{'DEM1: Y (m)','DEM1: X (m)','DEM2: Y (m)','DEM2: X (m)'});
     writetable(coords_table,[dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg',iceberg_no,'_PScoords.txt']);
     clear coords;
 end

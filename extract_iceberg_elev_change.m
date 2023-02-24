@@ -802,7 +802,7 @@ while p
                 end
                 p = 1;
             else
-                if p == 10
+                if p == 5
                     close all; break
                 else
                     p = p + 1; close all;
@@ -869,7 +869,7 @@ while p
             disp('Elevation change suggests ice accretion. Re-calculate iceberg rotation');
             p = p;
         else
-            if p == 10; break; else p = p + 1; close all; end
+            if p == 5; break; else p = p + 1; close all; end
         end
         clear new_ang x_rot y_rot median_dz;
     end
