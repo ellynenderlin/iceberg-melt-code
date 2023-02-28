@@ -656,8 +656,8 @@ gapf_mask = B.z_elpsd_adjust; gapf_mask(gapf_mask~=0) = 1; gapf_mask(isnan(B.z_e
 %recreate elevation maps with the regional adjustment (somehow getting removed)
 A.z_reg_adjust = A.z_elpsd_adjust - nanmedian(min(fjordz_o)); B.z_reg_adjust = B.z_elpsd_adjust - nanmedian(min(fjordz_f));
 
-% perform iceberg translation & rotation 10 times to quantify user uncertainty
-disp('Extract iceberg elevations from the same portion of the iceberg on each date. Repeat same procedure 10 times!');
+% perform iceberg translation & rotation 5 times to quantify user uncertainty
+disp('Extract iceberg elevations from the same portion of the iceberg on each date. Repeat same procedure 5 times!');
 p=1;
 while p
     disp(['Loop #',num2str(p)]);

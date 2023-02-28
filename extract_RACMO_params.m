@@ -1,9 +1,9 @@
-function [dt,berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates)
+function [dt,berg_T,berg_runoff,firnair,firn_density,firn_fit,firn_fitci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates)
 
 %read the RACMO files & find nearest pixel
-cd([dir_code,'RACMO2.3_Antarctica/']);
+cd(dir_SMB);
 if geography == 0
-    error('Need RACMO data for Greenland!');
+    error('Use MAR data for Greenland!');
 elseif geography == 1
     %check if the data fall within the RACMO AP model domain (preferred
     %over the AIS model b/c the spatial resolutions are 5.5 km & 27 km respectively)

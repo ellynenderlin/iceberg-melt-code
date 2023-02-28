@@ -18,7 +18,7 @@ disp(['DEM date = ',DEM.filename(end-11:end-4)]);
 
 %find the geotiffs for the specified date
 datefiles = dir([dir_DEM,'SETSM*',DEM.filename(end-11:end-4),'*.tif']);
-disp(['Number of SETSM files for that date: ',num2str(length(datefiles))]);
+disp(['Number of SETSM DEMs for that date: ',num2str(round(length(datefiles)/2))]);
 
 %load the DEM
 dateref = 0;
@@ -43,6 +43,11 @@ for j = 1:length(datefiles)
             demy_lims = [max([DEM.y(1),R.YWorldLimits(2)-0.5*R.CellExtentInWorldY]) min([DEM.y(end),R.YWorldLimits(1)+0.5*R.CellExtentInWorldY])];
             [xgrid_mosaic,ygrid_mosaic] = meshgrid(demx_lims(1):R.CellExtentInWorldX:demx_lims(2),demy_lims(1):-R.CellExtentInWorldY:demy_lims(2));
             
+            %estimate SEA LEVEL offset between DEMs (may cause bedrock offsets)
+            dem1min = nanmedian(min(DEM.z,[],'omitnan'));
+            dem2min = nanmedian(min(A,[],'omitnan'));
+            dz = dem1min - dem2min; A = A+dz*ones(size(A));
+            
             %create the mosaic
             disp('mosaicking DEMs...');
             dem_mosaic = NaN(size(xgrid_mosaic));
@@ -60,6 +65,28 @@ for j = 1:length(datefiles)
         dateref = 1; %flag that there is more than one file for this date
     end
 end
+
+%add the detailed time stamp to the structure
+datemeta = dir([dir_DEM,'SETSM*',DEM.filename(end-11:end-4),'*meta.txt']);
+date_notation = 'Acquisition_time=';
+hhmmss = []; deciday = [];
+for j = 1:length(datemeta)
+    fid = fopen([dir_DEM,datemeta(j).name], 'rt');
+    TextAsCells = textscan(fid, '%s', 'Delimiter', '\n');
+    idx = ~cellfun('isempty',strfind(TextAsCells{1},date_notation)); ind = find(idx==1);
+    alldates = char(TextAsCells{1}(ind));
+    for k = 1:length(ind)
+        datestart = strfind(alldates(k,:),'T')+1; %hh:mm:ss.ssssss starts after 'T'
+        hhmmss = [hhmmss; alldates(k,datestart:datestart+1),alldates(k,datestart+3:datestart+4),alldates(k,datestart+6:datestart+7)];
+        deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+    end
+    fclose(fid);
+    clear fid TextAsCells idx ind alldates datestart;
+end
+DEMhh = floor(nanmean(deciday)*24);
+DEMmm = floor((nanmean(deciday)*24-DEMhh)*60);
+DEMss = floor(((nanmean(deciday)*24-DEMhh)*60-DEMmm)*60);
+DEM.YYYYMMDDhhmmss = [DEM.time,num2str(DEMhh),num2str(DEMmm),num2str(DEMss)];
 
 %create a mask
 data_mask = zeros(size(DEM.z));

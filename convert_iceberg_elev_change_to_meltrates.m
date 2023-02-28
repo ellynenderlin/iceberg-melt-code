@@ -1,4 +1,4 @@
-function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_bedrock)
+function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_SMB)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Fall 2021
 %
@@ -34,13 +34,13 @@ for j = 1:length(coord_files)
     clear coords;
 end
 berg_x = nanmean([PSx_early PSx_late]); berg_y = nanmean([PSy_early PSy_late]);
-berg_dates = [DEM1.time; DEM2.time];
+berg_dates = [DEM1.YYYYMMDDhhmmss; DEM2.YYYYMMDDhhmmss];
 to = berg_dates(1,:); tf = berg_dates(2,:);
 
 %extract air temp (& firn density as needed) from model
 density_z = [0:1:1000]; %thickness profile for density curve fitting
 if geography == 1 %surface air temp, runoff, and firn density for Antarctica
-    [days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
+    [days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
     density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
     clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
     density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
@@ -58,7 +58,7 @@ if geography == 1 %surface air temp, runoff, and firn density for Antarctica
     save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
     close all; drawnow;
 else %only surface air temp and runoff for Greenland
-    [days,iceberg_avgtemp,surfmelt,~,~,~,~] = extract_RACMO_params(dir_code,geography,berg_x,berg_y,berg_dates);
+    [days,iceberg_avgtemp,surfmelt,~,~,~,~] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
 end
 
 % %load the saved data if restarting

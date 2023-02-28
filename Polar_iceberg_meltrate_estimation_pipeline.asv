@@ -89,11 +89,7 @@ if ~exist([DEM1.filename,'.mat']) | ~exist([DEM2.filename,'.mat'])
     switch DEMsource
         case '1) In-House'
             %save YYYYMMDDhhmmss to structure if in filename, otherwise
-            %fill in with 'dummy' estimates (hhmmss do not matter for melt
-            %rate estimates if the image dates are months apart)
-            if length(DEM1.time) == 8
-                DEM1.YYYYMMDDhhmmss = [DEM1.time,'120000']; DEM2.YYYYMMDDhhmmss = [DEM2.time,'120000']; 
-            end
+            %fill in with 'dummy' estimates (hhmmss do not mat
             
             % create matfiles from geotiffs for the earlier date DEM
             [DEM1,IM1] = convert_ASP_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
@@ -101,8 +97,6 @@ if ~exist([DEM1.filename,'.mat']) | ~exist([DEM2.filename,'.mat'])
             % create matfiles from geotiffs for the earlier date DEM
             [DEM2,IM2] = convert_ASP_tifs_to_matfiles(DEM2,dir_DEM,dir_output);
         case '2) PGC w/ check'
-            %DEM timestamps pulled from meta.txt files during conversion
-            
             % create matfiles from geotiffs for the earlier date DEM
             [DEM1,IM1] = convert_PGC_tifs_to_matfiles(DEM1,dir_DEM,dir_output);
             

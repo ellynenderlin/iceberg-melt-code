@@ -49,7 +49,7 @@ density_levels = [density_levels 917]; density_depths = [density_depths density.
 cd(dir_iceberg);
 
 %calculate the time separation between DEMs in terms of decimal days (days)
-to = DEM1.time; tf = DEM2.time;
+to = DEM1.YYYYMMDDhhmmss; tf = DEM2.YYYYMMDDhhmmss;
 dt = datenum(tf,'yyyymmddHHMMSS') - datenum(to,'yyyymmddHHMMSS');
 days = ones(1,ceil(dt)); days(2:end-1) = 1; 
 days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS'); 
