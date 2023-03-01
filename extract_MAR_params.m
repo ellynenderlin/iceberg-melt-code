@@ -47,7 +47,7 @@ for j = inds
     GRISmask = squeeze(ncread([dir_SMB,MARs(j).name],'MSK')); 
     smb = squeeze(ncread([dir_SMB,MARs(j).name],'SMB')); smb(smb==-1.0000e+19) = NaN; % surface mass balance (mmWE/day)
     runoff = squeeze(ncread([dir_SMB,MARs(j).name],'RU')); runoff(runoff==-1.0000e+19) = NaN; %meltwater+rain runoff (mmWE/day)
-    airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'ST2')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
+    airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'TT')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
     %mask-out water
     GRISmask(GRISmask==0) = NaN; GRISmask(~isnan(GRISmask)) = 1;
     for k = 1:size(smb,3)
