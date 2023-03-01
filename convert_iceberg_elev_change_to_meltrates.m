@@ -76,7 +76,7 @@ for i = 1:size(berg_numbers,1)
     %incorporate data into a structure
     SL(i).name = [region_name,num2str(berg_number)];
     xo = []; yo = []; xf = []; yf = [];
-    for j = 1:10
+    for j = 1:length(IB)
         xo = cat(1,xo,IB(j).vertices.xo); yo = cat(1,yo,IB(j).vertices.yo);
         xf = cat(1,xf,IB(j).vertices.xf); yf = cat(1,yf,IB(j).vertices.yf);   
         non_nans = ~isnan(IB(j).zo.local_adjust.map) & ~isnan(IB(j).zf.local_adjust.rotmap);
@@ -96,7 +96,7 @@ for i = 1:size(berg_numbers,1)
     SL(i).final.z = nanmean(zf,3);
     SL(i).initial.coreg_z = IB(1).local_adjust_o; SL(i).final.coreg_z = IB(1).local_adjust_f;
     SL(i).initial.time = to; SL(i).final.time = tf; SL(i).days = days;
-    SL(i).SMB = -surfmelt; SL(i).airtemp = iceberg_avgtemp;
+    SL(i).SMB = -abs(surfmelt); SL(i).airtemp = iceberg_avgtemp;
     if isfield(IB,'flag')
         SL(i).flag = IB(1).flag;
     else
@@ -319,10 +319,10 @@ for i = 1:size(SL,2)
     S.X = double(x'); S.Y = double(y');
     S.Name = ['iceberg',num2str(berg_numbers(i).name(8:9))];
     shapefile_name = ['WV_',num2str(to),'_icebergshape',num2str(berg_numbers(i).name(8:9))];
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     shapewrite(S,shapefile_name);
-    cd_to_site_data = ['cd ',dir_output]; eval(cd_to_site_data);
     copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
-    cd_output_dir = ['cd ',dir_output,'/',DEM1.time,'-',DEM2.time,'/']; eval(cd_output_dir);
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
     clear S;
 
     %save the data
@@ -522,6 +522,7 @@ for i = 1:size(SL,2)
     S.X = double(x'); S.Y = double(y');
     S.Name = ['iceberg',num2str(berg_numbers(i).name(8:9))];
     shapefile_name = ['WV_',num2str(tf),'_icebergshape',num2str(berg_numbers(i).name(8:9))];
+    cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     shapewrite(S,shapefile_name);
     copyfile([dir_code,PSprojfile],[dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/',shapefile_name,'.prj']);
     cd([dir_output,DEM1.time,'-',DEM2.time,'/']);
@@ -641,7 +642,7 @@ for i = 1:length(SL)
     dz_randerr = sqrt((2.9^2+2.9^2)./nanmean([pixelno_o pixelno_f])); %(2.9^2+2.9^2) is to account for DEM differencing over time
 
     %uncertainty from R2
-    for k = 1:10
+    for k = 1:length(IB)
         dzs(k) = IB(k).dz.local_adjust.mean;
     end
     dz_user_err = nanstd(dzs);

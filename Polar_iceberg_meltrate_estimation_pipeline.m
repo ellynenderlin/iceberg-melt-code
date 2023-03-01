@@ -29,8 +29,8 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'examples/QES'; 
-region_abbrev = 'QES';
+region_name = 'examples'; 
+region_abbrev = 'EXS';
 % path to codes
 dir_repo = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/'; %Github repo containing custom iceberg melt code
 dir_code = '/Users/ellynenderlin/Research/miscellaneous/general-code/'; %directory containing miscellaneous codes
@@ -42,8 +42,8 @@ dir_output = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/
 DEM1.time = '20200513'; DEM2.time = '20200528';
 
 %----------Specify Region------------
-%NOTE: RACMO data are by default in the "dir_code" directory within their
-%own directory, as specified for each geographic region below
+%NOTE: Make sure the SMB data are not in a Github repo!!! You may need to
+%specify unique paths below
 answer = questdlg('Where are you working?',...
     'Iceberg Location','1) Greenland','2) Antarctica','1) Greenland');
 switch answer
