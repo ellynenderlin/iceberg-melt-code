@@ -5,6 +5,7 @@
 %% Initialize
 clearvars; close all;
 addpath('/Users/ellynenderlin/Research/miscellaneous/general-code','/Users/ellynenderlin/Research/miscellaneous/general-code/cmocean');
+addpath('/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/iceberg-melt_vs_ocean-temp_paper/');
 % addpath('/Users/ellynenderlin/Research/miscellaneous/general-code/AntarcticMappingTools');
 
 %specify paths & file names for data
@@ -31,7 +32,7 @@ region_ref = [1,1,2,2,2,2,2,3,3,4,4,4,4,4,4]; %group according to region (1=EAP,
 marker = ['s','s','s','s','s','s','s','s','s','s','s','s','s','s','s']; %modify if you want to change symbols to indicate something about data (E vs W for example)
 plot_letters = [{'i)'},{'j)'},{'k)'},{'l)'},{'m)'},{'n)'},{'o)'},{'h)'},{'g)'},{'f)'},{'e)'},{'d)'},{'c)'},{'b)'},{'a)'}]; %plot letters for sites to be used in geographically-arranged subplots
 plot_loc = [2,4,6,8,10,12,14,15,13,11,9,7,5,3,1];
-EAP_color = [77,172,38]./255; EAIS_color = [184,225,134]./255; WAIS_color = [241,182,218]./255; WAP_color = [208,28,139]./255; 
+EAP_color = [39,100,25]./255; EAIS_color = [127,188,65]./255; WAIS_color = [241,182,218]./255; WAP_color = [197,27,125]./255; 
 
 %create color pallettes
 region_colors = zeros(length(region_ref),3);
@@ -84,18 +85,49 @@ for j = MertzE; Mertz_Erefs = [Mertz_Erefs; find(Mertz_inds==j)]; end
 for j = MertzW; Mertz_Wrefs = [Mertz_Wrefs; find(Mertz_inds==j)]; end
 % clear Thwaites_inds ThwaitesE ThwaitesW Mertz_inds MertzE MertzW;
 
-%navigate to the iceberg directory as the default workspace
-cd(iceberg_path);
-close all;
 
-%% Create profiles of ocean temperature & iceberg depth timeseries (Antarctic-iceberg-oceandata-profiles.eps)
+%load IBSCO Southern Ocean Bathymetric Map
+[B,S] = readgeoraster('/Users/ellynenderlin/Research/miscellaneous/Antarctic-IBSCO/IBCSO_v2_bed.tif');
+IBSCO.x = S.XWorldLimits(1)+0.5*S.CellExtentInWorldX:S.CellExtentInWorldX:S.XWorldLimits(2)-0.5*S.CellExtentInWorldX;
+IBSCO.y = S.YWorldLimits(2)-0.5*S.CellExtentInWorldY:-S.CellExtentInWorldY:S.YWorldLimits(1)+0.5*S.CellExtentInWorldY;
+IBSCO.z = B;
+clear B S;
+[B,~] = readgeoraster('/Users/ellynenderlin/Research/miscellaneous/Antarctic-IBSCO/IBCSO_v2_ice-surface.tif');
+IBSCO.h = B;
+%crop the IBSCO data (GREATLY(!!!) speeds up contour plotting below)
+IBSCO_xlims = [find(IBSCO.x >= min(IM.x),1,'first'):1:find(IBSCO.x <= max(IM.x),1,'last')];
+IBSCO_ylims = [find(IBSCO.y >= max(IM.y),1,'last'):1:find(IBSCO.y <= min(IM.y),1,'first')];
+
+
+%CREATE A MASK FOR LIMA BASED ON IBSCO... POINTS WITH DEPTHS <-250 METERS SHOULD BE
+%TRANSPARENT IN LIMA
+[IBSCOx,IBSCOy] = meshgrid(IBSCO.x,IBSCO.y); [IMx,IMy] = meshgrid(IM.x,IM.y);
+%interpolate to LIMA grid
+IBSCOint = interp2(IBSCOx,IBSCOy,double(IBSCO.h),IMx,IMy);
+IM.z_masked = IM.z;
+for k = 1:3
+%     %interpolate to IBSCO grid
+%     IMint = interp2(IMx,IMy,IM.z(:,:,k),IBSCOx,IBSCOy);
+%     IMint(IBSCO.h < 0) = NaN;
+%     IM_IBSCO(:,:,k) = IMint; clear IMint;
+    %mask image where IBSCO infers there is no ice
+    IMtemp = IM.z(:,:,k); IMtemp(IBSCOint<-100) = 0;
+    IM.z_masked(:,:,k) = IMtemp; clear IMtemp;
+end
+clear IBSCOint IBSCOx IBSCOy IMx IMy;
 
 %reload compiled data as needed
 if ~exist('melt')
     load([iceberg_path,'Antarctic-icebergmelt-comparison.mat']);
 end
 
-%set up plot
+%navigate to the iceberg directory as the default workspace
+cd(iceberg_path);
+close all;
+
+%% Create profiles of ocean temperature & iceberg depth timeseries (Antarctic-iceberg-oceandata-profiles.eps)
+
+%set up temperature profile & iceberg depth timeseries plot
 close all; 
 figure; set(gcf,'position',[50 50 800 1000]);
 fprintf('Length of temp colormap = %3i \n',length(Temp_cmap));
@@ -255,12 +287,11 @@ disp('Plotting figures to show iceberg melt rates vs thermal forcing');
 
 %set-up the scatterplots of meltrate vs thermal forcing
 Tm_scatterplot = figure; set(gcf,'position',[850 50 800 500]); %observation-based thermal forcing
-% TmSOSE_scatterplot = figure; set(gcf,'position',[850 550 800 400]); %observation-based thermal forcing
+TmSOSE_scatterplot = figure; set(gcf,'position',[850 550 800 400]); %observation-based thermal forcing
 %knowing the Thwaites data are comprehensive, plot the trendline for those data in the background
-figure(Tm_scatterplot); TF_sub = subplot(1,2,1); TFSOSE_sub = subplot(1,2,2);
+figure(Tm_scatterplot); %TF_sub = subplot(1,2,1); TFSOSE_sub = subplot(1,2,2);
 disp('Thwaites melt vs. thermal forcing:');
 %trendlines using observed ocean data
-subplot(TF_sub);
 %Thwaites East
 [TEf,TEgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Erefs),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Erefs),'poly1');
 TEci = confint(TEf,0.95); %disp('Thwaites East'); disp(['observed R^2 = ',num2str(round(TEgof.rsquare,2)),' & RMSE = ',num2str(round(TEgof.rmse,1))]);
@@ -276,6 +307,7 @@ TEci = confint(TEf,0.95); %disp('Thwaites East'); disp(['observed R^2 = ',num2st
 [TWf,TWgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Wrefs),'poly1');
 TWci = confint(TWf,0.95); %disp('Thwaites West'); disp(['observed R^2 = ',num2str(round(TWgof.rsquare,2)),' & RMSE = ',num2str(round(TWgof.rmse,1))]);
 fprintf('Thwaites W iceberg melt vs observed thermal forcing: %i m/yr per degree (R^2 = %3.2f, RMSE = %3.1f) \n',round(TWf.p1),TWgof.rsquare,TWgof.rmse);
+% subplot(TF_sub);
 plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10],...
     feval(TWf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10]),...
     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
@@ -284,37 +316,69 @@ fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wre
     [(TWci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10]+TWci(1,2)),...
     (TWci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavg(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfp(Thwaites_Wrefs))*10)/10])+TWci(2,2))],...
     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
-%trendlines using SOSE data
-subplot(TFSOSE_sub);
-newer = find(melt(strmatch('Thwaites',leg_names)).to>=2020);
-%Thwaites East
-[TEf,TEgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs(Thwaites_Erefs < min(newer)))-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs(Thwaites_Erefs < min(newer))),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Erefs(Thwaites_Erefs < min(newer))),'poly1');
-TEci = confint(TEf,0.95); %disp('Thwaites East'); disp(['modeled R^2 = ',num2str(round(TEgof.rsquare,2)),' & RMSE = ',num2str(round(TEgof.rmse,1))]);
-% plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10],...
-%     feval(TEf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10]),...
-%     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
-% fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10,...
-%     fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10])],...
-%     [(TEci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10]+TEci(1,2)),...
-%     (TEci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Erefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Erefs))*10)/10])+TEci(2,2))],...
-%     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
-%Thwaites West
-[TWf,TWgof] = fit(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs(Thwaites_Wrefs < min(newer)))-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs(Thwaites_Wrefs < min(newer))),365*melt(strmatch('Thwaites',leg_names)).m(Thwaites_Wrefs(Thwaites_Wrefs < min(newer))),'poly1');
-TWci = confint(TWf,0.95); %disp('Thwaites West'); disp(['modeled R^2 = ',num2str(round(TWgof.rsquare,2)),' & RMSE = ',num2str(round(TWgof.rmse,1))]);
-% plot([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10],...
-%     feval(TWf,[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10]),...
-%     '-','color',region_colors(strmatch('Thwaites',leg_names),:),'linewidth',2); hold on;
-% fill([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10,...
-%     fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10])],...
-%     [(TWci(1,1).*[0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10]+TWci(1,2)),...
-%     (TWci(2,1).*fliplr([0:0.1:ceil(max(melt(strmatch('Thwaites',leg_names)).oceanTavgSOSE(Thwaites_Wrefs)-melt(strmatch('Thwaites',leg_names)).oceanTfpSOSE(Thwaites_Wrefs))*10)/10])+TWci(2,2))],...
-%     region_colors(strmatch('Thwaites',leg_names),:),'FaceAlpha',0.25,'EdgeColor',region_colors(strmatch('Thwaites',leg_names),:));
-clear newer;
+drawnow;
+%cluster meltrate vs thermal forcing relationships from SOSE
+Tf = []; SOSETf = []; mr = [];
+for i = 1:length(melt)
+    older = find(melt(i).to<2023);
+    SOSETf = [SOSETf; melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older)];
+    mr = [mr; 365*melt(i).m(older)];
+    if ~isempty(melt(i).oceanTavg)
+        Tf = [Tf; melt(i).oceanTavg(older)-melt(i).oceanTfp(older)];
+    else
+        Tf = [Tf; NaN(size(melt(i).oceanTavgSOSE(older)))];
+    end
+    clear older;
+end
+% %plot distributions of meltrate/thermalforcing relationships
+% figure;
+% histogram(mr./Tf,[-50:10:500],'FaceColor','k'); hold on; histogram(mr./SOSETf,[-50:10:500],'FaceColor','y'); hold on; 
+%calssify/cluster with kmeans
+SOSETf(SOSETf<0) = NaN; 
+kmeans_groups = 7;
+[kmeans_idx,~] = meltrate_thermalforcing_clustering(mr,SOSETf,TWf.p1,kmeans_groups); close(gcf);
+%lump all groups outside the dominant group
+mode_idx = mode(kmeans_idx);
+kmeans_inds = ones(size(kmeans_idx)); kmeans_inds(kmeans_idx==mode_idx) = 0;
+%plot clustered data
+mr(isnan(SOSETf)) = []; kmeans_inds(isnan(SOSETf)) = []; SOSETf(isnan(SOSETf)) = [];
+SOSETfsub = SOSETf(kmeans_inds == 1); mrsub = mr(kmeans_inds == 1); mTf = mrsub./SOSETfsub;
+[Tmf,~] = fit(SOSETfsub,mrsub,'poly1'); Tmci = confint(Tmf,0.95);
+% figure(Tm_scatterplot); subplot(TFSOSE_sub);
+figure(TmSOSE_scatterplot);
+plot([0 max(SOSETfsub)],[0 feval(Tmf,max(SOSETfsub))],'-','linewidth',2,'color',[253,184,99]/255); hold on;
+% fill([0 SOSETfsub(find(mTf == max(mTf))) max(SOSETfsub) SOSETfsub(find(mTf == min(mTf))) 0],...
+%     [0 max(mTf)*SOSETfsub(find(mTf == max(mTf))) feval(Tmf,max(SOSETfsub)) min(mTf)*SOSETfsub(find(mTf == min(mTf))) 0],...
+%     [253,184,99]/255,'FaceAlpha',0.25,'EdgeColor',[253,184,99]/255); hold on;
+fprintf('Iceberg melt vs SOSE thermal forcing: %i m/yr per degree (n = %i) \n',round(Tmf.p1),100*(length(mrsub)./length(mr)));
+SOSETfsub = [SOSETfsub; max(SOSETfsub)]; mrsub = [mrsub; feval(Tmf,max(SOSETfsub))];
+ch = convhull([SOSETfsub mrsub]);
+fill(SOSETfsub(ch),mrsub(ch),[253,184,99]/255,'FaceAlpha',0.25,'EdgeColor',[253,184,99]/255); hold on;
+clear SOSETfsub mrsub Tmf Tmci mTf;
+SOSETfsub = SOSETf(kmeans_inds == 0); mrsub = mr(kmeans_inds == 0); mTf = mrsub./SOSETfsub;
+[Tmf,~] = fit(SOSETfsub,mrsub,'poly1'); Tmci = confint(Tmf,0.95);
+plot([0 max(SOSETfsub)],[0 feval(Tmf,max(SOSETfsub))],'-','linewidth',2,'color',[178,171,210]/255); hold on;
+% fill([0 max(SOSETfsub) max(SOSETfsub) max(SOSETfsub) 0],...
+%     [0 Tmci(1,1)*max(SOSETfsub)+Tmci(1,2) feval(Tmf,max(SOSETfsub)) Tmci(2,1)*max(SOSETfsub)+Tmci(2,2) 0],...
+%     [178,171,210]/255,'FaceAlpha',0.25,'EdgeColor',[178,171,210]/255); hold on;
+SOSETfsub = [SOSETfsub; max(SOSETfsub)]; mrsub = [mrsub; feval(Tmf,max(SOSETfsub))];
+ch = convhull([SOSETfsub mrsub; max(SOSETfsub) feval(Tmf,max(SOSETfsub))]);
+fill(SOSETfsub(ch),mrsub(ch),[178,171,210]/255,'FaceAlpha',0.25,'EdgeColor',[178,171,210]/255); hold on;
+fprintf('Iceberg melt vs SOSE thermal forcing: %i m/yr per degree  (n = %i) \n',round(Tmf.p1),100*(length(mrsub)./length(mr)));
+clear Tf SOSETfsub mrsub Tmf Tmci mTf;
 
 %set-up full Antarctic map
 Tm_mapplot = figure; set(gcf,'position',[50 50 800 800]);
-im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1];
-imagesc(IM.x,IM.y,IM.z); hold on; axis xy equal; colormap(gca,im_cmap);
+%add slightly colored ocean floor contours
+figure(Tm_mapplot);
+cont_cmap = colormap(bone); ocean_floor = IBSCO.z; ocean_floor(IBSCO.h>0) = NaN;
+contour(IBSCO.x(IBSCO_xlims),IBSCO.y(IBSCO_ylims),ocean_floor(IBSCO_ylims,IBSCO_xlims),[-2500:250:-250]); hold on; axis xy equal; drawnow;
+%add image with transparent water
+figure(Tm_mapplot);
+im_cmap = colormap(gray(10001)); im_cmap(1,:) = [1 1 1]; 
+im_mask = nanmean(IM.z_masked,3); im_mask(im_mask > 0.14) = 1; im_mask(im_mask <= 0.14) = 0;
+image(IM.x,IM.y,IM.z,'AlphaDataMapping','scaled','AlphaData',im_mask); colormap(gca,im_cmap); hold on; axis xy equal; drawnow;
+%label
 xlims = [-26.5e5 27.5e5]; ylims = [-22.5e5 22.5e5];
 set(gca,'xlim',xlims,'xtick',[-30e5:6e5:30e5],'xticklabel',[-3000:600:3000],...
     'ylim',ylims,'ytick',[-24e5:6e5:24e5],'yticklabel',[-2400:600:2400],'fontsize',16); grid off;
@@ -328,111 +392,24 @@ text(-17.55e5,14.55e5,['70',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'
 text(-21.65e5,18.4e5,['65',char(176),'S'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',45);
 text(0.75e5,max(ylims)-2.75e5,['0',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',90); 
 text(max(xlims)-4e5,0.75e5,['90',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',0);
-text(0.75e5,min(ylims)+4.25e5,['180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',-90);
+text(11.75e5,min(ylims)+4.25e5,['150',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',-60);
 text(min(xlims)+0.5e5,0.75e5,['-90',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',0);
-text(-0.75e5,min(ylims),['-180',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',90);
-clear xlims ylims;
+text(-14.00e5,min(ylims),['-150',char(176),'E'],'fontsize',16,'color',[0.5 0.5 0.5],'Rotation',60);
+drawnow; clear xlims ylims;
 
-%set-up the map figures for 4 regions with ocean data: Antarctic Peninsula, Thwaites, Mertz, Filchner
-%AP map
-Tm_mapplot_AP = figure; set(gcf,'position',[50 50 800 800]);
-imagesc(IM.x,IM.y,IM.z); hold on; axis xy equal; colormap(gca,im_cmap);
-xlims = [-2.58e6 -2.08e6]; ylims = [8.5e5 16.0e5];
-set(gca,'xlim',xlims,'ylim',ylims,...
-    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
-    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
-    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
-    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
-    'XTickLabelRotation',45,'fontsize',16); %grid on;
+%set-up the map figure for 5 regions with ocean data: Antarctic Peninsula, Thwaites, Mertz, Totten, Filchner
+Tm_mapplot_region = figure; set(gcf,'position',[50 50 800 800]);
+figure(Tm_mapplot_region);
+image(IM.x,IM.y,IM.z); colormap(gca,im_cmap); hold on; axis xy equal; drawnow;
+contour(IBSCO.x(IBSCO_xlims),IBSCO.y(IBSCO_ylims),ocean_floor(IBSCO_ylims,IBSCO_xlims),[-2500:250:-250]); hold on; axis xy equal; colormap(flipud(cont_cmap)); drawnow;
+%label
+xlims = [-26.5e5 27.5e5]; ylims = [-22.5e5 22.5e5];
+set(gca,'xlim',xlims,'xtick',[-30e5:6e5:30e5],'xticklabel',[-3000:600:3000],...
+    'ylim',ylims,'ytick',[-24e5:6e5:24e5],'yticklabel',[-2400:600:2400],'fontsize',16); grid off;
 xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
-figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
-graticuleps(-60:-2:-70,-90:5:-30);
-text(-24.15e5,max(ylims)-3e4,['64',char(176),'S'],'fontsize',16,'Rotation',55,'Color',[0.5 0.5 0.5]); 
-text(-21.375e5,max(ylims)-3e4,['66',char(176),'S'],'fontsize',16,'Rotation',55,'Color',[0.5 0.5 0.5]); 
-text(max(xlims)-2.5e4,12.1e5,['68',char(176),'S'],'fontsize',16,'Rotation',55,'Color',[0.5 0.5 0.5]);
-text(-22.68e5,max(ylims)-1e3,['-55',char(176),'E'],'fontsize',16,'Rotation',-35,'Color',[0.5 0.5 0.5]); 
-text(min(xlims)+3e3,14.99e5,['-60',char(176),'E'],'fontsize',16,'Rotation',-30,'Color',[0.5 0.5 0.5]); 
-text(min(xlims)+3e3,12.115e5,['-65',char(176),'E'],'fontsize',16,'Rotation',-25.0,'Color',[0.5 0.5 0.5]);
-text(min(xlims)+3e3,9.46e5,['-70',char(176),'E'],'fontsize',16,'Rotation',-20,'Color',[0.5 0.5 0.5]);
-clear xlims ylims; 
-%Thwaites Glacier map
-Tm_mapplot_TG = figure; set(gcf,'position',[250 50 800 800]);
-imagesc(IM.x,IM.y,IM.z); hold on; axis xy equal; colormap(gca,im_cmap);
-xlims = [-1.7e6 -1.525e6]; ylims = [-6e5 -3.25e5];
-set(gca,'xlim',xlims,'ylim',ylims,...
-    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
-    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
-    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
-    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
-    'XTickLabelRotation',45,'fontsize',16); %grid on;
-xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
-figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
-graticuleps(-72:-1:-78,-110:2:-100);
-text(-16.5e5,min(ylims)+1.25e4,['74',char(176),'S'],'fontsize',16,'Rotation',-72.5,'Color',[0.5 0.5 0.5]); 
-text(-15.32e5,min(ylims)+1.25e4,['75',char(176),'S'],'fontsize',16,'Rotation',-70,'Color',[0.5 0.5 0.5]); 
-text(max(xlims)-1.5e4,max(ylims)-0.45e4,['-102',char(176),'E'],'fontsize',16,'Rotation',10,'Color',[0.5 0.5 0.5]); 
-text(max(xlims)-1.5e4,-3.865e5,['-104',char(176),'E'],'fontsize',16,'Rotation',12.5,'Color',[0.5 0.5 0.5]); 
-text(max(xlims)-1.5e4,-4.44e5,['-106',char(176),'E'],'fontsize',16,'Rotation',15,'Color',[0.5 0.5 0.5]);
-text(max(xlims)-1.5e4,-5.025e5,['-108',char(176),'E'],'fontsize',16,'Rotation',17.5,'Color',[0.5 0.5 0.5]);
-text(max(xlims)-1.5e4,-5.630e5,['-110',char(176),'E'],'fontsize',16,'Rotation',20,'Color',[0.5 0.5 0.5]);
-clear xlims ylims; 
-%Mertz Ice Tongue map
-Tm_mapplot_MI = figure; set(gcf,'position',[450 50 800 800]);
-imagesc(IM.x,IM.y,IM.z); hold on; axis xy equal; colormap(gca,im_cmap);
-xlims = [1.25e6 1.5e6]; ylims = [-21.5e5 -20.0e5];
-set(gca,'xlim',xlims,'ylim',ylims,...
-    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
-    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
-    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
-    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
-    'XTickLabelRotation',45,'fontsize',16); %grid on;
-xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
-figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
-graticuleps(-66:-1:-70,142:2:150);
-text(min(xlims)+0.75e4,max(ylims)-0.45e4,['148',char(176),'E'],'fontsize',16,'Rotation',-58,'Color',[0.5 0.5 0.5]); 
-text(13.57e5,max(ylims)-0.45e4,['146',char(176),'E'],'fontsize',16,'Rotation',-56,'Color',[0.5 0.5 0.5]);
-text(14.625e5,max(ylims)-0.45e4,['144',char(176),'E'],'fontsize',16,'Rotation',-54,'Color',[0.5 0.5 0.5]);
-text(13.3e5,max(ylims)-1.5e4,['68',char(176),'S'],'fontsize',16,'Rotation',30,'Color',[0.5 0.5 0.5]);
-text(14.85e5,-20.45e5,['67',char(176),'S'],'fontsize',16,'Rotation',32,'Color',[0.5 0.5 0.5]);
-clear xlims ylims; 
-%Totten Ice Shelf map
-Tm_mapplot_TI = figure; set(gcf,'position',[450 50 800 800]);
-imagesc(IM.x,IM.y,IM.z); hold on; axis xy equal; colormap(gca,im_cmap);
-xlims = [2.20e6 2.45e6]; ylims = [-12.5e5 -11.0e5];
-set(gca,'xlim',xlims,'ylim',ylims,...
-    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
-    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
-    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
-    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
-    'XTickLabelRotation',45,'fontsize',16); %grid on;
-xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
-figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
-graticuleps(-64:-1:-68,112:2:120);
-text(2.27e6,max(ylims)-0.35e4,['116',char(176),'E'],'fontsize',16,'Rotation',-24,'Color',[0.5 0.5 0.5]); 
-text(min(xlims)+0.3e4,-1.1675e6,['118',char(176),'E'],'fontsize',16,'Rotation',-28,'Color',[0.5 0.5 0.5]);
-text(2.208e6,min(ylims)+3e3,['67',char(176),'S'],'fontsize',16,'Rotation',60,'Color',[0.5 0.5 0.5]);
-text(2.3375e6,min(ylims)+3e3,['66',char(176),'S'],'fontsize',16,'Rotation',60,'Color',[0.5 0.5 0.5]);
-clear xlims ylims; 
-%Filchner Ice Shelf map
-Tm_mapplot_FI = figure; set(gcf,'position',[650 50 800 800]);
-imagesc(IM.x,IM.y,IM.z); hold on; axis xy equal; colormap(gca,im_cmap);
-xlims = [-0.875e6 -0.725e6]; ylims = [9.75e5 11.75e5];
-set(gca,'xlim',xlims,'ylim',ylims,...
-    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
-    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
-    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
-    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
-    'XTickLabelRotation',45,'fontsize',16); %grid on;
-xlabel('Easting (km)','fontsize',16); ylabel('Northing (km)','fontsize',16);
-figpos = get(gcf,'position');set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
-graticuleps(-76:-1:-80,-42:2:-32);
-text(max(xlims)-0.85e4,10.825e5,['-34',char(176),'E'],'fontsize',16,'Rotation',-60,'Color',[0.5 0.5 0.5]); 
-text(-7.705e5,10.570e5,['-36',char(176),'E'],'fontsize',16,'Rotation',-56,'Color',[0.5 0.5 0.5]);
-text(-8.070e5,10.290e5,['-38',char(176),'E'],'fontsize',16,'Rotation',-52,'Color',[0.5 0.5 0.5]);
-text(-8.425e5,10.0e5,['-40',char(176),'E'],'fontsize',16,'Rotation',-48,'Color',[0.5 0.5 0.5]);
-text(-8.075e5,max(ylims)-0.65e4,['78',char(176),'S'],'fontsize',16,'Rotation',32,'Color',[0.5 0.5 0.5]);
-text(max(xlims)-1.0e4,10.85e5,['77',char(176),'S'],'fontsize',16,'Rotation',34,'Color',[0.5 0.5 0.5]);
-clear xlims ylims; 
+%add polar stereo coordinates
+graticuleps(-50:-1:-90,-180:2:180); 
+drawnow; clear xlims ylims;
 
 %set up a colormap for iceberg draft
 depth_cmap_top = cmocean('-topo',round(depth_cutoff/2)); 
@@ -441,6 +418,7 @@ depth_cmap = [depth_cmap_top(1:floor(depth_cutoff/4),:); depth_cmap_bottom(ceil(
 clear depth_cmap_*;
 %depth_cmap = cmocean('deep',depth_cutoff); 
 
+%loop through the data
 tempref = [];
 for i = 1:length(melt)
     disp(char(leg_names(i)));
@@ -612,15 +590,15 @@ for i = 1:length(melt)
         
         %plot data on the regional map
         if region_ref(i) == 1 || region_ref(i) == 4
-            figure(Tm_mapplot_AP); %call the AP map figure handle
+            figure(Tm_mapplot_region); %call the AP map figure handle
         elseif strcmp(cellstr(leg_names(i)),'Thwaites')
-            figure(Tm_mapplot_TG); %call the Thwaites map figure handle
+            figure(Tm_mapplot_region); %call the Thwaites map figure handle
         elseif ~isempty(strmatch('Mertz',char(leg_names(i))))
-            figure(Tm_mapplot_MI); %call the Mertz map figure handle
+            figure(Tm_mapplot_region); %call the Mertz map figure handle
         elseif ~isempty(strmatch('Totten',char(leg_names(i))))
-            figure(Tm_mapplot_TI); %call the Totten map figure handle
+            figure(Tm_mapplot_region); %call the Totten map figure handle
         elseif ~isempty(strmatch('Filchner',char(leg_names(i))))
-            figure(Tm_mapplot_FI); %call the Filchner map figure handle
+            figure(Tm_mapplot_region); %call the Filchner map figure handle
         end
         scatter(melt(i).oceanx(sum(temp_map,2)~=3),melt(i).oceany(sum(temp_map,2)~=3),20,temp_map((sum(temp_map,2)~=3),:),'filled','o','markeredgecolor','w'); hold on; %ocean temperature over maximum draft
 %         scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,highmelt_cmap(symbol_color,:),'filled','s','markeredgecolor','k','linewidth',0.5); hold on; %icebergs color-coded by meltrate
@@ -641,7 +619,7 @@ for i = 1:length(melt)
         close(site_scatter); clear gof;
         
         %add observation-based thermal forcing vs meltrate data to composite scatterplot
-        figure(Tm_scatterplot); subplot(TF_sub)
+        figure(Tm_scatterplot); %subplot(TF_sub)
         if ~isempty(strmatch('Edgeworth',char(leg_names(i)))) %only create a handle for one study site from each region (EAP,EAIS,WAIS,WAP)
             sp(1) = scatter(melt(i).oceanTavg-melt(i).oceanTfp,365*melt(i).m,draft_size,region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
         elseif ~isempty(strmatch('Mertz',char(leg_names(i))))
@@ -665,25 +643,31 @@ for i = 1:length(melt)
         
         %plot data on the regional map
         if region_ref(i) == 1 || region_ref(i) == 4
-            figure(Tm_mapplot_AP); %call the AP map figure handle
+            figure(Tm_mapplot_region); %call the AP map figure handle
+            scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         elseif strcmp(cellstr(leg_names(i)),'Thwaites')
-            figure(Tm_mapplot_TG); %call the Thwaites map figure handle
+            figure(Tm_mapplot_region); %call the Thwaites map figure handle
+            scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         elseif ~isempty(strmatch('Mertz',char(leg_names(i))))
-            figure(Tm_mapplot_MI); %call the Mertz map figure handle
+            figure(Tm_mapplot_region); %call the Mertz map figure handle
+            scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         elseif ~isempty(strmatch('Totten',char(leg_names(i))))
-            figure(Tm_mapplot_TI); %call the Totten map figure handle
+            figure(Tm_mapplot_region); %call the Totten map figure handle
+            scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         elseif ~isempty(strmatch('Filchner',char(leg_names(i))))
-            figure(Tm_mapplot_FI); %call the Filchner map figure handle
+            figure(Tm_mapplot_region); %call the Filchner map figure handle
+            scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
+        else
+            figure(Tm_mapplot_region); %call the regional figure handle (REMOVE IF ACTUALLY PLOTTING IN DIFFERENT FIGURES!)
+            scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         end
-%         scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,highmelt_cmap(symbol_color,:),'filled','s','markeredgecolor','k','linewidth',0.5); hold on; %icebergs color-coded by meltrate
-        scatter(melt(i).x,melt(i).y,round(melt(i).d/5)+20,region_colors(region_ref(i),:),'filled','s','markeredgecolor','k','linewidth',0.5,'markerfacealpha',1); hold on; %icebergs color-coded by region
         drawnow;
     end
 
     %add SOSE modeled-thermal forcing vs meltrate to scatterplot
-%     figure(TmSOSE_scatterplot);
     older = find(melt(i).to<2023);
-    figure(Tm_scatterplot); subplot(TFSOSE_sub);
+%     figure(Tm_scatterplot); subplot(TFSOSE_sub);
+    figure(TmSOSE_scatterplot);
     if ~isempty(strmatch('Edgeworth',char(leg_names(i)))) %only create a handle for one study site from each region (EAP,EAIS,WAIS,WAP)
         spS(1) = scatter(melt(i).oceanTavgSOSE(older)-melt(i).oceanTfpSOSE(older),365*melt(i).m(older),draft_size(older),region_colors(i,:),'filled','s','markeredgecolor','k'); hold on;
     elseif ~isempty(strmatch('Mertz',char(leg_names(i))))
@@ -709,11 +693,13 @@ figure(Tm_mapplot);
 %add labels
 for i = 1:length(melt)
     if strcmp(char(plot_letters(i)),'a)')
-        text(nanmean(melt(i).x)-150000,nanmean(melt(i).y)+50000,char(plot_letters(i)),'fontsize',12,'color',[0.5 0.5 0.5]);
+        text(nanmean(melt(i).x)-100000,nanmean(melt(i).y)+50000,char(plot_letters(i)),'fontsize',12,'color','k');
     elseif strcmp(char(plot_letters(i)),'b)') || strcmp(char(plot_letters(i)),'c)') || strcmp(char(plot_letters(i)),'e)')
-        text(nanmean(melt(i).x)-150000,nanmean(melt(i).y)-50000,char(plot_letters(i)),'fontsize',12,'color',[0.5 0.5 0.5]);
+        text(nanmean(melt(i).x)-100000,nanmean(melt(i).y)-40000,char(plot_letters(i)),'fontsize',12,'color','k');
+    elseif strcmp(char(plot_letters(i)),'o)') || strcmp(char(plot_letters(i)),'n)') || strcmp(char(plot_letters(i)),'m)')
+        text(nanmean(melt(i).x)-75000,nanmean(melt(i).y)+100000,char(plot_letters(i)),'fontsize',12,'color','k');
     else
-        text(nanmean(melt(i).x)+75000,nanmean(melt(i).y),char(plot_letters(i)),'fontsize',12,'color',[0.5 0.5 0.5]);
+        text(nanmean(melt(i).x)+75000,nanmean(melt(i).y),char(plot_letters(i)),'fontsize',12,'color','k');
     end
 end
 %add color & size legends for iceberg data
@@ -757,10 +743,10 @@ saveas(Tm_mapplot,[figure_path,'Antarctic-iceberg-oceandata-map.eps'],'epsc'); s
 
 
 %label the scatterplot & save
-figure(Tm_scatterplot); subplot(TF_sub);
+figure(Tm_scatterplot); %subplot(TF_sub);
 set(gca,'fontsize',16); grid on;
-set(gca,'xlim',[-0.25 2.25],'ylim',[0 70]); text(2.1,67.5,'a)','fontsize',16);
-set(TF_sub,'position',[0.11 0.11 0.40 0.8150]);
+set(gca,'xlim',[-0.25 2.25],'ylim',[0 70]); %text(2.1,67.5,'a)','fontsize',16);
+% set(TF_sub,'position',[0.11 0.11 0.40 0.8150]);
 %uncomment next 4 lines if you use the plot function to specify symbol colors as a function of draft
 % for k = 1:length(depth_cmap)
 %     plot([0.1 0.25],[47.5-(k/100) 47.5-(k/100)],'-','color',depth_cmap(k,:)); hold on;
@@ -768,68 +754,86 @@ set(TF_sub,'position',[0.11 0.11 0.40 0.8150]);
 % text(0.275,47,'0 m','fontsize',16); text(0.275,45,'200 m','fontsize',16); text(0.275,39.5,'750 m','fontsize',16);
 %next 9 lines should be used if scatterplot function specifies symbol colors as a function of region & symbol size as a function of draft
 ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
-rectangle('position',[0.45 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.525 0.05*((depth_cutoff-50)/150*1.075)*(range(ylims))],'facecolor','w','edgecolor','k');
+rectangle('position',[0.2 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.45 0.05*((depth_cutoff-50)/150*1.075)*(range(ylims))],'facecolor','w','edgecolor','k');
 for j = 1:1:(depth_cutoff-50)/150
     draft_size(j) = round((50+((j-1)*150))*draft_mult)+draft_add;
     yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.005*(range(ylims));
-    text(0.6,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
+    text(0.35,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
 end
-scatter(repmat(0.525,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
+scatter(repmat(0.275,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
 sp_leg = legend(sp,'EAP','EAIS','WAIS','WAP'); set(sp_leg,'location','northwest');
 xlabel(['Observed thermal forcing (',char(176),'C)'],'fontsize',16); ylabel('Melt rate (m/yr)','fontsize',16);
-% saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
+saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
 clear ylims yloc draft_size;
 %label and save the SOSE thermal forcing scatterplot
-% figure(TmSOSE_scatterplot); 
-subplot(TFSOSE_sub);
+figure(TmSOSE_scatterplot); 
+% subplot(TFSOSE_sub);
 set(gca,'fontsize',16,'box','on'); grid on;
-set(gca,'xlim',[-0.25 2.25],'ylim',[0 70],'yticklabel',[]); text(2.1,67.5,'b)','fontsize',16);
-set(TFSOSE_sub,'position',[0.54 0.11 0.40 0.8150]);
-% plot ellipses to bound the data
-t = linspace(0, 360,1001);
-%steeper relationship
-xAmplitude = 0.4; yAmplitude = 32; xCenter = 0.15; yCenter = yAmplitude; rotationAngle = -0.6; 
-xOriginal = xAmplitude * sind(t) + xCenter; yOriginal = yAmplitude * cosd(t) + yCenter;
-transformMatrix = [cosd(rotationAngle), sind(rotationAngle);...
-  -sind(rotationAngle), cosd(rotationAngle)];
-xyAligned = [xOriginal; yOriginal]'; xyRotated = xyAligned * transformMatrix;
-xRotated = xyRotated(:, 1); yRotated = xyRotated(:, 2);
-%calculate end points of a line fit to the long axis
-xyline = [xOriginal(1),yOriginal(1);xOriginal(501),yOriginal(501)];
-xylineRotated = xyline * transformMatrix;
-steep_slope = (xylineRotated(1,2) - xylineRotated(2,2))./(xylineRotated(1,1) - xylineRotated(2,1));
-fprintf('Approx. increase in melt rate with thermal forcing: %i m/yr per degree C \n',round(steep_slope));
-plot(xRotated, yRotated, 'k-.', 'LineWidth', 2,'color',[0.5 0.5 0.5]);
-%gradual relationship
-xAmplitude = 0.65; yAmplitude = 16; xCenter = 0.70; yCenter = yAmplitude; rotationAngle = -2.25; 
-xOriginal = xAmplitude * sind(t) + xCenter; yOriginal = yAmplitude * cosd(t) + yCenter;
-transformMatrix = [cosd(rotationAngle), sind(rotationAngle);...
-  -sind(rotationAngle), cosd(rotationAngle)];
-xyAligned = [xOriginal; yOriginal]'; xyRotated = xyAligned * transformMatrix;
-xRotated = xyRotated(:, 1); yRotated = xyRotated(:, 2);
-%calculate end points of a line fit to the long axis
-xyline = [xOriginal(1),yOriginal(1);xOriginal(501),yOriginal(501)];
-xylineRotated = xyline * transformMatrix;
-shallow_slope = (xylineRotated(1,2) - xylineRotated(2,2))./(xylineRotated(1,1) - xylineRotated(2,1));
-fprintf('Approx. increase in melt rate with thermal forcing: %i m/yr per degree C \n',round(shallow_slope));
-plot(xRotated, yRotated, 'k--', 'LineWidth', 2,'color',[0.5 0.5 0.5]);
-% ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
-% rectangle('position',[0.175 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.3 0.05*((depth_cutoff-50)/150*1.05)*(range(ylims))],'facecolor','w','edgecolor','k');
-% for j = 1:1:(depth_cutoff-50)/150
-%     draft_size(j) = round((50+((j-1)*150))*draft_mult)+draft_add;
-%     yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.01*(range(ylims));
-%     text(0.275,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
-% end
-% scatter(repmat(0.225,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
-% spS_leg = legend(spS,'EAP','EAIS','WAIS','WAP'); set(spS_leg,'location','northwest');
-xlabel(['Modeled thermal forcing (',char(176),'C)'],'fontsize',16); %ylabel('Melt rate (m/yr)','fontsize',16);
-% saveas(TmSOSE_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-SOSEtemp-depth-scatterplots.eps'],'epsc'); saveas(TmSOSE_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-SOSEtemp-depth-scatterplots.png'],'png');
+set(gca,'xlim',[-0.25 2.25],'ylim',[0 70],'yticklabel',[]); %text(2.1,67.5,'b)','fontsize',16);
+% set(TFSOSE_sub,'position',[0.54 0.11 0.40 0.8150]);
+% % plot ellipses to bound the data
+% t = linspace(0, 360,1001);
+% %steeper relationship
+% xAmplitude = 0.4; yAmplitude = 32; xCenter = 0.15; yCenter = yAmplitude; rotationAngle = -0.6; 
+% xOriginal = xAmplitude * sind(t) + xCenter; yOriginal = yAmplitude * cosd(t) + yCenter;
+% transformMatrix = [cosd(rotationAngle), sind(rotationAngle);...
+%   -sind(rotationAngle), cosd(rotationAngle)];
+% xyAligned = [xOriginal; yOriginal]'; xyRotated = xyAligned * transformMatrix;
+% xRotated = xyRotated(:, 1); yRotated = xyRotated(:, 2);
+% %calculate end points of a line fit to the long axis
+% xyline = [xOriginal(1),yOriginal(1);xOriginal(501),yOriginal(501)];
+% xylineRotated = xyline * transformMatrix;
+% steep_slope = (xylineRotated(1,2) - xylineRotated(2,2))./(xylineRotated(1,1) - xylineRotated(2,1));
+% fprintf('Approx. increase in melt rate with thermal forcing: %i m/yr per degree C \n',round(steep_slope));
+% plot(xRotated, yRotated, 'k-.', 'LineWidth', 2,'color',[0.5 0.5 0.5]);
+% %gradual relationship
+% xAmplitude = 0.65; yAmplitude = 16; xCenter = 0.70; yCenter = yAmplitude; rotationAngle = -2.25; 
+% xOriginal = xAmplitude * sind(t) + xCenter; yOriginal = yAmplitude * cosd(t) + yCenter;
+% transformMatrix = [cosd(rotationAngle), sind(rotationAngle);...
+%   -sind(rotationAngle), cosd(rotationAngle)];
+% xyAligned = [xOriginal; yOriginal]'; xyRotated = xyAligned * transformMatrix;
+% xRotated = xyRotated(:, 1); yRotated = xyRotated(:, 2);
+% %calculate end points of a line fit to the long axis
+% xyline = [xOriginal(1),yOriginal(1);xOriginal(501),yOriginal(501)];
+% xylineRotated = xyline * transformMatrix;
+% shallow_slope = (xylineRotated(1,2) - xylineRotated(2,2))./(xylineRotated(1,1) - xylineRotated(2,1));
+% fprintf('Approx. increase in melt rate with thermal forcing: %i m/yr per degree C \n',round(shallow_slope));
+% plot(xRotated, yRotated, 'k--', 'LineWidth', 2,'color',[0.5 0.5 0.5]);
+% legend
+ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
+rectangle('position',[0.2 max(ylims) - 0.05*((depth_cutoff-50)/150*1.15)*(range(ylims)) 0.45 0.05*((depth_cutoff-50)/150*1.075)*(range(ylims))],'facecolor','w','edgecolor','k');
+for j = 1:1:(depth_cutoff-50)/150
+    draft_size(j) = round((50+((j-1)*150))*draft_mult)+draft_add;
+    yloc(j) = max(ylims) - 0.05*j*(range(ylims)) - 0.005*(range(ylims));
+    text(0.35,yloc(j),[num2str((50+((j-1)*150))),' m'],'fontsize',16);
+end
+scatter(repmat(0.275,size(yloc)),yloc,draft_size,'w','filled','s','markeredgecolor','k'); hold on;
+%label
+spS_leg = legend(spS,'EAP','EAIS','WAIS','WAP'); set(spS_leg,'location','northwest');
+xlabel(['Modeled thermal forcing (',char(176),'C)'],'fontsize',16); ylabel('Melt rate (m/yr)','fontsize',16);
+saveas(TmSOSE_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-SOSEtemp-depth-scatterplots.eps'],'epsc'); saveas(TmSOSE_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-SOSEtemp-depth-scatterplots.png'],'png');
 clear ylims yloc draft_size;
-saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
+% saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.eps'],'epsc'); saveas(Tm_scatterplot,[figure_path,'Antarctic-iceberg-meltrate-temp-depth-scatterplots.png'],'png');
 
-%add legends to regional maps
+%rotate around regional map, format for each site & save
+figure(Tm_mapplot_region); 
 %AP
-figure(Tm_mapplot_AP); xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
+xlims = [-2.58e6 -2.08e6]; ylims = [8.5e5 16.0e5];
+set(gca,'xlim',xlims,'ylim',ylims,...
+    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
+    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
+    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
+    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
+    'XTickLabelRotation',45,'fontsize',16); %grid on;
+drawnow;
+figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
+text(-24.15e5,max(ylims)-3e4,['64',char(176),'S'],'fontsize',16,'Rotation',55,'Color',[0.5 0.5 0.5]); 
+text(-21.375e5,max(ylims)-3e4,['66',char(176),'S'],'fontsize',16,'Rotation',55,'Color',[0.5 0.5 0.5]); 
+text(max(xlims)-2.5e4,12.1e5,['68',char(176),'S'],'fontsize',16,'Rotation',55,'Color',[0.5 0.5 0.5]);
+text(-22.68e5,max(ylims)-1e3,['-55',char(176),'E'],'fontsize',16,'Rotation',-35,'Color',[0.5 0.5 0.5]); 
+text(min(xlims)+3e3,14.99e5,['-60',char(176),'E'],'fontsize',16,'Rotation',-30,'Color',[0.5 0.5 0.5]); 
+text(min(xlims)+3e3,12.115e5,['-65',char(176),'E'],'fontsize',16,'Rotation',-25.0,'Color',[0.5 0.5 0.5]);
+text(min(xlims)+3e3,9.46e5,['-70',char(176),'E'],'fontsize',16,'Rotation',-20,'Color',[0.5 0.5 0.5]);
 %add color & size legends for iceberg data
 scale_yshift = 0.12; scale_ystretch = 0.09; 
 % draft_xshift = 0.575; melt_xshift = 0.42; temp_xshift = 0.19; xspan = 0.55; %use if including meltrate color-coding
@@ -841,17 +845,6 @@ scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystr
 scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),round(500*draft_mult+draft_add),'w','filled','s','markeredgecolor','k'); text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),'500 m','fontsize',16); %scaling y-offset = 0.05*range(ylims)
 text(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
 text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'draft','fontsize',16,'fontweight','bold');
-% %colors
-% for k = 1:length(highmelt_cmap)
-%     plot([max(xlims)-melt_xshift*range(xlims) max(xlims)-(melt_xshift-0.05)*range(xlims)],...
-%         [max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap)) max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap))],...
-%         '-','linewidth',2*(range(ylims)/range(xlims)),'color',highmelt_cmap((length(highmelt_cmap)+1)-k,:));
-% end
-% text(max(xlims)-(melt_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims),'50 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(highmelt_cmap)*4/5)*((scale_ystretch*range(ylims))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(0.98*length(highmelt_cmap)*((scale_ystretch*range(ylims))/length(highmelt_cmap))),'<1 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-0.045)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
-% text(max(xlims)-(melt_xshift-0.040)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'melt rate','fontsize',16,'fontweight','bold');
 %add color legend for ocean temperature
 for k = 1:length(Temp_cmap)
     plot([max(xlims)-temp_xshift*range(xlims) max(xlims)-(temp_xshift-0.05)*range(xlims)],...
@@ -863,8 +856,27 @@ text(max(xlims)-(temp_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(y
 text(max(xlims)-(temp_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(Temp_cmap))*((scale_ystretch*range(ylims))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(max(xlims)-(temp_xshift-0.030)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-0.035)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
+drawnow; clear xlims ylims;
+saveas(Tm_mapplot_region,[figure_path,'AP_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_region,[figure_path,'AP_iceberg-oceandata-map.png'],'png');
+
 %THWAITES
-figure(Tm_mapplot_TG); xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
+figure(Tm_mapplot_region); 
+xlims = [-1.7e6 -1.525e6]; ylims = [-6e5 -3.25e5];
+set(gca,'xlim',xlims,'ylim',ylims,...
+    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
+    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
+    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
+    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
+    'XTickLabelRotation',45,'fontsize',16); %grid on;
+drawnow;
+figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
+text(-16.5e5,min(ylims)+1.25e4,['74',char(176),'S'],'fontsize',16,'Rotation',-72.5,'Color',[0.5 0.5 0.5]); 
+text(-15.32e5,min(ylims)+1.25e4,['75',char(176),'S'],'fontsize',16,'Rotation',-70,'Color',[0.5 0.5 0.5]); 
+text(max(xlims)-1.5e4,max(ylims)-0.45e4,['-102',char(176),'E'],'fontsize',16,'Rotation',10,'Color',[0.5 0.5 0.5]); 
+text(max(xlims)-1.5e4,-3.865e5,['-104',char(176),'E'],'fontsize',16,'Rotation',12.5,'Color',[0.5 0.5 0.5]); 
+text(max(xlims)-1.5e4,-4.44e5,['-106',char(176),'E'],'fontsize',16,'Rotation',15,'Color',[0.5 0.5 0.5]);
+text(max(xlims)-1.5e4,-5.025e5,['-108',char(176),'E'],'fontsize',16,'Rotation',17.5,'Color',[0.5 0.5 0.5]);
+text(max(xlims)-1.5e4,-5.630e5,['-110',char(176),'E'],'fontsize',16,'Rotation',20,'Color',[0.5 0.5 0.5]);
 %add color & size legends for iceberg data
 scale_yshift = 0.87; scale_ystretch = 0.09; 
 % draft_xshift = 0.925;  melt_xshift = 0.77; temp_xshift = 0.54; xspan = 0.55; %use if including meltrate color-coding
@@ -876,17 +888,6 @@ scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystr
 scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),round(500*draft_mult+draft_add),'w','filled','s','markeredgecolor','k'); text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),'500 m','fontsize',16); %scaling y-offset = 0.05*range(ylims)
 text(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
 text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'draft','fontsize',16,'fontweight','bold');
-% %colors
-% for k = 1:length(highmelt_cmap)
-%     plot([max(xlims)-melt_xshift*range(xlims) max(xlims)-(melt_xshift-0.05)*range(xlims)],...
-%         [max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap)) max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap))],...
-%         '-','linewidth',2*(range(ylims)/range(xlims)),'color',highmelt_cmap((length(highmelt_cmap)+1)-k,:));
-% end
-% text(max(xlims)-(melt_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims),'50 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(highmelt_cmap)*4/5)*((scale_ystretch*range(ylims))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(0.98*length(highmelt_cmap)*((scale_ystretch*range(ylims))/length(highmelt_cmap))),'<1 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-0.045)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
-% text(max(xlims)-(melt_xshift-0.040)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'melt rate','fontsize',16,'fontweight','bold');
 %add color legend for ocean temperature
 for k = 1:length(Temp_cmap)
     plot([max(xlims)-temp_xshift*range(xlims) max(xlims)-(temp_xshift-0.05)*range(xlims)],...
@@ -898,8 +899,25 @@ text(max(xlims)-(temp_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(y
 text(max(xlims)-(temp_xshift-0.065)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(Temp_cmap))*((scale_ystretch*range(ylims))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(max(xlims)-(temp_xshift-0.030)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-0.035)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
+drawnow; clear xlims ylims;
+saveas(Tm_mapplot_region,[figure_path,'TG_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_region,[figure_path,'TG_iceberg-oceandata-map.png'],'png');
+
 %MERTZ
-figure(Tm_mapplot_MI); xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
+figure(Tm_mapplot_region); 
+xlims = [1.25e6 1.5e6]; ylims = [-21.5e5 -20.0e5];
+set(gca,'xlim',xlims,'ylim',ylims,...
+    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
+    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
+    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
+    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
+    'XTickLabelRotation',45,'fontsize',16); %grid on;
+drawnow;
+figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
+text(min(xlims)+0.75e4,max(ylims)-0.45e4,['148',char(176),'E'],'fontsize',16,'Rotation',-58,'Color',[0.5 0.5 0.5]); 
+text(13.57e5,max(ylims)-0.45e4,['146',char(176),'E'],'fontsize',16,'Rotation',-56,'Color',[0.5 0.5 0.5]);
+text(14.625e5,max(ylims)-0.45e4,['144',char(176),'E'],'fontsize',16,'Rotation',-54,'Color',[0.5 0.5 0.5]);
+text(13.3e5,max(ylims)-1.5e4,['68',char(176),'S'],'fontsize',16,'Rotation',30,'Color',[0.5 0.5 0.5]);
+text(14.85e5,-20.45e5,['67',char(176),'S'],'fontsize',16,'Rotation',32,'Color',[0.5 0.5 0.5]);
 %add color & size legends for iceberg data
 scale_yshift = 0.75; scale_ystretch = 0.18; 
 % draft_xshift = 0.925; melt_xshift = 0.81; temp_xshift = 0.62; xspan = 0.45;%use if including meltrate color-coding
@@ -911,17 +929,6 @@ scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystr
 scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),round(500*draft_mult+draft_add),'w','filled','s','markeredgecolor','k'); text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),'500 m','fontsize',16); %scaling y-offset = 0.05*range(ylims)
 text(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
 text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'draft','fontsize',16,'fontweight','bold');
-% %colors
-% for k = 1:length(highmelt_cmap)
-%     plot([max(xlims)-melt_xshift*range(xlims) max(xlims)-(melt_xshift-(xspan/10))*range(xlims)],...
-%         [max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap)) max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap))],...
-%         '-','linewidth',2*(range(ylims)/range(xlims)),'color',highmelt_cmap((length(highmelt_cmap)+1)-k,:));
-% end
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims),'50 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(highmelt_cmap)*4/5)*((scale_ystretch*range(ylims))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(0.98*length(highmelt_cmap)*((scale_ystretch*range(ylims))/length(highmelt_cmap))),'<1 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)+0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
-% text(max(xlims)-(melt_xshift-(xspan/10)+0.020)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'melt rate','fontsize',16,'fontweight','bold');
 %add color legend for ocean temperature
 for k = 1:length(Temp_cmap)
     plot([max(xlims)-temp_xshift*range(xlims) max(xlims)-(temp_xshift-(xspan/10))*range(xlims)],...
@@ -933,8 +940,24 @@ text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_ysh
 text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(Temp_cmap))*((scale_ystretch*range(ylims))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(max(xlims)-(temp_xshift-(xspan/10)+0.025)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-(xspan/10)+0.02)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
+drawnow; clear xlims ylims;
+saveas(Tm_mapplot_region,[figure_path,'MI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_region,[figure_path,'MI_iceberg-oceandata-map.png'],'png');
+
 %TOTTEN
-figure(Tm_mapplot_TI); xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
+figure(Tm_mapplot_region); 
+xlims = [2.20e6 2.45e6]; ylims = [-12.5e5 -11.0e5];
+set(gca,'xlim',xlims,'ylim',ylims,...
+    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
+    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
+    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
+    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
+    'XTickLabelRotation',45,'fontsize',16); %grid on;
+drawnow;
+figpos = get(gcf,'position'); set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
+text(2.27e6,max(ylims)-0.35e4,['116',char(176),'E'],'fontsize',16,'Rotation',-24,'Color',[0.5 0.5 0.5]); 
+text(min(xlims)+0.3e4,-1.1675e6,['118',char(176),'E'],'fontsize',16,'Rotation',-28,'Color',[0.5 0.5 0.5]);
+text(2.208e6,min(ylims)+3e3,['67',char(176),'S'],'fontsize',16,'Rotation',60,'Color',[0.5 0.5 0.5]);
+text(2.3375e6,min(ylims)+3e3,['66',char(176),'S'],'fontsize',16,'Rotation',60,'Color',[0.5 0.5 0.5]);
 %add color & size legends for iceberg data
 scale_yshift = 0.75; scale_ystretch = 0.18; 
 % draft_xshift = 0.475; melt_xshift = 0.36; temp_xshift = 0.17; xspan = 0.45;%use if including meltrate color-coding
@@ -946,17 +969,6 @@ scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystr
 scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),round(500*draft_mult+draft_add),'w','filled','s','markeredgecolor','k'); text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),'500 m','fontsize',16); %scaling y-offset = 0.05*range(ylims)
 text(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
 text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'draft','fontsize',16,'fontweight','bold');
-% %colors
-% for k = 1:length(highmelt_cmap)
-%     plot([max(xlims)-melt_xshift*range(xlims) max(xlims)-(melt_xshift-(xspan/10))*range(xlims)],...
-%         [max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap)) max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap))],...
-%         '-','linewidth',2*(range(ylims)/range(xlims)),'color',highmelt_cmap((length(highmelt_cmap)+1)-k,:));
-% end
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims),'50 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(highmelt_cmap)*4/5)*((scale_ystretch*range(ylims))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(0.98*length(highmelt_cmap)*((scale_ystretch*range(ylims))/length(highmelt_cmap))),'<1 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)+0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
-% text(max(xlims)-(melt_xshift-(xspan/10)+0.020)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'melt rate','fontsize',16,'fontweight','bold');
 %add color legend for ocean temperature
 for k = 1:length(Temp_cmap)
     plot([max(xlims)-temp_xshift*range(xlims) max(xlims)-(temp_xshift-(xspan/10))*range(xlims)],...
@@ -968,8 +980,26 @@ text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_ysh
 text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(Temp_cmap))*((scale_ystretch*range(ylims))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(max(xlims)-(temp_xshift-(xspan/10)+0.025)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-(xspan/10)+0.02)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
+drawnow; clear xlims ylims;
+saveas(Tm_mapplot_region,[figure_path,'TI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_region,[figure_path,'TI_iceberg-oceandata-map.png'],'png');
+
 %FILCHNER
-figure(Tm_mapplot_FI); xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
+figure(Tm_mapplot_region); 
+xlims = [-0.875e6 -0.725e6]; ylims = [9.75e5 11.75e5];
+set(gca,'xlim',xlims,'ylim',ylims,...
+    'xtick',[(ceil(min(xlims)/1000)*1000):50000:(floor(max(xlims)/1000)*1000)],...
+    'xticklabel',[(ceil(min(xlims)/1000)):50:(floor(max(xlims)/1000))],...
+    'ytick',[(ceil(min(ylims)/1000)*1000):50000:(floor(max(ylims)/1000)*1000)],...
+    'yticklabel',[(ceil(min(ylims)/1000)):50:(floor(max(ylims)/1000))],...
+    'XTickLabelRotation',45,'fontsize',16); %grid on;
+drawnow;
+figpos = get(gcf,'position');set(gcf,'position',[figpos(1) figpos(2) figpos(3) range(ylims)/range(xlims)*figpos(3)+25]); %resize vertical dimension to maximize figure window usage
+text(max(xlims)-0.85e4,10.825e5,['-34',char(176),'E'],'fontsize',16,'Rotation',-60,'Color',[0.5 0.5 0.5]); 
+text(-7.705e5,10.570e5,['-36',char(176),'E'],'fontsize',16,'Rotation',-56,'Color',[0.5 0.5 0.5]);
+text(-8.070e5,10.290e5,['-38',char(176),'E'],'fontsize',16,'Rotation',-52,'Color',[0.5 0.5 0.5]);
+text(-8.425e5,10.0e5,['-40',char(176),'E'],'fontsize',16,'Rotation',-48,'Color',[0.5 0.5 0.5]);
+text(-8.075e5,max(ylims)-0.65e4,['78',char(176),'S'],'fontsize',16,'Rotation',32,'Color',[0.5 0.5 0.5]);
+text(max(xlims)-1.0e4,10.85e5,['77',char(176),'S'],'fontsize',16,'Rotation',34,'Color',[0.5 0.5 0.5]);
 %add color & size legends for iceberg data
 scale_yshift = 0.87; scale_ystretch = 0.09; 
 % draft_xshift = 0.55; melt_xshift = 0.40; temp_xshift = 0.18; xspan = 0.54;%use if including meltrate color-coding
@@ -981,17 +1011,6 @@ scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystr
 scatter(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),round(500*draft_mult+draft_add),'w','filled','s','markeredgecolor','k'); text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift+scale_ystretch)*range(ylims),'500 m','fontsize',16); %scaling y-offset = 0.05*range(ylims)
 text(max(xlims)-draft_xshift*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
 text(max(xlims)-(draft_xshift-0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'draft','fontsize',16,'fontweight','bold');
-% %colors
-% for k = 1:length(highmelt_cmap)
-%     plot([max(xlims)-melt_xshift*range(xlims) max(xlims)-(melt_xshift-(xspan/10))*range(xlims)],...
-%         [max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap)) max(ylims)-scale_yshift*range(ylims)-k*((scale_ystretch*range(ylims))/length(highmelt_cmap))],...
-%         '-','linewidth',2*(range(ylims)/range(xlims)),'color',highmelt_cmap((length(highmelt_cmap)+1)-k,:));
-% end
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims),'50 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(highmelt_cmap)*4/5)*((scale_ystretch*range(ylims))/length(highmelt_cmap)),'10 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(0.98*length(highmelt_cmap)*((scale_ystretch*range(ylims))/length(highmelt_cmap))),'<1 m yr^{-1}','fontsize',16);
-% text(max(xlims)-(melt_xshift-(xspan/10)+0.015)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'iceberg','fontsize',16,'fontweight','bold');
-% text(max(xlims)-(melt_xshift-(xspan/10)+0.020)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'melt rate','fontsize',16,'fontweight','bold');
 %add color legend for ocean temperature
 for k = 1:length(Temp_cmap)
     plot([max(xlims)-temp_xshift*range(xlims) max(xlims)-(temp_xshift-(xspan/10))*range(xlims)],...
@@ -1003,13 +1022,8 @@ text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_ysh
 text(max(xlims)-(temp_xshift-(xspan/10)-0.015)*range(xlims),max(ylims)-scale_yshift*range(ylims)-(length(Temp_cmap))*((scale_ystretch*range(ylims))/length(Temp_cmap)),['-',num2str(cmap_add),char(176),'C'],'fontsize',16);
 text(max(xlims)-(temp_xshift-(xspan/10)+0.025)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/1.5)*range(ylims),'ocean','fontsize',16,'fontweight','bold');
 text(max(xlims)-(temp_xshift-(xspan/10)+0.02)*range(xlims),max(ylims)-(scale_yshift-scale_ystretch/3)*range(ylims),'temp.','fontsize',16,'fontweight','bold');
-
-%save regional maps
-saveas(Tm_mapplot_AP,[figure_path,'AP_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_AP,[figure_path,'AP_iceberg-oceandata-map.png'],'png');
-saveas(Tm_mapplot_TG,[figure_path,'TG_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_TG,[figure_path,'TG_iceberg-oceandata-map.png'],'png');
-saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_MI,[figure_path,'MI_iceberg-oceandata-map.png'],'png');
-saveas(Tm_mapplot_TI,[figure_path,'TI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_TI,[figure_path,'TI_iceberg-oceandata-map.png'],'png');
-saveas(Tm_mapplot_FI,[figure_path,'FI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_FI,[figure_path,'FI_iceberg-oceandata-map.png'],'png');
+drawnow; clear xlims ylims;
+saveas(Tm_mapplot_region,[figure_path,'FI_iceberg-oceandata-map.eps'],'epsc'); saveas(Tm_mapplot_region,[figure_path,'FI_iceberg-oceandata-map.png'],'png');
 
 disp('plots completed!');
 

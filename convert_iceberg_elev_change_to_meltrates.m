@@ -58,7 +58,7 @@ if geography == 1 %surface air temp, runoff, and firn density for Antarctica
     save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
     close all; drawnow;
 else %only surface air temp and runoff for Greenland
-    [days,iceberg_avgtemp,surfmelt,~,~,~,~] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+    [days,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
 end
 
 % %load the saved data if restarting
