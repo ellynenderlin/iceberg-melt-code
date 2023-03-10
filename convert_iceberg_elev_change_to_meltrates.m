@@ -59,6 +59,7 @@ if geography == 1 %surface air temp, runoff, and firn density for Antarctica
     close all; drawnow;
 else %only surface air temp and runoff for Greenland
     [days,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+    rho_f = rho_i; %rename ice density parameter to match final density used for Antarctic icebergs
 end
 
 % %load the saved data if restarting
@@ -177,25 +178,21 @@ for i = 1:size(SL,2)
     
     %zoom in
     disp(['...zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
-    figure(figure1);
+    figure(figure2); set(gca,'ydir','normal','clim',[0 50]); hold on;
+    figure(figure1); colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
 %     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
     vxi = nearestneighbour(SL(i).initial.x,A.x); vyi = nearestneighbour(SL(i).initial.y,A.y);
     set(gca,'xlim',[min(A.x(vxi))-150 max(A.x(vxi))+150],'ylim',[min(A.y(vyi))-150 max(A.y(vyi))+150]);
-    prompt = 'Widen the zoom window (y/n)?';
-    zstr = input(prompt,'s');
-    if strmatch(zstr,'y')==1
-        set(gca,'xlim',[min(A.x(vxi))-250 max(A.x(vxi))+250],'ylim',[min(A.y(vyi))-250 max(A.y(vyi))+250]);
-    end
-    plot(A.x(vxi),A.y(vyi),'--r','linewidth',2);
-    figure(figure2);
-%     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
-    set(gca,'ydir','normal','clim',[0 50]); hold on;
-    if strmatch(zstr,'y')==1
-        set(gca,'xlim',[min(SL(i).initial.x)-250 max(SL(i).initial.x)+250],'ylim',[min(SL(i).initial.y)-250 max(SL(i).initial.y)+250]);
-    else
-        set(gca,'xlim',[min(SL(i).initial.x)-150 max(SL(i).initial.x)+150],'ylim',[min(SL(i).initial.y)-150 max(SL(i).initial.y)+150]);
-    end
+    zoomin = questdlg('Widen the zoom window?',...
+            'Zoom check','1) Yes','2) No','2) No');
+        switch zoomin
+            case '1) Yes'
+                figure(figure1); set(gca,'xlim',[min(A.x(vxi))-250 max(A.x(vxi))+250],'ylim',[min(A.y(vyi))-250 max(A.y(vyi))+250]);
+                figure(figure2); set(gca,'xlim',[min(SL(i).initial.x)-250 max(SL(i).initial.x)+250],'ylim',[min(SL(i).initial.y)-250 max(SL(i).initial.y)+250]);
+            case '2) No'
+                figure(figure2); set(gca,'xlim',[min(SL(i).initial.x)-150 max(SL(i).initial.x)+150],'ylim',[min(SL(i).initial.y)-150 max(SL(i).initial.y)+150]);
+        end
+    figure(figure1); plot(A.x(vxi),A.y(vyi),'--r','linewidth',2);
     plot(SL(i).initial.x,SL(i).initial.y,'-k','linewidth',2); hold on; plot(SL(i).initial.x,SL(i).initial.y,'--w','linewidth',2); hold on;
     
     %define the iceberg area & save its vertices to a shapefile

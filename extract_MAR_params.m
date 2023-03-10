@@ -82,7 +82,7 @@ for j = inds
         %plot map with grid indices to identify nearest neighboring
         %reference grid cell with data
         imagesc(smb_map'); colormap(gca,smb_cmap); hold on; axis xy equal;
-        plot(MARx,MARy,'+m','linewidth',2,'markerfacecolor','none','markersize',20);
+        plot(MARx,MARy,'+k','linewidth',2,'markerfacecolor','none','markersize',20);
         disp(['annual smb at MAR pixel = ',num2str(smb_map(MARx,MARy)./1000),' m w.e.']);
         set(gca,'clim',[smb_map(MARx,MARy)-1*nanstd(smb_map(~isnan(smb_map))) smb_map(MARx,MARy)+1*nanstd(smb_map(~isnan(smb_map)))]); cbar = colorbar;
         set(get(cbar,'ylabel'),'string','SMB (mm w.e. per day');
