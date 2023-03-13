@@ -59,7 +59,6 @@ if geography == 1 %surface air temp, runoff, and firn density for Antarctica
     close all; drawnow;
 else %only surface air temp and runoff for Greenland
     [days,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
-    rho_f = rho_i; %rename ice density parameter to match final density used for Antarctic icebergs
 end
 
 % %load the saved data if restarting
@@ -306,8 +305,8 @@ for i = 1:size(SL,2)
     lat_area = sort(draft).*sum(dist); SL(i).initial_range.LA = lat_area;
     area = base_area*ones(size(lat_area)) + lat_area; SL(i).initial_range.TA = area;
     SL(i).initial.V = DEM_pixel_area*(rho_sw/(rho_sw-SL(i).initial.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(i).initial_range.V(1) = DEM_pixel_area*(rho_sw/(rho_sw-min(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(i).initial_range.V(2) = DEM_pixel_area*(rho_sw/(rho_sw-max(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(i).initial_range.V(1) = DEM_pixel_area*(rho_sw/(rho_sw-min(SL(i).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(i).initial_range.V(2) = DEM_pixel_area*(rho_sw/(rho_sw-max(SL(i).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
     
     %save the iceberg outline
     disp('Writing shapefile containing early iceberg polygon information');
@@ -510,8 +509,8 @@ for i = 1:size(SL,2)
     lat_area = sort(draft).*sum(dist); SL(i).final_range.LA = lat_area;
     area = base_area*ones(size(lat_area)) + lat_area; SL(i).final_range.TA = area;
     SL(i).final.V = DEM_pixel_area*(rho_sw/(rho_sw-SL(i).final.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(i).final_range.V(1) = DEM_pixel_area*(rho_sw/(rho_sw-min(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(i).final_range.V(2) = DEM_pixel_area*(rho_sw/(rho_sw-max(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(i).final_range.V(1) = DEM_pixel_area*(rho_sw/(rho_sw-min(SL(i).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(i).final_range.V(2) = DEM_pixel_area*(rho_sw/(rho_sw-max(SL(i).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
     
     %save the iceberg outline
     S.Geometry = 'Polygon';
