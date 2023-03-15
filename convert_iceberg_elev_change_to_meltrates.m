@@ -40,7 +40,7 @@ to = berg_dates(1,:); tf = berg_dates(2,:);
 %extract air temp (& firn density as needed) from model
 density_z = [0:1:1000]; %thickness profile for density curve fitting
 if geography == 1 %surface air temp, runoff, and firn density for Antarctica
-    [days,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+    [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
     density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
     clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
     density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
@@ -58,7 +58,7 @@ if geography == 1 %surface air temp, runoff, and firn density for Antarctica
     save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
     close all; drawnow;
 else %only surface air temp and runoff for Greenland
-    [days,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+    [dt,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
 end
 
 % %load the saved data if restarting
@@ -95,7 +95,7 @@ for i = 1:size(berg_numbers,1)
 %     SL(i).final.z = single(mask2.*Y.z_elpsd_adjust); SL(i).final.z(SL(i).final.z == 0) = NaN; SL(i).final.z(SL(i).final.z<0) = NaN;
     SL(i).final.z = nanmean(zf,3);
     SL(i).initial.coreg_z = IB(1).local_adjust_o; SL(i).final.coreg_z = IB(1).local_adjust_f;
-    SL(i).initial.time = to; SL(i).final.time = tf; SL(i).days = days;
+    SL(i).initial.time = to; SL(i).final.time = tf; SL(i).days = dt;
     SL(i).SMB = -abs(surfmelt); SL(i).airtemp = iceberg_avgtemp;
     if isfield(IB,'flag')
         SL(i).flag = IB(1).flag;
