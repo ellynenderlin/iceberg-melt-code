@@ -172,13 +172,28 @@ zmaxs = h.BinEdges(find(cumsum(h.Values)>=0.9*sum(h.Values),1,'first')+1); clear
 figure; h = histogram(DEM2.z_elpsd_adjust(ymin:ymax,xmin:xmax),min(min(DEM2.z_elpsd_adjust(ymin:ymax,xmin:xmax))):1:max(max(DEM2.z_elpsd_adjust(ymin:ymax,xmin:xmax)))); 
 ymaxs = h.BinEdges(find(cumsum(h.Values)>=0.9*sum(h.Values),1,'first')+1); clear h; close(gcf);
 drawnow;
+
+%determine maximum elevation used for color mapping
+[ZXgrid,ZYgrid] = meshgrid(DEM1.x,DEM1.y);
+xpoly = [early_x-250 early_x+250 early_x+250 early_x-250 early_x-250];
+ypoly = [early_y-250 early_y-250 early_y+250 early_y+250 early_y-250];
+in = inpolygon(ZXgrid,ZYgrid,xpoly,ypoly);
+zmax1 = max(DEM1.z_elpsd_adjust(in))-cmin_early;
+clear Z*grid *poly in;
+[ZXgrid,ZYgrid] = meshgrid(DEM2.x,DEM2.y);
+xpoly = [late_x-250 late_x+250 late_x+250 late_x-250 late_x-250];
+ypoly = [late_y-250 late_y-250 late_y+250 late_y+250 late_y-250];
+in = inpolygon(ZXgrid,ZYgrid,xpoly,ypoly);
+zmax2 = max(DEM2.z_elpsd_adjust(in))-cmin_late;
+clear Z*grid *poly in;
+
 %plot DEMs
 Znans = isnan(DEM1.z_elpsd_adjust); Ynans = isnan(DEM2.z_elpsd_adjust); 
 DEM1.z_elpsd_adjust(Znans) = 0; DEM2.z_elpsd_adjust(Ynans) = 0;
 figure1 = figure; set(figure1,'position',DEMo_pos); %set(figure1,'position',[50 800 800 700]);
 imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust-cmin_early); hold on; axis xy equal; 
 % set(gca,'clim',[0 max(max(DEM1.z_elpsd_adjust(ymine:ymaxe,xmine:xmaxe)))-cmin_early],'fontsize',14); 
-set(gca,'clim',[0 zmaxs-cmin_early],'fontsize',14); 
+set(gca,'clim',[0 zmax1],'fontsize',14); 
 colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
 set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
 plot(early_x,early_y,'*w','markersize',7,'linewidth',1);
@@ -186,7 +201,7 @@ title(['Early date: ',num2str(datestr(date_o,'yyyy/mm/dd'))],'fontsize',16);
 figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[50 50 800 700]);
 imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust-cmin_late); hold on; axis xy equal; 
 % set(gca,'clim',[0 max(max(DEM2.z_elpsd_adjust(ymin:ymax,xmin:xmax)))-cmin_late],'fontsize',14);
-set(gca,'clim',[0 ymaxs-cmin_late],'fontsize',14);
+set(gca,'clim',[0 zmax2],'fontsize',14);
 colormap(gca,elev_cmap); set(get(cbar,'ylabel'),'string', 'elevation (m)');
 set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
 plot(early_x,early_y,'*w','markersize',7,'linewidth',1);
