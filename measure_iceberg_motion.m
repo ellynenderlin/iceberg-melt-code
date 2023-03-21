@@ -147,11 +147,14 @@ disp('Calculating iceberg rotation');
         end
         clear new_ang X_rot Y_rot;
         
-        prompt = 'Are you happy with the rotation estimate (y/n)?'; str = input(prompt,'s');
-        if strmatch(str,'n')==1
-            q = q+1;
-        else
-            break
+        %check if you need to re-estimate iceberg rotation
+        rotation_ans = questdlg('Are you happy with the rotation estimate?',...
+            'Rotation Check','1) No','2) Yes','1) No');
+        switch rotation_ans
+            case '1) No'
+                q = q+1;
+            case '2) Yes'
+                break
         end
     end
     
