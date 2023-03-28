@@ -29,17 +29,17 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'examples'; 
-region_abbrev = 'EXS';
+region_name = 'QTS'; 
+region_abbrev = 'QTS';
 % path to codes
-dir_repo = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/'; %Github repo containing custom iceberg melt code
+dir_repo = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code'; %Github repo containing custom iceberg melt code
 dir_code = '/Users/ellynenderlin/Research/miscellaneous/general-code/'; %directory containing miscellaneous codes
 % path to DEM files in directory
-dir_DEM = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/',region_name,'/'];
+dir_DEM = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/sites/',region_name,'/'];
 % path to outputs folder (where you would like all outputs saved)
-dir_output = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/elevations/',region_name,'/'];
+dir_output = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/sites/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20200513'; DEM2.time = '20200528';
+DEM1.time = '20210421'; DEM2.time = '20210719';
 
 %----------Specify Region------------
 %NOTE: Make sure the SMB data are not in a Github repo!!! You may need to

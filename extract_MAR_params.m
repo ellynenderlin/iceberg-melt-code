@@ -131,7 +131,7 @@ days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS');
 days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));
 
 %estimate surface melting using MAR runoff (mm w.e.)
-berg_runoff = nansum(days'.*runoff); %surface meltwater that runs off (mm w.e.)
+berg_runoff = nansum(days'.*runoff)/1000; %surface meltwater that runs off (convert from mm w.e. per day to total m w.e.)
 %estimate the ice temperature as the average annual air temperature (doesn't account for advection of colder ice and melt/refreezing at the surface and/or submarine interface)
 berg_T = 273+nanmean(icetemp); % air temp (Kelvin)
 

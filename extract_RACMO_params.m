@@ -129,7 +129,7 @@ end
 %     clear days;
 %     days = ones(1,length(melt)); days(1) = 1-hrs_o; days(2:end-1) = 1; days(end) = hrs_f;
 % end
-berg_runoff = nansum(days'.*melt)/1000; %surface meltwater that runs off (mm w.e. per day)
+berg_runoff = nansum(days'.*melt)/1000; %surface meltwater that runs off (convert from mm w.e. per day to total m w.e.)
 %estimate the ice temperature as the average long-term air temperature (doesn't account for advection of colder ice and melt/refreezing at the surface and/or submarine interface)
 berg_T = nanmean(squeeze(icetemp(RACMOy,RACMOx,:))); % air temp (Kelvin)
 
