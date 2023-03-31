@@ -597,7 +597,7 @@ for i = 1:length(SL)
     
     %correct for creep thinning
     rf_o = 3.5e-25; %rate factor at -10C (Pa^-3 s^-1) from Cuffey & Paterson p. 74
-    if iceberg_avgtemp <= 263
+    if SL(i).airtemp <= 263
         rf=rf_o*exp((-60000/8.314)*((1/SL(i).airtemp)-(1/263))); %rate factor for cold ice
     else
         rf=rf_o*exp((-134000/8.314)*((1/SL(i).airtemp)-(1/263))); %rate factor for nearly-temperate ice
@@ -605,7 +605,8 @@ for i = 1:length(SL)
     SL(i).ratefactor = rf;
     B = rf^(-1/3); %Pa s^1/3
     creep = ((-1/(2*sqrt(3)))*((nanmean([SL(i).initial.density SL(i).final.density])*9.81*SL(i).mean.z)/(2*sqrt(3)))^3*(1-(nanmean([SL(i).initial.density SL(i).final.density])/rho_sw))^3)/(B^3); %creep thinning rate (1/s)
-    SL(i).creep_dz = (SL(i).mean.H*creep*(dt*31536000));
+%     SL(i).creep_dz = (SL(i).mean.H*creep*(dt*31536000)); %correct if dt is in decimal YEARS
+    SL(i).creep_dz = (SL(i).mean.H*(creep*86400)*dt); %correct if dt is in days
     dH_submelt = dH_SMBadjust_mean + SL(i).creep_dz; %integrate creep over the ice thickness & over the time period
 
     %dH uncertainty sources

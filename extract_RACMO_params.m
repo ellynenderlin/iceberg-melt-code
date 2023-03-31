@@ -109,9 +109,12 @@ for k = 1:length(yrs)
         doys(k) = 365;
     end
 end
+if mod(str2num(to(1:4)),4)==0; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
+if mod(str2num(tf(1:4)),4)==0; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
+doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
 doy1 = sum(doys(1:str2num(to(1:4))-2011))+doyo;
 doy2 = sum(doys(1:str2num(tf(1:4))-2011))+doyf;
-decidayo =  str2num(to(1:4))+(doyo/doyso); decidayf =  str2num(tf(1:4))+(doyf/doysf);
+decidayo =  str2num(to(1:4))+(doyo/doys(k)); decidayf =  str2num(tf(1:4))+(doyf/doys(k));
 if decidayf<(2017+(max(runoff_days)-365-366-365-365-365-366)/365)
     melt = squeeze(runoff(RACMOy,RACMOx,doy1:doy2));
 else
@@ -137,7 +140,7 @@ berg_T = nanmean(squeeze(icetemp(RACMOy,RACMOx,:))); % air temp (Kelvin)
 %extract firn density estimates if in Antarctica, assume ice in Greenland
 if geography == 1
     %extract FAC data from the Ligtenberg model output
-    cd([dir_code,'FDM_Antarctica/']);
+    cd(dir_SMB); cd ../FDM_Antarctica/;
     %FAC = firn air content (H_observed-FAC = H_i)
     if AP==1
         firn_lat = ncread('FDM_FirnAir_XPEN055_1979-2016.nc','lat');

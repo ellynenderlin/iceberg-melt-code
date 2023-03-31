@@ -80,13 +80,14 @@ if option_no==1 %calculate melt rates for all icebergs
     
     % calculate iceberg meltrate from elevation change:
     if exist([region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']) == 2 %does the meltrate file already exist?
-        prompt = 'Do you want/need to redo the conversion to melt rates (y/n)?';
-        str = input(prompt,'s');
-        if strmatch(str,'y')==1
-            SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_SMB);
-        else
-            disp('reloading meltrate data...');
-            load([region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
+        redo = questdlg('Do you want/need to redo the conversion to melt rates?',...
+            'Redo melt conversion','1) Yes','2) No','1) Yes');
+        switch redo
+            case '1) Yes'
+                SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_SMB);
+            case '2) No'
+                disp('reloading meltrate data...');
+                load([region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
         end
     else
         SL = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_SMB);

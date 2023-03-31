@@ -1,6 +1,7 @@
 %Check dVdt adjustments from end-product textfiles. Used to check:
 %(1) RACMO SMB (account for swapped X&Y coords)
-%(2) creep thinning calculations (account for 365x over-estimation of creep)
+%(2) creep thinning calculations (account for 365x over-estimation of creep
+
 
 
 %% initialize
@@ -9,7 +10,7 @@ addpath('/Users/ellynenderlin/Research/miscellaneous/general-code','/Users/ellyn
 
 %specify file locations
 root_dir = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt/';
-RACMO_path = '/Users/ellynenderlin/Research/miscellaneous/RACMO2.3_Antarctica/';
+RACMO_path = '/Users/ellynenderlin/Research/miscellaneous/';
 dir_code = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code/';
 addpath(dir_code);
 
@@ -24,16 +25,8 @@ rho_sw = 1026;  rho_sw_err = 2; %kg m^-3
 rho_i = 917; rho_i_err = 10; %kg m^-3
 rf_o = 3.5e-25; %rate factor at -10C (Pa^-3 s^-1) from Cuffey & Paterson p. 74
 
-%% check meltwater flux & melt rate estimates
+%% check that RACMO SMB is zero everywhere
 warning off;
-answer = questdlg('Where are you working?',...
-    'Iceberg Location','1) Greenland','2) Antarctica','1) Greenland');
-switch answer
-    case '1) Greenland'
-        geography = 0;
-    case '2) Antarctica'
-        geography = 1;
-end
 
 % loop through csvs for each site & pull RACMO SMB from coords
 for j = 1:length(region)
@@ -43,6 +36,16 @@ for j = 1:length(region)
     
     %identify the region where you are working for RACMO data extraction
     fprintf(['Site: ',char(region(j)),' \n']);
+%     answer = questdlg('Where are you working?',...
+%         'Iceberg Location','1) Greenland','2) Antarctic Peninsula','3) Antarctica','1) Greenland');
+%     switch answer
+%         case '1) Greenland'
+%             geography = 0;
+%         case '2) Antarctic Peninsula'
+%             geography = 1;
+%         case '3) Antarctica'
+            geography = 2;
+%     end
     
     %loop through each date & adjust volume change estimates
     for k = 1:length(csvs)
@@ -64,7 +67,6 @@ for j = 1:length(region)
         %extract air temp & firn density info from RACMO
         [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(RACMO_path,geography,berg_x,berg_y,berg_dates);
         fprintf('Surface melt = %4.3f m \n',surfmelt);
-        fprintf('Time separation = %3.1f days \n',dt);
         
         %loop through each iceberg
         for l = 1:height(T)
@@ -109,37 +111,31 @@ for j = 1:length(region)
             clear d*_mean d*_stdev rf B creep* d*melt d*_total_err;
         end
         disp('close figure to advance');
-        fig = figure; 
-        if size(dVdt,1) == size(table2array(T(:,22)),1)
-            plot(365*table2array(T(:,16))./table2array(T(:,22)),365*dVdt./table2array(T(:,22)),'xk','markersize',12); hold on;
-        else
-            plot(365*table2array(T(:,16))./table2array(T(:,22)),365*dVdt'./table2array(T(:,22)),'xk','markersize',12); hold on;
-        end
+        fig = figure; plot(365*table2array(T(:,16))./table2array(T(:,22)),365*dVdt'./table2array(T(:,22)),'xk'); hold on;
         grid on;
         xlabel('Old melt rate (m/yr)'); ylabel('New melt rate (m/yr)');
         waitfor(fig);
         
-%         %remake the table
-%         clear T;
-%         T = table(repmat(dt,size(Tp1(:,2))),Tp1(:,2),Tp1(:,3),Tp1(:,4),Tp1(:,5),Tp1(:,6),Tp1(:,7),...
-%             Tp1(:,8),Tp1(:,9),Tp1(:,10),Tp1(:,11),Tp1(:,12),Tp1(:,13),Tp1(:,14),Tp1(:,15),...
-%             dVdt,dVdt_err,Tp2(:,1),Tp2(:,2),Tp2(:,3),Tp2(:,4),Tp2(:,5),Tp2(:,6));
-%         column_names = ["TimeSeparation", "X_i", "Y_i", "MedianZ_i",...
-%             "Density_i", "Volume_i", "X_f", "Y_f", "MedianZ_f",...
-%             "Density_f", "Volume_f", "VerticalAdjustment_i", "VerticalAdjustment_f",...
-%             "ElevationChange_mean", "ElevationChange_stdev", "VolumeChangeRate", "VolumeChangeRate_uncert",...
-%             "MedianDraft_mean", "MedianDraft_range", "SurfaceArea_mean", "SurfaceArea_range",...
-%             "SubmergedArea_mean","SubmergedArea_uncert"];
-%         column_units = ["days", "m", "m", "m",...
-%             "kg/m^3", "m^3", "m", "m", "m",...
-%             "kg/m^3", "m^3", "m", "m,"...
-%             "m", "m", "m^3/d", "m^3/d",...
-%             "m", "m", "m^2", "m^2",...
-%             "m^2", "m^2"];
-%         T.Properties.VariableNames = column_names; T.Properties.VariableUnits = column_units;
-%         writetable(T,[root_dir,char(region(j)),'/',csvs(k).name]);
-%         disp('Re-exported csv!');
-        disp('moving on');
+        %remake the table
+        clear T;
+        T = table(repmat(dt,size(Tp1(:,2))),Tp1(:,2),Tp1(:,3),Tp1(:,4),Tp1(:,5),Tp1(:,6),Tp1(:,7),...
+            Tp1(:,8),Tp1(:,9),Tp1(:,10),Tp1(:,11),Tp1(:,12),Tp1(:,13),Tp1(:,14),Tp1(:,15),...
+            dVdt,dVdt_err,Tp2(:,1),Tp2(:,2),Tp2(:,3),Tp2(:,4),Tp2(:,5),Tp2(:,6));
+        column_names = ["TimeSeparation", "X_i", "Y_i", "MedianZ_i",...
+            "Density_i", "Volume_i", "X_f", "Y_f", "MedianZ_f",...
+            "Density_f", "Volume_f", "VerticalAdjustment_i", "VerticalAdjustment_f",...
+            "ElevationChange_mean", "ElevationChange_stdev", "VolumeChangeRate", "VolumeChangeRate_uncert",...
+            "MedianDraft_mean", "MedianDraft_range", "SurfaceArea_mean", "SurfaceArea_range",...
+            "SubmergedArea_mean","SubmergedArea_uncert"];
+        column_units = ["days", "m", "m", "m",...
+            "kg/m^3", "m^3", "m", "m", "m",...
+            "kg/m^3", "m^3", "m", "m,"...
+            "m", "m", "m^3/d", "m^3/d",...
+            "m", "m", "m^2", "m^2",...
+            "m^2", "m^2"];
+        T.Properties.VariableNames = column_names; T.Properties.VariableUnits = column_units;
+        writetable(T,[root_dir,char(region(j)),'/',csvs(k).name]);
+        disp('Re-exported csv!');
         
         %clear variables
         clear iceberg_avgtemp surfmelt firnair density f ci;
