@@ -304,7 +304,7 @@ for i = 1:size(SL,2)
 
     %save the data
     disp('Saving data');
-    save([dir_output,DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
+    save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
     cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     
     if i<size(SL,2)
