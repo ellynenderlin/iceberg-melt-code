@@ -94,9 +94,7 @@ close all; drawnow;
 %decimal years (ddays) & decimal days (days)
 to = berg_dates(1,:); tf = berg_dates(2,:);
 dt = datenum(tf,'yyyymmddHHMMSS') - datenum(to,'yyyymmddHHMMSS');
-days = ones(1,ceil(dt)); days(2:end-1) = 1; 
-days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS'); 
-days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));
+
 
 %estimate surface melting using RACMO runoff (mm w.e. per day)
 %data start in 2011 so date indices are referenced to Jan 1, 2011
@@ -128,6 +126,9 @@ else
         end
     end
 end
+days = ones(1,length(melt)); %days(2:end-1) = 1; 
+days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS'); 
+days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));
 % if length(days)~=length(melt)
 %     clear days;
 %     days = ones(1,length(melt)); days(1) = 1-hrs_o; days(2:end-1) = 1; days(end) = hrs_f;
