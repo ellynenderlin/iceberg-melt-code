@@ -85,28 +85,7 @@ if plot_flag == 1
                         
                         %convert volume change to flux & melt rate
                         to = SL(SLref(i)).initial.time; tf = SL(SLref(i)).final.time;
-                        if mod(str2num(to(1:4)),4)==0; doyso=366; modayso = [31 29 31 30 31 30 31 31 30 31 30 31]; else doyso=365; modayso = [31 28 31 30 31 30 31 31 30 31 30 31]; end
-                        if mod(str2num(tf(1:4)),4)==0; doysf=366; modaysf = [31 29 31 30 31 30 31 31 30 31 30 31]; else doysf=365; modaysf = [31 28 31 30 31 30 31 31 30 31 30 31]; end
-                        doyo = sum(modayso(1:str2num(to(5:6))))-31+str2num(to(7:8)); doyf = sum(modaysf(1:str2num(tf(5:6))))-31+str2num(tf(7:8));
-                        if str2num(tf(1:4)) == str2num(to(1:4))
-                            ddays = doyf-doyo+1;
-                        elseif str2num(tf(1:4)) - str2num(to(1:4)) == 1
-                            ddays = doyf + (doyso-doyo)+1;
-                        else
-                            years = str2num(to(1:4)):1:str2num(tf(1:4));
-                            for k = 1:length(years)
-                                if mod(years(k),4)==0
-                                    doys(k)=366;
-                                else
-                                    doys(k) = 365;
-                                end
-                            end
-                            ddays = doyf + sum(doys(2:end-1)) + (doyso-doyo)+1;
-                        end
-                        hrs_o = ((str2num(to(13:14))/(60*60*24))+(str2num(to(11:12))/(60*24))+(str2num(to(9:10))/24));
-                        hrs_f = ((str2num(tf(13:14))/(60*60*24))+(str2num(tf(11:12))/(60*24))+(str2num(tf(9:10))/24));
-                        dhrs = hrs_f - hrs_o;
-                        dt = ddays + dhrs;
+                        dt = datenum(tf(1:12),'yyyymmddHHMM') - datenum(to(1:12),'yyyymmddHHMM');
                         dVdt_mean = dV_mean/dt;
                         dHdt_mean = dVdt_mean/SL(SLref(i)).mean.TA;
                         

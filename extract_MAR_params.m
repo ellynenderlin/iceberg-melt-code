@@ -125,7 +125,7 @@ clear *_stack;
 %calculate the time separation between DEMs in terms of
 %decimal years (ddays) & decimal days (days)
 to = berg_dates(1,:); tf = berg_dates(2,:);
-dt = datenum(tf,'yyyymmddHHMMSS') - datenum(to,'yyyymmddHHMMSS');
+dt = datenum(tf(1:12),'yyyymmddHHMM') - datenum(to(1:12),'yyyymmddHHMM');
 days = ones(1,(datenum(tf(1:8),'yyyymmdd') - datenum(to(1:8),'yyyymmdd'))+1); days(2:end-1) = 1; 
 days(1) = ceil(datenum(to,'yyyymmddHHMMSS'))-datenum(to,'yyyymmddHHMMSS'); 
 days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));

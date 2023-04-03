@@ -93,7 +93,7 @@ close all; drawnow;
 %calculate the time separation between DEMs in terms of
 %decimal years (ddays) & decimal days (days)
 to = berg_dates(1,:); tf = berg_dates(2,:);
-dt = datenum(tf,'yyyymmddHHMMSS') - datenum(to,'yyyymmddHHMMSS');
+dt = datenum(tf(1:12),'yyyymmddHHMM') - datenum(to(1:12),'yyyymmddHHMM');
 
 
 %estimate surface melting using RACMO runoff (mm w.e. per day)
