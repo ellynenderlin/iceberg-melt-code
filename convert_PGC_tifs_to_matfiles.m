@@ -86,7 +86,12 @@ end
 DEMhh = floor(nanmean(deciday)*24);
 DEMmm = floor((nanmean(deciday)*24-DEMhh)*60);
 DEMss = floor(((nanmean(deciday)*24-DEMhh)*60-DEMmm)*60);
-DEM.YYYYMMDDhhmmss = [DEM.time,num2str(DEMhh),num2str(DEMmm),num2str(DEMss)];
+
+%convert time segments to strings and concatenate
+if DEMhh < 10; DEMhhstr = ['0',num2str(DEMhh)]; else DEMhhstr = num2str(DEMhh); end %hours
+if DEMmm < 10; DEMmmstr = ['0',num2str(DEMmm)]; else DEMmmstr = num2str(DEMmm); end %minutes
+if DEMss < 10; DEMssstr = ['0',num2str(DEMss)]; else DEMssstr = num2str(DEMss); end %seconds
+DEM.YYYYMMDDhhmmss = [DEM.time,DEMhhstr,DEMmmstr,DEMssstr];
 
 %create a mask
 data_mask = zeros(size(DEM.z));
