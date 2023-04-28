@@ -56,8 +56,8 @@ DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel
 %set image bounds & crop
 %EARLIER DATE
 xo = []; yo = [];
-for i = 1:length(SL)
-    xo = [xo SL(berg_ref).initial.x]; yo = [yo SL(berg_ref).initial.y];
+for i = berg_refs
+    xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
 end
 dy = IM1.y(1)-IM1.y(2);
 if dy < 0
@@ -92,8 +92,8 @@ end
 clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax;
 %LATER DATE
 xf = []; yf = [];
-for i = 1:length(SL)
-    xf = [xf SL(berg_ref).final.x]; yf = [yf SL(berg_ref).final.y];
+for i = berg_refs
+    xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
 end
 dy = IM2.y(1)-IM2.y(2);
 if dy < 0
@@ -580,7 +580,7 @@ for i = 1:length(iceberg_refs)
     SL(berg_ref).ratefactor = rf;
     B = rf^(-1/3); %Pa s^1/3
     creep = ((-1/(2*sqrt(3)))*((nanmean([SL(berg_ref).initial.density SL(berg_ref).final.density])*9.81*SL(berg_ref).mean.z)/(2*sqrt(3)))^3*(1-(nanmean([SL(berg_ref).initial.density SL(berg_ref).final.density])/rho_sw))^3)/(B^3); %creep thinning rate (1/s)
-    SL(berg_ref).creep_dz = (SL(berg_ref).mean.H*creep*(dt*31536000));
+    SL(berg_ref).creep_dz = (SL(berg_ref).mean.H*(creep*86400)*dt);
     dH_submelt = dH_SMBadjust_mean + SL(berg_ref).creep_dz; %integrate creep over the ice thickness & over the time period
     
     %dH uncertainty sources
