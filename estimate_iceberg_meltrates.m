@@ -124,7 +124,7 @@ elseif option_no==2 %recalculate melt rates for select icebergs
         disp('Specify the berg numbers (from melt plots) that need updating as "iceberg_refs = []; dbcont"');
         keyboard
     end
-    SL = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code);
+    SL = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code,dir_SMB);
     disp('Resaved iceberg melt structure, plots, & data table!');
 
 elseif option_no==3 %only plot

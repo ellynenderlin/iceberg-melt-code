@@ -1,4 +1,4 @@
-function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code)
+function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code,dir_SMB)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Spring 2022
 %
