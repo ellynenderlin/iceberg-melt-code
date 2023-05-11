@@ -372,7 +372,7 @@ for i = 1:length(iceberg_refs)
     clear DEM_z_masked z idx idy x y iceberg_IMmask iceberg_DEMmask rho_f draft Hberg lat_area base_area dist area_mask masked_pixels image_xgrid image_ygrid shapes lmin* lmax* perimeter;
     clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax DEM_x DEM_y DEM_z;
     disp('Advancing to the later date');
-    close(figure1); close(figure2); drawnow;
+    close all; drawnow;
     
     %plot the later DEM & image
     disp('Plotting the later image-DEM pair for the fjord');
