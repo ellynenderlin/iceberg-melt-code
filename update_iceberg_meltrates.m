@@ -53,6 +53,7 @@ end
 if length(DEM1.YYYYMMDDhhmmss) < 14; DEM1.YYYYMMDDhhmmss = [DEM1.YYYYMMDDhhmmss,num2str(zeros(1,14-length(DEM1.YYYYMMDDhhmmss)))]; end 
 if length(DEM2.YYYYMMDDhhmmss) < 14; DEM2.YYYYMMDDhhmmss = [DEM2.YYYYMMDDhhmmss,num2str(zeros(1,14-length(DEM2.YYYYMMDDhhmmss)))]; end 
 berg_dates = [DEM1.YYYYMMDDhhmmss; DEM2.YYYYMMDDhhmmss];
+to = berg_dates(1,:); tf = berg_dates(2,:);
 
 %extract DEM pixel areas
 DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel_area = abs(DEM2.x(1)-DEM2.x(2)).*abs(DEM2.y(1)-DEM2.y(2)); %square meters
