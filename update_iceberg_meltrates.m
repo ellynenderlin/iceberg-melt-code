@@ -287,8 +287,8 @@ for i = 1:length(iceberg_refs)
     SL(berg_ref).days = dt;
     SL(berg_ref).SMB = -abs(surfmelt); SL(berg_ref).airtemp = iceberg_avgtemp;
     
-    %convert elevations over the iceberg area to a volume
-    if geography == 1 %iteratively converge on best-estimate for density accounting for water saturation as needed
+    %convert elevations over the iceberg area to a volume: iteratively converge on best-estimate for density accounting for water saturation as needed
+    if geography == 1 
         %flag the iceberg as upright or overturned
         answer = questdlg('Is the iceberg upright (i.e., does it look like the glacier surface)?',...
             'Iceberg Upright or Flipped','1) Yes','2) No','1) Yes');
@@ -347,8 +347,8 @@ for i = 1:length(iceberg_refs)
     lat_area = sort(draft).*sum(dist); SL(berg_ref).initial_range.LA = lat_area;
     area = base_area*ones(size(lat_area)) + lat_area; SL(berg_ref).initial_range.TA = area;
     SL(berg_ref).initial.V = DEM1_pixel_area*(rho_sw/(rho_sw-SL(berg_ref).initial.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).initial.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(berg_ref).initial_range.V(1) = DEM1_pixel_area*(rho_sw/(rho_sw-min(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).initial.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(berg_ref).initial_range.V(2) = DEM1_pixel_area*(rho_sw/(rho_sw-max(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(berg_ref).initial_range.V(1) = DEM1_pixel_area*(rho_sw/(rho_sw-min(SL(berg_ref).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(berg_ref).initial_range.V(2) = DEM1_pixel_area*(rho_sw/(rho_sw-max(SL(berg_ref).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).initial.z_median*sum(sum(isnan(DEM_z_masked))));
     
     
     %save the iceberg outline
@@ -492,8 +492,8 @@ for i = 1:length(iceberg_refs)
     lat_area = sort(draft).*sum(dist); SL(berg_ref).final_range.LA = lat_area;
     area = base_area*ones(size(lat_area)) + lat_area; SL(berg_ref).final_range.TA = area;
     SL(berg_ref).final.V = DEM2_pixel_area*(rho_sw/(rho_sw-SL(berg_ref).final.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).final.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(berg_ref).final_range.V(1) = DEM2_pixel_area*(rho_sw/(rho_sw-min(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).final.z_median*sum(sum(isnan(DEM_z_masked))));
-    SL(berg_ref).final_range.V(2) = DEM2_pixel_area*(rho_sw/(rho_sw-max(rho_f)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).final.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(berg_ref).final_range.V(1) = DEM2_pixel_area*(rho_sw/(rho_sw-min(SL(berg_ref).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).final.z_median*sum(sum(isnan(DEM_z_masked))));
+    SL(berg_ref).final_range.V(2) = DEM2_pixel_area*(rho_sw/(rho_sw-max(SL(berg_ref).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(berg_ref).final.z_median*sum(sum(isnan(DEM_z_masked))));
     
     %save the iceberg outline
     S.Geometry = 'Polygon';
