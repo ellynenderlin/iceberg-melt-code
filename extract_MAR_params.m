@@ -77,18 +77,19 @@ for j = inds
         disp('Adjust coordinates (if necessary) to extract surface melt estimates');
         figure; set(gcf,'position',[100 100 700 700]);
         smb_cmap = cmocean('thermal',10001); smb_cmap(1,:) = [1 1 1];
-        smb_map = sum(smb,3); smb_map(isnan(smb_map)) = min(smb_map(~isnan(smb_map)))-1;
+        smb_map = sum(smb,3); 
+        disp(['annual smb at MAR pixel = ',num2str(smb_map(MARx,MARy)./1000),' m w.e.']);
         
         %plot map with grid indices to identify nearest neighboring
         %reference grid cell with data
+%         smb_map(isnan(smb_map)) = min(smb_map(~isnan(smb_map)))-1; %replace NaN with smallest observed value
         imagesc(smb_map'); colormap(gca,smb_cmap); hold on; axis xy equal;
         plot(MARx,MARy,'+k','linewidth',2,'markerfacecolor','none','markersize',20);
-        disp(['annual smb at MAR pixel = ',num2str(smb_map(MARx,MARy)./1000),' m w.e.']);
-        set(gca,'clim',[smb_map(MARx,MARy)-1*nanstd(smb_map(~isnan(smb_map))) smb_map(MARx,MARy)+1*nanstd(smb_map(~isnan(smb_map)))]); cbar = colorbar;
-        set(get(cbar,'ylabel'),'string','SMB (mm w.e. per day');
+%         set(gca,'clim',[smb_map(MARx,MARy)-1*nanstd(smb_map(~isnan(smb_map))) smb_map(MARx,MARy)+1*nanstd(smb_map(~isnan(smb_map)))]);
+        cbar = colorbar; set(get(cbar,'ylabel'),'string','SMB (mm w.e. per day');
         set(gca,'xlim',[MARx-20 MARx+20],...
             'ylim',[MARy-20 MARy+20]);
-        
+
         %adjust coordinates as necessary
         disp('Modify coordinates if the marker is in a region with no data');
         adjustment = questdlg('Do the coordinates need to be modified?',...
