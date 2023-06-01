@@ -220,6 +220,10 @@ for i = [8:1:length(region) 7:-1:1]
         meltflux = [meltflux; dVdt]; meltflux_uncert = [meltflux_uncert; dVdt_uncert]; %meltwater flux
         meltrate = [meltrate; m]; meltrate_uncert = [meltrate_uncert; abs(m).*sqrt((dVdt_uncert./dVdt).^2 + (Asub_uncert./Asub).^2)]; %melt rate
         
+        %display size range data
+        disp(['Surface area range: ',num2str(min(Asurf)),' - ',num2str(max(Asurf)),' m^2']);
+        disp(['Draft range: ',num2str(min(draft)),' - ',num2str(max(draft)),' m']);
+        disp(['Submerged area range: ',num2str(min(Asub)),' - ',num2str(max(Asub)),' m^2']);
         
         %multi-panel subplots of all data
         figure(figureB);
