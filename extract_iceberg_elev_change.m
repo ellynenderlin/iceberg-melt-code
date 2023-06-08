@@ -439,15 +439,16 @@ end
 drawnow;
 disp('Done modifying iceberg polygon for elevation extraction');
 
-%calculate the iceberg dimensions to crop the DEMs
+%calculate the iceberg dimensions to crop the DEMs: use the max of both
+%dimensions to account for possible rotation of big skinny icebergs
 berg_width = abs(max(xmi) - min(xmi));
 berg_length = abs(max(ymi) - min(ymi));
-xmine = xce-(berg_width+50); xmaxe = xce+(berg_width+50);
-ymine = yce-(berg_length+50); ymaxe = yce+(berg_length+50);
+xmine = xce-(max([berg_width,berg_length])+50); xmaxe = xce+(max([berg_width,berg_length])+50);
+ymine = yce-(max([berg_width,berg_length])+50); ymaxe = yce+(max([berg_width,berg_length])+50);
 xmine(xmine<=1) = 1; xmaxe(xmaxe >= length(DEM1.x)) = length(DEM1.x);
 ymine(ymine<=1) = 1; ymaxe(ymaxe >= length(DEM1.y)) = length(DEM1.y);
-xmin = xc-(berg_width+50); xmax = xc+(berg_width+50);
-ymin = yc-(berg_length+50); ymax = yc+(berg_length+50);
+xmin = xc-(max([berg_width,berg_length])+50); xmax = xc+(max([berg_width,berg_length])+50);
+ymin = yc-(max([berg_width,berg_length])+50); ymax = yc+(max([berg_width,berg_length])+50);
 xmin(xmin<=1) = 1; xmax(xmax >= length(DEM2.x)) = length(DEM2.x);
 ymin(ymin<=1) = 1; ymax(ymax >= length(DEM2.y)) = length(DEM2.y);
 

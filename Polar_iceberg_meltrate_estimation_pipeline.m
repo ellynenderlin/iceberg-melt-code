@@ -56,10 +56,8 @@ end
 % ----------INITIAL SET-UP----------
 
 % add paths to necessary functions and datasets
-addpath(dir_repo);
-addpath(dir_code);
-addpath([dir_code,'cmocean/']); %use if calling cmocean color-mapping package... may need to modify path if not in this default location
-addpath(dir_SMB);
+addpath(dir_repo,dir_code,dir_SMB); 
+addpath([dir_code,'cmocean/']);%use if calling cmocean color-mapping package... may need to modify path if not in this default location
 
 %decide if you want to estimate fjord surface elevation differences with the TMD tidal model (not recommended)
 tidemodel_flag = 0; %specifies whether you want to attempt to correct sea level using a tidal model: 0 = no (default), 1 = yes

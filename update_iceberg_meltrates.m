@@ -153,7 +153,7 @@ for i = 1:length(iceberg_refs)
     %step 2: Load the re-extracted elevation change data & recalculate volume flux
     load(['iceberg',berg_number,'_dz.mat']);
     SL(berg_ref).name = [region_name,num2str(berg_number)]; 
-    xo = []; yo = []; xf = []; yf = []; zo = [] zf = [];
+    xo = []; yo = []; xf = []; yf = []; zo = []; zf = [];
     for j = 1:length(IB)
         xo = cat(1,xo,IB(j).vertices.xo); yo = cat(1,yo,IB(j).vertices.yo);
         xf = cat(1,xf,IB(j).vertices.xf); yf = cat(1,yf,IB(j).vertices.yf);
