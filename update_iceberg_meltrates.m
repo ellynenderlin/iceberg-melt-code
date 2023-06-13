@@ -583,8 +583,8 @@ for i = 1:length(iceberg_refs)
         rf=rf_o*exp((-134000/8.314)*((1/SL(berg_ref).airtemp)-(1/263))); %rate factor for nearly-temperate ice
     end
     SL(berg_ref).ratefactor = rf;
-    B = rf^(-1/3); %Pa s^1/3
-    creep = ((-1/(2*sqrt(3)))*((nanmean([SL(berg_ref).initial.density SL(berg_ref).final.density])*9.81*SL(berg_ref).mean.z)/(2*sqrt(3)))^3*(1-(nanmean([SL(berg_ref).initial.density SL(berg_ref).final.density])/rho_sw))^3)/(B^3); %creep thinning rate (1/s)
+    RF = rf^(-1/3); %Pa s^1/3
+    creep = ((-1/(2*sqrt(3)))*((nanmean([SL(berg_ref).initial.density SL(berg_ref).final.density])*9.81*SL(berg_ref).mean.z)/(2*sqrt(3)))^3*(1-(nanmean([SL(berg_ref).initial.density SL(berg_ref).final.density])/rho_sw))^3)/(RF^3); %creep thinning rate (1/s)
     SL(berg_ref).creep_dz = (SL(berg_ref).mean.H*(creep*86400)*dt);
     dH_submelt = dH_SMBadjust_mean + SL(berg_ref).creep_dz; %integrate creep over the ice thickness & over the time period
     
