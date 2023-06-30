@@ -74,11 +74,29 @@ for j = 1:length(datemeta)
     fid = fopen([dir_DEM,datemeta(j).name], 'rt');
     TextAsCells = textscan(fid, '%s', 'Delimiter', '\n');
     idx = ~cellfun('isempty',strfind(TextAsCells{1},date_notation)); ind = find(idx==1);
-    alldates = char(TextAsCells{1}(ind));
-    for k = 1:length(ind)
-        datestart = strfind(alldates(k,:),'T')+1; %hh:mm:ss.ssssss starts after 'T'
-        hhmmss = [hhmmss; alldates(k,datestart:datestart+1),alldates(k,datestart+3:datestart+4),alldates(k,datestart+6:datestart+7)];
-        deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+    if ~isempty(ind) %if the acquisition time is saved as a unique variable
+        alldates = char(TextAsCells{1}(ind));
+        for k = 1:length(ind)
+            datestart = strfind(alldates(k,:),'T')+1; %hh:mm:ss.ssssss starts after 'T'
+            hhmmss = [hhmmss; alldates(k,datestart:datestart+1),alldates(k,datestart+3:datestart+4),alldates(k,datestart+6:datestart+7)];
+            deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+        end
+    else %find the acquisition time in the image name
+        clear idx ind;
+        date_notation = 'Output Resolution=';
+        idx = ~cellfun('isempty',strfind(TextAsCells{1},date_notation)); ind = find(idx==1);
+        alldates = char(TextAsCells{1}(ind-2)); %use the first image's datestring... go up 2 rows
+        %pull the data
+        for k = 1:length(ind)
+            datestart = strfind(alldates(k,:),'/WV')+14; %YYYYMMDDhhmmss starts after WorldView satellite specification
+            %USE datestart(2) BECAUSE datestart(1) GIVES THE DIRECTORY NAME, WHICH OMITS THE hhmmss
+            hhmmss = [hhmmss; alldates(k,datestart(2):datestart(2)+1),alldates(k,datestart(2)+2:datestart(2)+3),alldates(k,datestart(2)+4:datestart(2)+5)];
+            deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+        end
+        %double-check that at least one actual date was pulled, not NaNs
+        if isnan(alldates(1,datestart(2):datestart(2)+1))
+            deciday = 0.5; %guess imagery was collected around noon
+        end
     end
     fclose(fid);
     clear fid TextAsCells idx ind alldates datestart;
