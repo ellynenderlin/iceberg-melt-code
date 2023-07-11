@@ -671,7 +671,7 @@ clear A B Y Z;
 
 %plot the data to determine if any icebergs have bad melt estimates
 plot_flag = 1; %plot data
-table_flag = 0; %suppress export to table
+table_flag = 1; %export to table
 plot_export_iceberg_melt_data(SL,dir_output,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
 
 
