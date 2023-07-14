@@ -88,10 +88,18 @@ for j = 1:length(datemeta)
         alldates = char(TextAsCells{1}(ind-2)); %use the first image's datestring... go up 2 rows
         %pull the data
         for k = 1:length(ind)
-            datestart = strfind(alldates(k,:),'/WV')+14; %YYYYMMDDhhmmss starts after WorldView satellite specification
-            %USE datestart(2) BECAUSE datestart(1) GIVES THE DIRECTORY NAME, WHICH OMITS THE hhmmss
-            hhmmss = [hhmmss; alldates(k,datestart(2):datestart(2)+1),alldates(k,datestart(2)+2:datestart(2)+3),alldates(k,datestart(2)+4:datestart(2)+5)];
-            deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+            %determine if DEM is from WorldView (most) or GeoEye images
+            if contains(alldates(k,:),'/WV')
+                datestart = strfind(alldates(k,:),'/WV')+14; %YYYYMMDDhhmmss starts after WorldView satellite specification
+                %USE datestart(2) BECAUSE datestart(1) GIVES THE DIRECTORY NAME, WHICH OMITS THE hhmmss
+                hhmmss = [hhmmss; alldates(k,datestart(2):datestart(2)+1),alldates(k,datestart(2)+2:datestart(2)+3),alldates(k,datestart(2)+4:datestart(2)+5)];
+                deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+            else
+                datestart = strfind(alldates(k,:),'/GE')+14; %YYYYMMDDhhmmss starts after WorldView satellite specification
+                %USE datestart(2) BECAUSE datestart(1) GIVES THE DIRECTORY NAME, WHICH OMITS THE hhmmss
+                hhmmss = [hhmmss; alldates(k,datestart(2):datestart(2)+1),alldates(k,datestart(2)+2:datestart(2)+3),alldates(k,datestart(2)+4:datestart(2)+5)];
+                deciday = [deciday; str2num(hhmmss(k,1:2))/24 + str2num(hhmmss(k,3:4))/(24*60) + str2num(hhmmss(k,5:6))/(24*60*60)];
+            end
         end
         %double-check that at least one actual date was pulled, not NaNs
         if isnan(alldates(1,datestart(2):datestart(2)+1))
