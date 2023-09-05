@@ -41,23 +41,26 @@ if plot_flag == 1
     figure; set(gcf,'position',[100 500 1500 600]);
     subplot(1,3,1);
     plot(Asub,dVdt,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     set(gca,'fontsize',20); xlabel('Submerged area (m^2)','fontsize',20); ylabel('Meltwater flux (m^3/d)','fontsize',20);
     for i = 1:length(m)
-        text(double(Asub(i))-0.03e5,double(dVdt(i)),berg_no(i,:))
+        text(double(Asub(i))-0.02*range(xlims),double(dVdt(i)),berg_no(i,:))
     end
     grid on;
     subplot(1,3,2);
     plot(H,m,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     set(gca,'fontsize',20); xlabel('Average iceberg thickness (m)','fontsize',20); ylabel('Melt rate (m/d)','fontsize',20);
     for i = 1:length(m)
-        text(double(H(i))-2,double(m(i)),berg_no(i,:))
+        text(double(H(i))-0.02*range(xlims),double(m(i)),berg_no(i,:))
     end
     grid on;
     subplot(1,3,3);
     plot(coreg_zo-coreg_zf,dVdt,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     set(gca,'fontsize',20); xlabel('\Delta sea-level adjustment (m)','fontsize',20); ylabel('Meltwater flux (m^3/d)','fontsize',20);
     for i = 1:length(m)
-        text(double(coreg_zo(i)-coreg_zf(i)),double(dVdt(i)),berg_no(i,:))
+        text(double(coreg_zo(i)-coreg_zf(i))-0.02*range(xlims),double(dVdt(i)),berg_no(i,:))
     end
     grid on;
     saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.eps'],'epsc');
@@ -117,20 +120,23 @@ if plot_flag == 1
     figure; set(gcf,'position',[100 100 1200 600]);
     subplot(1,2,1);
     plot(Asub,dVdt,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     set(gca,'fontsize',20); xlabel('Submerged area (m^2)','fontsize',20); ylabel('Meltwater flux (m^3/d)','fontsize',20);
     for i = 1:length(m)
-        text(double(Asub(i))-0.03e5,double(dVdt(i)),berg_no(i,:))
+        text(double(Asub(i))-0.02*range(xlims),double(dVdt(i)),berg_no(i,:))
     end
     grid on;
     subplot(1,2,2);
     plot(H,m,'ok','markersize',24,'markerfacecolor','w'); hold on;
+    xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
     set(gca,'fontsize',20); xlabel('Average iceberg thickness (m)','fontsize',20); ylabel('Melt rate (m/d)','fontsize',20);
     for i = 1:length(m)
-        text(double(H(i))-2,double(m(i)),berg_no(i,:))
+        text(double(H(i))-0.02*range(xlims),double(m(i)),berg_no(i,:))
     end
     grid on;
     disp('Iceberg meltwater flux should increase linearly with submerged area');
     disp('Iceberg melt rates should increase with thickness');
+    clear xlims ylims;
     saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
 end
 
@@ -152,7 +158,7 @@ if table_flag == 1
             Asub(append_ref) = SL(i).mean.TA; Asub_uncert(append_ref) = SL(i).change.TA;
             append_ref = append_ref+1;
         else
-            disp(['Skipping over data for ',num2str(berg_no(i,:)),' (',num2str(i),' in SL structure)']);
+            disp(['Skipping over data for ',SL(i).name,' (',num2str(i),' in SL structure)']);
         end
     end
     bad_refs = find(draft<0); %remove data with negative thicknesses (unrealistic = error-prone)
