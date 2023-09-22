@@ -30,38 +30,38 @@ for k = 1:length(datepairs)
         for i = 1:length(SL)
             if isfield(SL,'mean') %format from 2020 to present
                 if SL(i).mean.dVdt > 0 && ~isempty(SL(i).mean.TA)
-                    dt(append_ref) = sum(SL(i).days);
-                    xo(append_ref) = nanmean(SL(i).initial.x); yo(append_ref) = nanmean(SL(i).initial.y); zo(append_ref) = SL(i).initial.z_median; Vo(append_ref) = SL(i).initial.V;
-                    xf(append_ref) = nanmean(SL(i).final.x); yf(append_ref) = nanmean(SL(i).final.y); zf(append_ref) = SL(i).final.z_median; Vf(append_ref) = SL(i).final.V;
-                    po(append_ref)=SL(i).initial.density; pf(append_ref) = SL(i).final.density;
-                    coreg_zo(append_ref) = SL(i).initial.coreg_z; coreg_zf(append_ref) = SL(i).final.coreg_z;
-                    dz(append_ref) = SL(i).mean.dz; dz_sigma(append_ref) = SL(i).uncert.dz;
-                    dVdt(append_ref) = SL(i).mean.dVdt; dVdt_uncert(append_ref) = max(SL(i).uncert.dVdt);
-                    draft(append_ref) = SL(i).mean.draft; draft_uncert(append_ref) = SL(i).change.draft;
-                    Asurf(append_ref) = SL(i).mean.SA; Asurf_uncert(append_ref) = SL(i).change.SA;
-                    Asub(append_ref) = SL(i).mean.TA; Asub_uncert(append_ref) = SL(i).change.TA;
+                    dt(append_ref,1) = sum(SL(i).days);
+                    xo(append_ref,1) = nanmean(SL(i).initial.x); yo(append_ref,1) = nanmean(SL(i).initial.y); zo(append_ref,1) = SL(i).initial.z_median; Vo(append_ref,1) = SL(i).initial.V;
+                    xf(append_ref,1) = nanmean(SL(i).final.x); yf(append_ref,1) = nanmean(SL(i).final.y); zf(append_ref,1) = SL(i).final.z_median; Vf(append_ref,1) = SL(i).final.V;
+                    po(append_ref,1)=SL(i).initial.density; pf(append_ref,1) = SL(i).final.density;
+                    coreg_zo(append_ref,1) = SL(i).initial.coreg_z; coreg_zf(append_ref,1) = SL(i).final.coreg_z;
+                    dz(append_ref,1) = SL(i).mean.dz; dz_sigma(append_ref,1) = SL(i).uncert.dz;
+                    dVdt(append_ref,1) = SL(i).mean.dVdt; dVdt_uncert(append_ref,1) = max(SL(i).uncert.dVdt);
+                    draft(append_ref,1) = SL(i).mean.draft; draft_uncert(append_ref,1) = SL(i).change.draft;
+                    Asurf(append_ref,1) = SL(i).mean.SA; Asurf_uncert(append_ref,1) = SL(i).change.SA;
+                    Asub(append_ref,1) = SL(i).mean.TA; Asub_uncert(append_ref,1) = SL(i).change.TA;
                     append_ref = append_ref+1;
                 else
-                    disp(['Skipping over data for ',num2str(append_ref),' (',num2str(i),' in SL structure)']);
+                    disp(['Skipping over data for ',num2str(append_ref,1),' (',num2str(i),' in SL structure)']);
                 end
             else
                 if SL(i).dVdt.mean > 0 && ~isempty(SL(i).TA.mean)
-                    dt(append_ref) = sum(SL(i).days);
-                    xo(append_ref) = nanmean(SL(i).xo); yo(append_ref) = nanmean(SL(i).yo); zo(append_ref) = median(SL(i).zo(~isnan(SL(i).zo))); Vo(append_ref) = SL(i).V.initial;
-                    xf(append_ref) = nanmean(SL(i).xf); yf(append_ref) = nanmean(SL(i).yf); zf(append_ref) = median(SL(i).zf(~isnan(SL(i).zf))); Vf(append_ref) = SL(i).V.final;
-                    po(append_ref)=900; pf(append_ref) = 900;
-                    coreg_zo(append_ref) = SL(i).adjust_o; coreg_zf(append_ref) = SL(i).adjust_f;
+                    dt(append_ref,1) = sum(SL(i).days);
+                    xo(append_ref,1) = nanmean(SL(i).xo); yo(append_ref,1) = nanmean(SL(i).yo); zo(append_ref,1) = median(SL(i).zo(~isnan(SL(i).zo))); Vo(append_ref,1) = SL(i).V.initial;
+                    xf(append_ref,1) = nanmean(SL(i).xf); yf(append_ref,1) = nanmean(SL(i).yf); zf(append_ref,1) = median(SL(i).zf(~isnan(SL(i).zf))); Vf(append_ref,1) = SL(i).V.final;
+                    po(append_ref,1)=900; pf(append_ref,1) = 900;
+                    coreg_zo(append_ref,1) = SL(i).adjust_o; coreg_zf(append_ref,1) = SL(i).adjust_f;
                     if ~isfield(SL,'dz')
-                        dz(append_ref) = SL(i).zo_median - SL(i).zf_median; dz_sigma(append_ref) = nanstd(SL(i).zo - SL(i).zf);
-                        draft(append_ref) = 900/(1027-900).*nanmean([SL(i).zo_median,SL(i).zf_median]); 
-                        draft_uncert(append_ref) = 900/(1027-900).*(SL(i).zo_median-SL(i).zf_median);
+                        dz(append_ref,1) = SL(i).zo_median - SL(i).zf_median; dz_sigma(append_ref,1) = nanstd(SL(i).zo - SL(i).zf);
+                        draft(append_ref,1) = 900/(1027-900).*nanmean([SL(i).zo_median,SL(i).zf_median]); 
+                        draft_uncert(append_ref,1) = 900/(1027-900).*(SL(i).zo_median-SL(i).zf_median);
                     else
-                        dz(append_ref) = SL(i).dz.mean; dz_sigma(append_ref) = SL(i).dz.stdev;
-                        draft(append_ref) = SL(i).draft.mean; draft_uncert(append_ref) = SL(i).draft.initial - SL(i).draft.final;
+                        dz(append_ref,1) = SL(i).dz.mean; dz_sigma(append_ref,1) = SL(i).dz.stdev;
+                        draft(append_ref,1) = SL(i).draft.mean; draft_uncert(append_ref,1) = SL(i).draft.initial - SL(i).draft.final;
                     end
-                    dVdt(append_ref) = SL(i).dVdt.mean; dVdt_uncert(append_ref) = max(SL(i).dVdt.err);
-                    Asurf(append_ref) = SL(i).SA.mean; Asurf_uncert(append_ref) = abs(SL(i).SA.initial - SL(i).SA.final)/2;
-                    Asub(append_ref) = SL(i).TA.mean; Asub_uncert(append_ref) = abs(SL(i).TA.initial - SL(i).TA.final)/2;
+                    dVdt(append_ref,1) = SL(i).dVdt.mean; dVdt_uncert(append_ref,1) = max(SL(i).dVdt.err);
+                    Asurf(append_ref,1) = SL(i).SA.mean; Asurf_uncert(append_ref,1) = abs(SL(i).SA.initial - SL(i).SA.final)/2;
+                    Asub(append_ref,1) = SL(i).TA.mean; Asub_uncert(append_ref,1) = abs(SL(i).TA.initial - SL(i).TA.final)/2;
                     append_ref = append_ref+1;
                 else
                     disp(['Skipping over data for ',num2str(append_ref),' (',num2str(i),' in SL structure)']);
@@ -118,7 +118,7 @@ for k = 1:length(datepairs)
         output_name = [region_abbrev,datepairs(k).name(end-50:end-3),'csv'];
     else
         d1 = datepairs(k).name(4:11); d2 = datepairs(k).name(13:20); %assumes 2-letter abbreviation at file name beginning
-        output_name = [datepairs(k).name(1:end-3),'info.csv'];
+        output_name = [datepairs(k).name(1:end-4),'info.csv'];
     end
     
     %plot the data
@@ -135,7 +135,7 @@ for k = 1:length(datepairs)
     grid on;
     drawnow;
     
-    %resave as a tab-delimited text file
+    %resave as a csv
 %     clear dt xo yo zo po Vo xf yf zf pf Vf coreg_z* dz* dVdt* draft* Asurf* Asub*;
     column_names = ["TimeSeparation", "X_i", "Y_i", "MedianZ_i",...
         "Density_i", "Volume_i", "X_f", "Y_f", "MedianZ_f",...
@@ -161,3 +161,4 @@ end
 subplot(sub1); leg = legend(pl,num2str([years]')); set(leg,'location','northwest');
 ylims = get(gca,'ylim'); set(gca,'ylim',[0 max(ylims)]);
 saveas(gcf,[region_name,'_iceberg-melt_subplots.png'],'png');
+disp('done exporting csvs');
