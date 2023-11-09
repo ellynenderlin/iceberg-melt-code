@@ -36,7 +36,13 @@ end
 berg_x = nanmean([PSx_early PSx_late]); berg_y = nanmean([PSy_early PSy_late]);
 %make sure DEM date string is long enough to patch now-corrected error in convert_PGC_tifs_to_matfiles.m (corrected 21/04/23)
 if length(DEM1.YYYYMMDDhhmmss) < 14; DEM1.YYYYMMDDhhmmss = [DEM1.YYYYMMDDhhmmss,num2str(zeros(1,14-length(DEM1.YYYYMMDDhhmmss)))]; end 
-if length(DEM2.YYYYMMDDhhmmss) < 14; DEM2.YYYYMMDDhhmmss = [DEM2.YYYYMMDDhhmmss,num2str(zeros(1,14-length(DEM2.YYYYMMDDhhmmss)))]; end 
+if length(DEM2.YYYYMMDDhhmmss) < 14
+    if length(DEM2.YYYYMMDDhhmmss) == 12
+        DEM2.YYYYMMDDhhmmss = [DEM2.YYYYMMDDhhmmss,'00']; 
+    elseif length(DEM2.YYYYMMDDhhmmss) == 13
+        DEM2.YYYYMMDDhhmmss = [DEM2.YYYYMMDDhhmmss,'0']; 
+    end 
+end
 berg_dates = [DEM1.YYYYMMDDhhmmss; DEM2.YYYYMMDDhhmmss];
 to = berg_dates(1,:); tf = berg_dates(2,:);
 
