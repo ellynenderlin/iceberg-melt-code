@@ -29,17 +29,17 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'HLG'; 
-region_abbrev = 'HLG';
+region_name = 'KOG'; 
+region_abbrev = 'KOG';
 % path to codes
 dir_repo = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code'; %Github repo containing custom iceberg melt code
-dir_code = '/Users/ellynenderlin/Research/miscellaneous/general-code/'; %directory containing miscellaneous codes
+dir_code = '/Users/Shared/general-code/'; %directory containing miscellaneous codes
 % path to DEM files in directory
-dir_DEM = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/sites/',region_name,'/'];
+dir_DEM = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % path to outputs folder (where you would like all outputs saved)
-dir_output = ['/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/sites/',region_name,'/'];
+dir_output = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20210715'; DEM2.time = '20210727';
+DEM1.time = '20230505'; DEM2.time = '20230606';
 
 %----------Specify Region------------
 %NOTE: Make sure the SMB data are not in a Github repo!!! You may need to
@@ -48,7 +48,7 @@ answer = questdlg('Where are you working?',...
     'Iceberg Location','1) Greenland','2) Antarctica','1) Greenland');
 switch answer
     case '1) Greenland'
-        geography = 0; dir_SMB = '/Users/ellynenderlin/Research/miscellaneous/MARv3.12.1_Greenland/';
+        geography = 0; dir_SMB = '/Users/Shared/general-code/MARv3_Greenland/';
     case '2) Antarctica'
         geography = 1; dir_SMB = '/Users/ellynenderlin/Research/miscellaneous/RACMO2.3_Antarctica/';
 end
