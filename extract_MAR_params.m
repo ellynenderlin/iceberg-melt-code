@@ -47,7 +47,11 @@ for j = inds
     GRISmask = squeeze(ncread([dir_SMB,MARs(j).name],'MSK')); 
     smb = squeeze(ncread([dir_SMB,MARs(j).name],'SMB')); smb(smb==-1.0000e+19) = NaN; % surface mass balance (mmWE/day)
     runoff = squeeze(ncread([dir_SMB,MARs(j).name],'RU')); runoff(runoff==-1.0000e+19) = NaN; %meltwater+rain runoff (mmWE/day)
-    airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'TT')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
+    if smb_yr >= 2023
+        airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'TTZ')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
+    else
+        airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'TT')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
+    end
     %mask-out water
     GRISmask(GRISmask==0) = NaN; GRISmask(~isnan(GRISmask)) = 1;
     for k = 1:size(smb,3)
@@ -135,7 +139,8 @@ days(end) = datenum(tf,'yyyymmddHHMMSS')-floor(datenum(tf,'yyyymmddHHMMSS'));
 berg_runoff = nansum(days'.*runoff)/1000; %surface meltwater that runs off (convert from mm w.e. per day to total m w.e.)
 %estimate the ice temperature as the average annual air temperature (doesn't account for advection of colder ice and melt/refreezing at the surface and/or submarine interface)
 berg_T = 273+nanmean(icetemp); % air temp (Kelvin)
-
+disp(['Iceberg runoff = ',num2str(berg_runoff),' m w.e.']);
+disp(['Iceberg temp (from air temp) = ',num2str(berg_T),' K']);
 
 
 end
