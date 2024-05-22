@@ -45,11 +45,15 @@ for j = inds
     
     %grab the variables
     GRISmask = squeeze(ncread([dir_SMB,MARs(j).name],'MSK')); 
-    smb = squeeze(ncread([dir_SMB,MARs(j).name],'SMB')); smb(smb==-1.0000e+19) = NaN; % surface mass balance (mmWE/day)
-    runoff = squeeze(ncread([dir_SMB,MARs(j).name],'RU')); runoff(runoff==-1.0000e+19) = NaN; %meltwater+rain runoff (mmWE/day)
     if smb_yr >= 2023
+        smb = squeeze(ncread([dir_SMB,MARs(j).name],'SMB')); smb(smb==-1.0000e+19) = NaN; % surface mass balance (mmWE/day)
+        runoff = squeeze(ncread([dir_SMB,MARs(j).name],'RU')); runoff(runoff==-1.0000e+19) = NaN; %meltwater+rain runoff (mmWE/day)
         airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'TTZ')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
+        smb_temp = smb(:,:,1,:); runoff_temp = runoff(:,:,1,:); airtemp_temp = airtemp(:,:,1,:); clear smb runoff airtemp;
+        smb = squeeze(smb_temp); runoff = squeeze(runoff_temp); airtemp = squeeze(airtemp_temp);  clear *_temp;
     else
+        smb = squeeze(ncread([dir_SMB,MARs(j).name],'SMB')); smb(smb==-1.0000e+19) = NaN; % surface mass balance (mmWE/day)
+        runoff = squeeze(ncread([dir_SMB,MARs(j).name],'RU')); runoff(runoff==-1.0000e+19) = NaN; %meltwater+rain runoff (mmWE/day)
         airtemp = squeeze(ncread([dir_SMB,MARs(j).name],'TT')); airtemp(airtemp==-1.0000e+19) = NaN; %surface temp (degrees C)
     end
     %mask-out water
