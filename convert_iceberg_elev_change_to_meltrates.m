@@ -579,7 +579,7 @@ for i = 1:length(SL)
     %convert surface elevation changes to thickness changes
     vals = [];
     for j = 1:length(IB)
-        if IB(j).local_adjust_f ~= 0 %use local sea level-adjusted elevations
+        if ~isfield(IB(j).dz,'br_tide_adjust') %use local sea level-adjusted elevations
             non_NaNs = length(IB(j).dz.local_adjust.map(~isnan(IB(j).dz.local_adjust.map)));
             vals(size(vals,2)+1:size(vals,2)+non_NaNs) = IB(j).dz.local_adjust.map(~isnan(IB(j).dz.local_adjust.map));
         else %use bedrock & tide-adjusted elevations

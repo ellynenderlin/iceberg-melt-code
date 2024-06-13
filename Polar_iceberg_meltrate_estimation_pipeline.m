@@ -161,7 +161,7 @@ end
 clear answer;
 
 %coregister (if not already executed)
-if ~isfield(DEM1,'geoid_z')
+if ~isfield(DEM1,'z_masked_sl_adjust')
     if tidemodel_flag == 0
         [DEM1,DEM2] = coregister_iceberg_DEM_pairs(DEM1,DEM2,IM1,IM2,geography,region_abbrev,dir_output);
     else
