@@ -119,16 +119,24 @@ if DEMmm < 10; DEMmmstr = ['0',num2str(DEMmm)]; else DEMmmstr = num2str(DEMmm); 
 if DEMss < 10; DEMssstr = ['0',num2str(DEMss)]; else DEMssstr = num2str(DEMss); end %seconds
 DEM.YYYYMMDDhhmmss = [DEM.time,DEMhhstr,DEMmmstr,DEMssstr];
 
-%create a mask
-data_mask = zeros(size(DEM.z));
-for i = 1:size(DEM.z,1)
-    startval = find(~isnan(DEM.z(i,:))==1,1,'first');
-    endval = find(~isnan(DEM.z(i,:))==1,1,'last');
-    if ~isempty(startval)
-        data_mask(i,startval:endval) = 1;
-    end
-    clear startval endval;
-end
+%crop & create a data mask
+data_mask = zeros(size(DEM.z)); data_mask(~isnan(DEM.z)==1) = 1;
+sum_rows = sum(data_mask,1); sum_cols = sum(data_mask,2);
+row_extent = sort([find(sum_rows>=1,1,'first'), find(sum_rows>=1,1,'last')]);
+col_extent = sort([find(sum_cols>=1,1,'first'), find(sum_cols>=1,1,'last')]);
+xcrop = DEM.x(min(row_extent):max(row_extent)); ycrop = DEM.y(min(col_extent):max(col_extent));
+zcrop = DEM.z(min(col_extent):max(col_extent),min(row_extent):max(row_extent));
+DEM.x = []; DEM.y = []; DEM.z = [];
+DEM.x = xcrop; DEM.y = ycrop; DEM.z = zcrop; clear *crop sum_* *_extent data_mask;
+data_mask = zeros(size(DEM.z)); data_mask(~isnan(DEM.z)==1) = 1;
+% for i = 1:size(DEM.z,1)
+%     startval = find(~isnan(DEM.z(i,:))==1,1,'first');
+%     endval = find(~isnan(DEM.z(i,:))==1,1,'last');
+%     if ~isempty(startval)
+%         data_mask(i,startval:endval) = 1;
+%     end
+%     clear startval endval;
+% end
 DEM.mask = data_mask;
 
 %save DEM as a mat-file
@@ -147,7 +155,7 @@ for j = 1:length(datefiles)
             IM.y = R.YWorldLimits(2)-0.5*R.CellExtentInWorldY:-R.CellExtentInWorldY:R.YWorldLimits(1)+0.5*R.CellExtentInWorldY;
             
             %normalize the image
-            A(A==-9999) = NaN;
+            A(A==-9999) = NaN; A(A==0) = NaN;
             B = single(A); B(B == -32768) = NaN; clear A;
             C = B-min(B(~isnan(B))); clear B;
             D = C./max(C(~isnan(C))); clear C;
@@ -156,7 +164,7 @@ for j = 1:length(datefiles)
             clear D R;
         else
             %normalize the image
-            A(A==-9999) = NaN;
+            A(A==-9999) = NaN; A(A==0) = NaN;
             B = single(A); B(B == -32768) = NaN; clear A;
             C = B-min(B(~isnan(B))); clear B;
             D = C./max(C(~isnan(C))); clear C;
@@ -187,15 +195,23 @@ for j = 1:length(datefiles)
 end
 
 %create a mask for the image then infill holes inside data domain
-im_mask = zeros(size(IM.z));
-for i = 1:size(IM.z,1)
-    startval = find(~isnan(IM.z(i,:))==1,1,'first');
-    endval = find(~isnan(IM.z(i,:))==1,1,'last');
-    if ~isempty(startval)
-        im_mask(i,startval:endval) = 1;
-    end
-    clear startval endval;
-end
+im_mask = zeros(size(IM.z)); im_mask(~isnan(IM.z)==1) = 1;
+sum_rows = sum(im_mask,1); sum_cols = sum(im_mask,2);
+row_extent = sort([find(sum_rows>=1,1,'first'), find(sum_rows>=1,1,'last')]);
+col_extent = sort([find(sum_cols>=1,1,'first'), find(sum_cols>=1,1,'last')]);
+xcrop = IM.x(min(row_extent):max(row_extent)); ycrop = IM.y(min(col_extent):max(col_extent));
+zcrop = IM.z(min(col_extent):max(col_extent),min(row_extent):max(row_extent));
+IM.x = []; IM.y = []; IM.z = [];
+IM.x = xcrop; IM.y = ycrop; IM.z = zcrop; clear *crop sum_* *_extent data_mask;
+im_mask = zeros(size(IM.z)); im_mask(~isnan(IM.z)==1) = 1;
+% for i = 1:size(IM.z,1)
+%     startval = find(~isnan(IM.z(i,:))==1,1,'first');
+%     endval = find(~isnan(IM.z(i,:))==1,1,'last');
+%     if ~isempty(startval)
+%         im_mask(i,startval:endval) = 1;
+%     end
+%     clear startval endval;
+% end
 
 %save the image
 IM.mask = im_mask; %removed IM.z_masked

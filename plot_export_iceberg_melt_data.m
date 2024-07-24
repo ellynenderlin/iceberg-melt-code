@@ -63,7 +63,8 @@ if plot_flag == 1
         text(double(coreg_zo(i)-coreg_zf(i))-0.02*range(xlims),double(dVdt(i)),berg_no(i,:))
     end
     grid on;
-    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.eps'],'epsc');
+%     saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.eps'],'epsc');
+    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots.png'],'png');
     
     %"fix" melt rate estimates with bad local sea level adjustments
     sldz = coreg_zo-coreg_zf;  %sea level adjustment
@@ -137,7 +138,8 @@ if plot_flag == 1
     disp('Iceberg meltwater flux should increase linearly with submerged area');
     disp('Iceberg melt rates should increase with thickness');
     clear xlims ylims;
-    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
+%     saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.eps'],'epsc');
+    saveas(gcf,[dir_output,'/',DEM1.time,'-',DEM2.time,'/',region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt_scatterplots-adjusted.png'],'png');
 end
 
 %save as a table in a text file
