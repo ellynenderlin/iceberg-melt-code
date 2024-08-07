@@ -70,6 +70,12 @@ else %only surface air temp and runoff for Greenland
     [dt,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
 end
 
+%calculate pixel areas
+DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); %square meters
+im1_pixel_area = abs(IM1.x(1)-IM1.x(2)).*abs(IM1.y(1)-IM1.y(2)); %square meters
+DEM2_pixel_area = abs(DEM2.x(1)-DEM2.x(2)).*abs(DEM2.y(1)-DEM2.y(2)); %square meters
+im2_pixel_area = abs(IM2.x(1)-IM2.x(2)).*abs(IM2.y(1)-IM2.y(2)); %square meters
+
 %load the saved data if restarting
 if exist([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']) == 2 %file already exists!
     restart_flag = questdlg('Load existing file or start from scratch?',...
@@ -191,10 +197,6 @@ if entry_point <= 1
     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
     set(gca,'ydir','normal','clim',[0 50]); hold on;
     
-    %extract pixel areas
-    DEM_pixel_area = abs(DEM_x(1)-DEM_x(2)).*abs(DEM_y(1)-DEM_y(2)); %square meters
-    im_pixel_area = abs(A.x(1)-A.x(2)).*abs(A.y(1)-A.y(2)); %square meters
-    
     % ----------extract initial area & size info----------
     disp('For each iceberg, extract size info');
     if ~exist([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/'],'dir')
@@ -268,7 +270,7 @@ if entry_point <= 1
         lmin_o = abs(A.x(2)-A.x(1))*shapes_o.MinorAxisLength;
         lmax_o = abs(A.x(2)-A.x(1))*shapes_o.MajorAxisLength;
         SL(i).initial.width_min = lmin_o; SL(i).initial.width_max = lmax_o;
-        base_area = shapes_o.Area.*im_pixel_area; SL(i).initial.SA = base_area;
+        base_area = shapes_o.Area.*im1_pixel_area; SL(i).initial.SA = base_area;
         SL(i).initial.z_map = single(DEM_z_masked); SL(i).initial.z_map(SL(i).initial.z_map == 0) = NaN; SL(i).initial.z_map(SL(i).initial.z_map<0) = NaN;
         zo = SL(i).initial.z_map(~isnan(SL(i).initial.z_map));
         SL(i).initial.z_median = nanmedian(zo); SL(i).initial.z_mad = mad(zo,1);
@@ -335,9 +337,9 @@ if entry_point <= 1
         SL(i).initial_range.draft = sort(draft);
         lat_area = sort(draft).*sum(dist); SL(i).initial_range.LA = lat_area;
         area = base_area*ones(size(lat_area)) + lat_area; SL(i).initial_range.TA = area;
-        SL(i).initial.V = DEM_pixel_area*(rho_sw/(rho_sw-SL(i).initial.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
-        SL(i).initial_range.V(1) = DEM_pixel_area*(rho_sw/(rho_sw-min(SL(i).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
-        SL(i).initial_range.V(2) = DEM_pixel_area*(rho_sw/(rho_sw-max(SL(i).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+        SL(i).initial.V = DEM1_pixel_area*(rho_sw/(rho_sw-SL(i).initial.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+        SL(i).initial_range.V(1) = DEM1_pixel_area*(rho_sw/(rho_sw-min(SL(i).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
+        SL(i).initial_range.V(2) = DEM1_pixel_area*(rho_sw/(rho_sw-max(SL(i).initial_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).initial.z_median*sum(sum(isnan(DEM_z_masked))));
         
         %save the iceberg outline
         disp('Writing shapefile containing early iceberg polygon information');
@@ -426,10 +428,6 @@ if entry_point <= 2
     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
     set(gca,'ydir','normal','clim',[0 50]); hold on;
     
-    %extract pixel areas
-    DEM_pixel_area = abs(DEM_x(1)-DEM_x(2)).*abs(DEM_y(1)-DEM_y(2)); %square meters
-    im_pixel_area = abs(A.x(1)-A.x(2)).*abs(A.y(1)-A.y(2)); %square meters
-    
     % ----------extract final area & size info----------
     disp('For each iceberg, measure the iceberg aerial extent by drawing a polygon around the iceberg edge');
     cd([dir_output,DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
@@ -498,7 +496,7 @@ if entry_point <= 2
         lmin_f = abs(A.x(2)-A.x(1))*shapes_f.MinorAxisLength;
         lmax_f = abs(A.x(2)-A.x(1))*shapes_f.MajorAxisLength;
         SL(i).final.width_min = lmin_f; SL(i).final.width_max = lmax_f;
-        base_area = shapes_f.Area.*im_pixel_area; SL(i).final.SA = base_area;
+        base_area = shapes_f.Area.*im2_pixel_area; SL(i).final.SA = base_area;
         SL(i).final.z_map = single(DEM_z_masked); SL(i).final.z_map(SL(i).final.z_map == 0) = NaN; SL(i).final.z_map(SL(i).final.z_map<0) = NaN;
         zf = SL(i).final.z_map(~isnan(SL(i).final.z_map));
         SL(i).final.z_median = nanmedian(zf); SL(i).final.z_mad = mad(zf,1);
@@ -544,9 +542,9 @@ if entry_point <= 2
         SL(i).final_range.draft = sort(draft);
         lat_area = sort(draft).*sum(dist); SL(i).final_range.LA = lat_area;
         area = base_area*ones(size(lat_area)) + lat_area; SL(i).final_range.TA = area;
-        SL(i).final.V = DEM_pixel_area*(rho_sw/(rho_sw-SL(i).final.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
-        SL(i).final_range.V(1) = DEM_pixel_area*(rho_sw/(rho_sw-min(SL(i).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
-        SL(i).final_range.V(2) = DEM_pixel_area*(rho_sw/(rho_sw-max(SL(i).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
+        SL(i).final.V = DEM2_pixel_area*(rho_sw/(rho_sw-SL(i).final.density))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
+        SL(i).final_range.V(1) = DEM2_pixel_area*(rho_sw/(rho_sw-min(SL(i).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
+        SL(i).final_range.V(2) = DEM2_pixel_area*(rho_sw/(rho_sw-max(SL(i).final_range.density)))*(sum(DEM_z_masked(~isnan(DEM_z_masked)))+SL(i).final.z_median*sum(sum(isnan(DEM_z_masked))));
         
         %save the iceberg outline
         S.Geometry = 'Polygon';
@@ -677,7 +675,7 @@ if entry_point <= 3
         dz_SMB_err = 0.3*abs(surfmelt);
         
         %uncertainty from R1
-        pixelno_o = SL(i).initial.SA./DEM_pixel_area; pixelno_f = SL(i).final.SA./DEM_pixel_area;
+        pixelno_o = SL(i).initial.SA./DEM1_pixel_area; pixelno_f = SL(i).final.SA./DEM2_pixel_area;
         dz_randerr = sqrt((2.9^2+2.9^2)./nanmean([pixelno_o pixelno_f])); %(2.9^2+2.9^2) is to account for DEM differencing over time
         
         %uncertainty from R2
