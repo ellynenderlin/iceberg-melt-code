@@ -94,6 +94,8 @@ if exist([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.ma
         case 'Restart'
             entry_point = 0;
     end
+else
+    entry_point = 0; %start at the beginning
 end
 cd(dir_iceberg);
   
