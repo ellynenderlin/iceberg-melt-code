@@ -131,7 +131,7 @@ elseif option_no==3 %only plot
     load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
     cd(dir_iceberg);
     plot_flag = 1; %plot data
-    table_flag = 0; %default (0) suppresses table generation, switch to 1 to create tables
+    table_flag = 1; %default (1) creates table CSVs, switch to 0 to suppress file generation
     plot_export_iceberg_melt_data(SL,dir_output,region_abbrev,DEM1,DEM2,plot_flag,table_flag);
 end
 

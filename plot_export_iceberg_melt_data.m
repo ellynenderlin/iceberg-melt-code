@@ -96,7 +96,7 @@ if plot_flag == 1
                         %replace sea level adjustments & corrected volume flux (dVdt_mean) and melt rate (dHdt_mean) in structure
                         SL(SLref(i)).mean.dVdt = dVdt_mean; SL(SLref(i)).mean.dHdt = dHdt_mean;
                         SL(SLref(i)).initial.coreg_z = median_slzo; SL(SLref(i)).final.coreg_z = median_slzf;
-                        
+                        save([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat'],'SL','-v7.3');
                 end
                 
                 
