@@ -95,12 +95,14 @@ if ~isempty(PScoord_files)
     %plot the iceberg images & assess whether the center coordinates need to be adjusted
     figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[50 250 800 700]);
     imagesc(IM1.x(1,xminie:xmaxie),IM1.y(1,yminie:ymaxie),IM1.z(yminie:ymaxie,xminie:xmaxie)); axis xy equal; colormap gray; hold on;
+    set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
     % plot iceberg coordinates on early image
     hold on; plot(early_x,early_y,'*w','markersize',7,'linewidth',1);
     set(gca,'fontsize',14);
     title(['Early date: ',datestr(date_o,'yyyy/mm/dd')],'fontsize',16);
     figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 250 800 700]);
     imagesc(IM2.x(1,xmini:xmaxi),IM2.y(1,ymini:ymaxi),IM2.z(ymini:ymaxi,xmini:xmaxi)); axis xy equal; colormap gray; hold on;
+    set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
     % plot iceberg coordinates on later image
     hold on; plot(late_x,late_y,'*w','markersize',7,'linewidth',1);
     set(gca,'fontsize',14);
@@ -140,10 +142,12 @@ if ~isempty(PScoord_files)
         %plot the iceberg images & assess whether the center coordinates need to be adjusted
         figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[50 250 800 700]);
         imagesc(IM1.x(1,xminie:xmaxie),IM1.y(1,yminie:ymaxie),IM1.z_masked(yminie:ymaxie,xminie:xmaxie)); axis xy equal; colormap gray; hold on;
+        set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
         set(gca,'fontsize',14);
         title(['Early date: ',num2str(datestr(date_o,'yyyy/mm/dd'))],'fontsize',16);
         figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 250 800 700]);
         imagesc(IM2.x(1,xmini:xmaxi),IM2.y(1,ymini:ymaxi),IM2.z_masked(ymini:ymaxi,xmini:xmaxi)); axis xy equal; colormap gray; hold on;
+        set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
         set(gca,'fontsize',14);
         title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16);
     end  

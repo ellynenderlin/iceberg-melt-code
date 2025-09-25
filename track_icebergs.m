@@ -32,23 +32,23 @@ cd_to_datefolder = ['cd ',dir_output,'/',DEM1.time,'-',DEM2.time,'/']; eval(cd_t
 % DEM1.z_elpsd_adjust(DEM1.z_elpsd_adjust<0) = 0; DEM2.z_elpsd_adjust(DEM2.z_elpsd_adjust<0) = 0; %remove elevations less than zero for plotting purposes
 figure1 = figure; set(figure1,'position',[0 600 800 600]);
 imagesc(DEM1.x,DEM1.y,DEM1.z_elpsd_adjust); axis xy equal; grid on; hold on;
-set(gca,'clim',[min(nanmedian(DEM1.z_elpsd_adjust)) min(nanmedian(DEM1.z_elpsd_adjust))+maxelev]); colormap(gca,elev_cmap); colorbar; 
+set(gca,'clim',[nanmedian(min(DEM1.z_elpsd_adjust)) nanmedian(min(DEM1.z_elpsd_adjust))+maxelev]); colormap(gca,elev_cmap); colorbar; 
 set(gca,'xtick',[min(DEM1.x):round(range(DEM1.x)/10000)*1000:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:round(range(DEM1.x)/10000):max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):round(range(DEM1.y)/10000)*1000:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:round(range(DEM1.y)/10000):max(DEM1.y)/1000]);
 figure2 = figure; set(figure2,'position',[975 600 800 600]);
 imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust); axis xy equal; grid on; hold on;
-set(gca,'clim',[min(nanmedian(DEM2.z_elpsd_adjust)) min(nanmedian(DEM2.z_elpsd_adjust))+maxelev]); colormap(gca,elev_cmap); colorbar; 
+set(gca,'clim',[nanmedian(min(DEM2.z_elpsd_adjust)) nanmedian(min(DEM2.z_elpsd_adjust))+maxelev]); colormap(gca,elev_cmap); colorbar; 
 set(gca,'xtick',[min(DEM2.x):round(range(DEM2.x)/10000)*1000:max(DEM2.x)],'xticklabel',[min(DEM2.x)/1000:round(range(DEM2.x)/10000):max(DEM2.x)/1000],...
     'ytick',[min(DEM2.y):round(range(DEM2.y)/10000)*1000:max(DEM2.y)],'yticklabel',[min(DEM2.y)/1000:round(range(DEM2.y)/10000):max(DEM2.y)/1000]);
 
 %plot images
 figure3 = figure; set(figure3,'position',[0 0 800 600]); ax3=gca;
-imagesc(IM1.x,IM1.y,IM1.z); axis xy equal; colormap(gca,'gray'); grid on; set(gca,'clim',[0 200]); hold on;
+imagesc(IM1.x,IM1.y,IM1.z); axis xy equal; colormap(gca,'gray'); grid on; set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
 set(gca,'xtick',[min(DEM1.x):round(range(DEM1.x)/10000)*1000:max(DEM1.x)],'xticklabel',[min(DEM1.x)/1000:round(range(DEM1.x)/10000):max(DEM1.x)/1000],...
     'ytick',[min(DEM1.y):round(range(DEM1.y)/10000)*1000:max(DEM1.y)],'yticklabel',[min(DEM1.y)/1000:round(range(DEM1.y)/10000):max(DEM1.y)/1000]);
 
 figure4 = figure; set(figure4,'position',[975 0 800 600]); ax4=gca;
-imagesc(IM2.x,IM2.y,IM2.z); axis xy equal; colormap(gca,'gray'); grid on; set(gca,'clim',[0 200]); hold on;
+imagesc(IM2.x,IM2.y,IM2.z); axis xy equal; colormap(gca,'gray'); grid on; set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
 set(gca,'xtick',[min(DEM2.x):round(range(DEM2.x)/10000)*1000:max(DEM2.x)],'xticklabel',[min(DEM2.x)/1000:round(range(DEM2.x)/10000):max(DEM2.x)/1000],...
     'ytick',[min(DEM2.y):round(range(DEM2.y)/10000)*1000:max(DEM2.y)],'yticklabel',[min(DEM2.y)/1000:round(range(DEM2.y)/10000):max(DEM2.y)/1000]);
 
@@ -86,57 +86,105 @@ else
     q=1;
 end
 
-%iterative iceberg selection
+%% iterative iceberg selection
 while q
-    ID_question = questdlg('Are there matching icebergs?',...
+    ID_question = questdlg('Are there more matching icebergs?',...
         'Iceberg Pairing','1) Yes!','2) No!','1) Yes!');
     if q <= 30
         %execute blunder removal based on question response
         switch ID_question
             case '1) Yes!'
                 disp(['iceberg #',num2str(q)]);
-                
+
                 %zoom in
-                disp('earlier image');
-                figure(figure3);
-                disp('Click on UL & LR corners of a box bounding a region where you want to look at icebergs to zoom in'); % Upper left, lower right.
-                [a] = ginput(2);
-                set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
-                figure(figure1);
-                set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
-                drawnow; clear a;
-                disp('later image');
-                figure(figure4);
-                disp('Click on UL & LR corners of a box bounding a region where you want to look at icebergs to zoom in'); % Upper left, lower right.
-                [a] = ginput(2);
-                set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
-                figure(figure2);
-                set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
-                drawnow; clear a;
+                zoom_in = questdlg('Zoom in?',...
+                    'Zoom','1) Yes!','2) No!','1) Yes!');
+                switch zoom_in
+                    case '1) Yes!'
+                        disp('earlier image');
+                        figure(figure3);
+                        disp('Click on UL & LR corners of a box bounding a region where you want to look at icebergs to zoom in'); % Upper left, lower right.
+                        [a] = ginput(2);
+                        set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
+                        figure(figure1);
+                        set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
+                        drawnow; clear a;
+                        disp('later image');
+                        figure(figure4);
+                        disp('Click on UL & LR corners of a box bounding a region where you want to look at icebergs to zoom in'); % Upper left, lower right.
+                        [a] = ginput(2);
+                        set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
+                        figure(figure2);
+                        set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
+                        drawnow; clear a;
+                    case '2) No!'
+                        disp('keeping zoom the same')
+                end
                 
+                %select the iceberg
                 disp('Click on the middle of the iceberg in each DEM');
-                disp('earlier image');
-                figure(figure3);
+                disp('earlier DEM');
+                figure(figure1);
                 [PSx_early(q),PSy_early(q)] = ginput(1);
                 plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','c');
-                figure(figure1);
+                figure(figure3);
                 plot(PSx_early(q),PSy_early(q),'.','markersize',10,'color','c');
                 drawnow;
-                disp('later image');
-                figure(figure4);
+                disp('later DEM');
+                figure(figure2);
                 [PSx_late(q),PSy_late(q)] = ginput(1);
                 plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','c');
-                figure(figure2);
+                figure(figure4);
                 plot(PSx_late(q),PSy_late(q),'.','markersize',10,'color','c');
                 drawnow;
                 
-                %zoom back out & advance
+                %save after each loop in case Matlab freezes (slower but
+                %saves data more regularly)
                 q = q+1;
-                figure(figure1); set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
-                figure(figure3); set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
-                figure(figure2); set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
-                figure(figure4); set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
-                drawnow;
+                for j = 1:length(PSx_early)
+                    if size(num2str(j),2) == 1
+                        iceberg_no = [num2str(0),num2str(j)];
+                    else
+                        iceberg_no = num2str(j);
+                    end
+                    coords = [PSy_early(j)  PSx_early(j) PSy_late(j) PSx_late(j)];
+                    coords_table = array2table(coords,...
+                        'VariableNames',{'DEM1: Y (m)','DEM1: X (m)','DEM2: Y (m)','DEM2: X (m)'});
+                    writetable(coords_table,[dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg',iceberg_no,'_PScoords.txt']);
+                    clear coords;
+                end
+                disp('iceberg coordinates saved');
+
+                %zoom back out & advance
+                zoom_out = questdlg('Zoom back out?',...
+                    'Zoom','1) Zoom out','2) No','1) Zoom out');
+                switch zoom_out
+                    case '1) Zoom out'
+                        figure(figure1); set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
+                        figure(figure3); set(gca,'xlim',[min(DEM1.x) max(DEM1.x)],'ylim',[min(DEM1.y) max(DEM1.y)]);
+                        figure(figure2); set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
+                        figure(figure4); set(gca,'xlim',[min(DEM2.x) max(DEM2.x)],'ylim',[min(DEM2.y) max(DEM2.y)]);
+                        drawnow;
+                    % case '2) Pan'
+                    %     %figure 1
+                    %     disp('Pan around in the earlier DEM')
+                    %     po = pan(figure1);
+                    %     po.ActionPostCallback = @mypanpostcallback; % Set the ActionPostCallback to disable pan
+                    %     po.Enable = 'on';
+                    %     disp('Pan (only works for one click and drag)');
+                    %     waitfor(po, 'Enable', 'off');
+                    %     %figure 1
+                    %     disp('Pan around in the later DEM')
+                    %     po = pan(figure2);
+                    %     po.ActionPostCallback = @mypanpostcallback; % Set the ActionPostCallback to disable pan
+                    %     po.Enable = 'on';
+                    %     disp('Pan (only works for one click and drag)');
+                    %     waitfor(po, 'Enable', 'off');
+
+                    case '2) No'
+                        disp('keeping zoom the same')
+                end
+
             case '2) No!'
                 disp('Move on!')
                 break
@@ -177,6 +225,8 @@ end
 %     plot(PSx_late(j),PSy_late(j),'.','markersize',10,'color','y');
 %     drawnow
 % end
+
+%% compile and save
 
 % concatenate coordinates
 early_coords = [PSx_early',PSy_early']; %early_coords = sortrows(early_coords,[1 2]);

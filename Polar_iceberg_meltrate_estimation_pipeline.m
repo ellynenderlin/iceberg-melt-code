@@ -29,17 +29,17 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'QTS'; 
-region_abbrev = 'QTS';
+region_name = 'APU'; 
+region_abbrev = region_name;
 % path to codes
-dir_repo = '/Users/ellynenderlin/Research/NSF_Antarctic-Icebergs/iceberg-melt-code'; %Github repo containing custom iceberg melt code
+dir_repo = '/Users/ellynenderlin/Research/iceberg-melt/iceberg-melt-code'; %Github repo containing custom iceberg melt code
 dir_code = '/Users/Shared/general-code/'; %directory containing miscellaneous codes
 % path to DEM files in directory
 dir_DEM = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % path to outputs folder (where you would like all outputs saved)
 dir_output = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20210421'; DEM2.time = '20210719';
+DEM1.time = '20210718'; DEM2.time = '20210727';
 
 %----------Specify Region------------
 %NOTE: Make sure the SMB data are not in a Github repo!!! You may need to
@@ -227,11 +227,11 @@ clear answer;
 
 % Option to reload matfiles from previous step if previously completed but
 % variables are not in workspace
-answer = questdlg('Estimate iceberg melt rates?',...
-    'Melt Estimation','1) Load DEMs & images then estimate melt.','2) Data already loaded. Estimate melt.',...
-    '3) Neither. Move on.','1) Load DEMs & images then estimate melt.');
+answer = questdlg('Do you need to load the DEMs?',...
+    'DEM Load','1) Load DEMs & images.','2) Data already loaded.',...
+    '1) Load DEMs & images.');
 switch answer
-    case '1) Load DEMs & images then estimate melt.'
+    case '1) Load DEMs & images.'
         DEM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-DEM.mat']).DEM;
         IM1 = load([dir_output,region_abbrev,'_',DEM1.time,'-orthoimage.mat']).IM;
         DEM2 = load([dir_output,region_abbrev,'_',DEM2.time,'-DEM.mat']).DEM;
@@ -242,13 +242,11 @@ switch answer
         disp('Running melt estimation codes...');
         [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,dir_SMB,geography,region_abbrev,region_name,option_no);
         
-    case '2) Data already loaded. Estimate melt.'
+    case '2) Data already loaded.'
         % estimate iceberg melt rates
         disp('Running melt estimation codes...');
         [DEM1,DEM2] = estimate_iceberg_meltrates(DEM1,DEM2,IM1,IM2,dir_output,dir_code,dir_SMB,geography,region_abbrev,region_name,option_no);
-        
-    case '3) Neither. Move on.'
-        disp('Skipping melt estimation!')
+
 end
 clear answer;
 
