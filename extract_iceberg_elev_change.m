@@ -530,32 +530,34 @@ figure(figure1); set(gca,'clim',[0 cmax]);
 figure(figure2); set(gca,'clim',[0 cmax]);
 
 %remove DEM bias using local ice-free regions
-prompt = 'Are there good water/sea ice elevations around the iceberg in both DEMs (y/n)?'; ibmask_str = input(prompt,'s');
-if strmatch(ibmask_str,'y')==1
-    [A,B,sl_offset1,sl_offset2,cmin_early,cmin_late,flag] = sea_level_adjust(DEM1.time,DEM2.time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
-else
-    disp('using regional sea level adjustment for elevation change estimates');
-    sl_offset1 = nanmedian(min(fjordz_o)); sl_offset2 = nanmedian(min(fjordz_f));
-    flag = 1; %note that the adjustment is not reliable
-    
-    %replot figures with regional elevation adjustments for coregistration
-    clf(figure1); figure(figure1);
-    A.z_local_adjust = A.z_elpsd_adjust - sl_offset1;
-    imagesc(A.x,A.y,A.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
-    cmap = colormap(gca,elev_cmap); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-    title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
-    plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; %iceberg ROI
-    B.z_local_adjust = B.z_elpsd_adjust - sl_offset2;
-    clf(figure2); figure(figure2);
-    imagesc(B.x,B.y,B.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
-    cmap = colormap(gca,elev_cmap); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-    title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
-    
-    zmins2 = min(A.z_local_adjust); ymins2 = min(B.z_local_adjust);
-    zmins2(zmins2<-100 | zmins2>100) = NaN; ymins2(ymins2<-100 | ymins2>100) = NaN;
-    zmins2(zmins2<(nanmedian(zmins2)-3*1.4826*mad(zmins2,1)) | zmins2>(nanmedian(zmins2)+3*1.4826*mad(zmins2,1))) = NaN;
-    ymins2(ymins2<(nanmedian(ymins2)-3*1.4826*mad(ymins2,1)) | ymins2>(nanmedian(ymins2)+3*1.4826*mad(ymins2,1))) = NaN;
-    cmin_early = floor(nanmedian(zmins2)); cmin_late = floor(nanmedian(ymins2));
+icefree = questdlg('Are there good water/sea ice elevations around the iceberg in both DEMs?',...
+    'Mask Check','Yes','No','Yes');
+switch icefree
+    case 'Yes'
+        [A,B,sl_offset1,sl_offset2,cmin_early,cmin_late,flag] = sea_level_adjust(DEM1.time,DEM2.time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+    case 'No'
+        disp('using regional sea level adjustment for elevation change estimates');
+        sl_offset1 = nanmedian(min(fjordz_o)); sl_offset2 = nanmedian(min(fjordz_f));
+        flag = 1; %note that the adjustment is not reliable
+
+        %replot figures with regional elevation adjustments for coregistration
+        clf(figure1); figure(figure1);
+        A.z_local_adjust = A.z_elpsd_adjust - sl_offset1;
+        imagesc(A.x,A.y,A.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
+        cmap = colormap(gca,elev_cmap); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+        title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
+        plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; %iceberg ROI
+        B.z_local_adjust = B.z_elpsd_adjust - sl_offset2;
+        clf(figure2); figure(figure2);
+        imagesc(B.x,B.y,B.z_reg_adjust); hold on; axis xy equal; set(gca,'clim',[0 (cmax-(sl_offset2 + sl_offset1)/2)],'fontsize',14);
+        cmap = colormap(gca,elev_cmap); cmap(1,:) = [1 1 1]; colormap(gca,cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+        title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
+
+        zmins2 = min(A.z_local_adjust); ymins2 = min(B.z_local_adjust);
+        zmins2(zmins2<-100 | zmins2>100) = NaN; ymins2(ymins2<-100 | ymins2>100) = NaN;
+        zmins2(zmins2<(nanmedian(zmins2)-3*1.4826*mad(zmins2,1)) | zmins2>(nanmedian(zmins2)+3*1.4826*mad(zmins2,1))) = NaN;
+        ymins2(ymins2<(nanmedian(ymins2)-3*1.4826*mad(ymins2,1)) | ymins2>(nanmedian(ymins2)+3*1.4826*mad(ymins2,1))) = NaN;
+        cmin_early = floor(nanmedian(zmins2)); cmin_late = floor(nanmedian(ymins2));
 end
 cmin = min([cmin_early;cmin_late]);
 
@@ -622,61 +624,68 @@ conth.LineColor = 'k';
 
 %mask-out regions within icebergs that have anomalous elevations (holes or spikes)
 disp('If spurious elevations (big spikes or holes) are evident in the iceberg DEMs, draw masks around them to remove them');
+%earlier DEM
 p=1;
 while p
     if p == 1
-        prompt = 'Create mask for early DEM (y/n)?'; str = input(prompt,'s');
+        bad_mask = questdlg('Create mask for early DEM?','Mask Check','Yes','No','No');
         spurious_o = zeros(size(A.z_local_adjust));
     else
-        prompt = 'Are additional masks necessary (y/n)?'; str = input(prompt,'s');
+        bad_mask = questdlg('Are additional masks necessary?','Mask Check','Yes','No','No');
     end
-    if strmatch(str,'y')==1
-        figure(figure1);
-        anom_z_mask1 = roipoly; anom_z_mask1 = double(~anom_z_mask1);
-        A.z = anom_z_mask1.*A.z; A.z(anom_z_mask1==0) = NaN;
-        A.z_elpsd_adjust = anom_z_mask1.*A.z_elpsd_adjust; A.z_elpsd_adjust(anom_z_mask1==0) = NaN;
-        A.z_local_adjust = anom_z_mask1.*A.z_local_adjust; A.z_local_adjust(anom_z_mask1==0) = NaN;
-        imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
-        colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-        title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
-        plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on; 
-        [cont,conth] = contour(A.x,A.y,A.z_local_adjust,[0:1:round(cmax)]);
-        conth.LineColor = 'k';
-        drawnow;
-        blunders = ~anom_z_mask1;
-        spurious_o = spurious_o + blunders;
-        p = p+1;
-    else
-        spurious_o(spurious_o>0) = 1;
-        break
+
+    %execute masking as needed
+    switch bad_mask
+        case 'Yes'
+            figure(figure1);
+            anom_z_mask1 = roipoly; anom_z_mask1 = double(~anom_z_mask1);
+            A.z = anom_z_mask1.*A.z; A.z(anom_z_mask1==0) = NaN;
+            A.z_elpsd_adjust = anom_z_mask1.*A.z_elpsd_adjust; A.z_elpsd_adjust(anom_z_mask1==0) = NaN;
+            A.z_local_adjust = anom_z_mask1.*A.z_local_adjust; A.z_local_adjust(anom_z_mask1==0) = NaN;
+            imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
+            colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+            title(['Early date: ',num2str(DEM1.time)],'fontsize',16);
+            plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on;
+            [cont,conth] = contour(A.x,A.y,A.z_local_adjust,[0:1:round(cmax)]);
+            conth.LineColor = 'k';
+            drawnow;
+            blunders = ~anom_z_mask1;
+            spurious_o = spurious_o + blunders;
+            p = p+1;
+        case 'No'
+            spurious_o(spurious_o>0) = 1;
+            break
     end
 end
+%later DEM
 p=1;
 while p
     if p == 1
-        prompt = 'Create mask for later DEM (y/n)?'; str = input(prompt,'s');
+        bad_mask = questdlg('Create mask for later DEM?','Mask Check','Yes','No','No');
         spurious_f = zeros(size(B.z_local_adjust));
     else
-        prompt = 'Are additional masks necessary (y/n)?'; str = input(prompt,'s');
+        bad_mask = questdlg('Are additional masks necessary?','Mask Check','Yes','No','No');
     end
-    if strmatch(str,'y')==1
-        figure(figure2);
-        anom_z_mask2 = roipoly; anom_z_mask2 = double(~anom_z_mask2);
-        B.z = anom_z_mask2.*B.z; B.z(anom_z_mask2==0) = NaN;
-        B.z_elpsd_adjust = anom_z_mask2.*B.z_elpsd_adjust; B.z_elpsd_adjust(anom_z_mask2==0) = NaN;
-        B.z_local_adjust = anom_z_mask2.*B.z_local_adjust; B.z_local_adjust(anom_z_mask2==0) = NaN;
-        imagesc(B.x,B.y,B.z_local_adjust); hold on; hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
-        colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-        title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
-        [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
-        conth.LineColor = 'k';
-        drawnow;
-        blunders = ~anom_z_mask2;
-        spurious_f = spurious_f + blunders;
-        p = p+1;
-    else
-        spurious_f(spurious_f>0) = 1;
-        break
+    %execute masking as needed
+    switch bad_mask
+        case 'Yes'
+            figure(figure2);
+            anom_z_mask2 = roipoly; anom_z_mask2 = double(~anom_z_mask2);
+            B.z = anom_z_mask2.*B.z; B.z(anom_z_mask2==0) = NaN;
+            B.z_elpsd_adjust = anom_z_mask2.*B.z_elpsd_adjust; B.z_elpsd_adjust(anom_z_mask2==0) = NaN;
+            B.z_local_adjust = anom_z_mask2.*B.z_local_adjust; B.z_local_adjust(anom_z_mask2==0) = NaN;
+            imagesc(B.x,B.y,B.z_local_adjust); hold on; hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
+            colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
+            title(['Late date: ',num2str(DEM2.time)],'fontsize',16);
+            [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
+            conth.LineColor = 'k';
+            drawnow;
+            blunders = ~anom_z_mask2;
+            spurious_f = spurious_f + blunders;
+            p = p+1;
+        case 'No'
+            spurious_f(spurious_f>0) = 1;
+            break
     end
 end
 w=who;%create a variable that lists all variables in the current workspace
@@ -815,41 +824,44 @@ while p
         figA=figure; imagesc(IB(p).xo,IB(p).yo,IB(p).dz.reg_adjust.map); axis xy equal; colormap jet; colorbar;
 %         set(gca,'clim',[nanmedian(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)))-3*1.4826*mad(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)),1) nanmedian(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)))+3*1.4826*mad(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)),1)]);
         set(gca,'clim',[nanmean(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)))-2*nanstd(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map))) nanmean(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)))+2*nanstd(IB(p).dz.reg_adjust.map(~isnan(IB(p).dz.reg_adjust.map)))]);
-        prompt = 'Is the range of elevation change HUGE across the iceberg (i.e., tens of meters) (y/n)?'; str = input(prompt,'s');
-        if strmatch(str,'n')==1
-            close(figA);
-            %advance the loop or recalculate sea level if melt rates are negative
-            if p==1 && IB(p).dz.local_adjust.filtered_mean <=0 
-                disp('Elevation change suggests ice accretion. Re-calculate elevation adjustment');
-                clear IB;
-                prompt = 'Should the regional, NOT local, fjord elevation offsets be used to coregister the DEMs (y/n)?';
-                str = input(prompt,'s');
-                if strmatch(str,'y')==1
-                    sl_offset1 = nanmedian(min(fjordz_o)); sl_offset2 = nanmedian(min(fjordz_f));
-                    A.z_local_adjust = A.z_reg_adjust; B.z_local_adjust = B.z_reg_adjust; 
-                    flag = 1;
+        bad_diff = questdlg('Is the range of elevation change HUGE across the iceberg (i.e., tens of meters)?',...
+            'Difference Check','Yes','No','No');
+        switch bad_diff
+            case 'No'
+                close(figA);
+                %advance the loop or recalculate sea level if melt rates are negative
+                if p==1 && IB(p).dz.local_adjust.filtered_mean <=0
+                    disp('Elevation change suggests ice accretion. Re-calculate elevation adjustment');
+                    clear IB;
+                    bad_sealevel = questdlg('Should the regional, NOT local, fjord elevation offsets be used to coregister the DEMs?',...
+                        'Sea Level Adjustment','Yes','No','No');
+                    switch bad_sealevel
+                        case 'Yes'
+                            sl_offset1 = nanmedian(min(fjordz_o)); sl_offset2 = nanmedian(min(fjordz_f));
+                            A.z_local_adjust = A.z_reg_adjust; B.z_local_adjust = B.z_reg_adjust;
+                            flag = 1;
+                        case 'No'
+                            disp('...then re-extract local sea level elevations from the DEMs');
+                            [A,B,sl_offset1,sl_offset2,~,~,flag] = sea_level_adjust(DEM1.time,DEM2.time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+                    end
+                    p = 1;
                 else
-                    disp('...then re-extract local sea level elevations from the DEMs');
-                    [A,B,sl_offset1,sl_offset2,~,~,flag] = sea_level_adjust(DEM1.time,DEM2.time,IM1,IM2,dir_output,A,B,S,sl_early,sl_late,fjord_offset,fjordz_o,fjordz_f,iceberg_no,region_abbrev,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+                    if p == 5
+                        close all; break
+                    else
+                        p = p + 1; close all;
+                    end
+                    drawnow;
+                    clear new_ang x_rot y_rot;
                 end
-                p = 1;
-            else
-                if p == 5
-                    close all; break
+            case 'Yes'
+                disp('recalculate iceberg translation & rotation');
+                if p ==1
+                    clear IB
                 else
-                    p = p + 1; close all;
+                    ib = IB(1:p-1); clear IB; IB = ib; clear ib;
                 end
-                drawnow;
-                clear new_ang x_rot y_rot;
-            end
-        else
-            disp('recalculate iceberg translation & rotation');
-            if p ==1
-                clear IB
-            else
-            ib = IB(1:p-1); clear IB; IB = ib; clear ib;
-            end
-            close(figA); p = p; 
+                close(figA); p = p;
         end
     elseif p > 1 && ~isempty(strmatch('Sl',w))
         %all iterations will have the same values b/c the translation &

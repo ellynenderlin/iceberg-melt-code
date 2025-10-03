@@ -445,11 +445,6 @@ if entry_point <= 2
         vxf = nearestneighbour(SL(i).final.x,A.x); vyf = nearestneighbour(SL(i).final.y,A.y);
         set(gca,'xlim',[min(A.x(vxf))-150 max(A.x(vxf))+150],'ylim',[min(A.y(vyf))-150 max(A.y(vyf))+150]);
         plot(A.x(vxf),A.y(vyf),'--r','linewidth',2);
-        % prompt = 'Widen the zoom window (y/n)?';
-        % zstr = input(prompt,'s');
-        % if strmatch(zstr,'y')==1
-        %     set(gca,'xlim',[min(A.x(vxf))-250 max(A.x(vxf))+250],'ylim',[min(A.y(vyf))-250 max(A.y(vyf))+250]);
-        % end
         zoomin = questdlg('Widen the zoom window?',...
             'Zoom check','1) Yes','2) No','2) No');
         switch zoomin
