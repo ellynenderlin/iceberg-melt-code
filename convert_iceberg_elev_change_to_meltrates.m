@@ -444,12 +444,21 @@ if entry_point <= 2
         colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
         vxf = nearestneighbour(SL(i).final.x,A.x); vyf = nearestneighbour(SL(i).final.y,A.y);
         set(gca,'xlim',[min(A.x(vxf))-150 max(A.x(vxf))+150],'ylim',[min(A.y(vyf))-150 max(A.y(vyf))+150]);
-        prompt = 'Widen the zoom window (y/n)?';
-        zstr = input(prompt,'s');
-        if strmatch(zstr,'y')==1
-            set(gca,'xlim',[min(A.x(vxf))-250 max(A.x(vxf))+250],'ylim',[min(A.y(vyf))-250 max(A.y(vyf))+250]);
-        end
         plot(A.x(vxf),A.y(vyf),'--r','linewidth',2);
+        % prompt = 'Widen the zoom window (y/n)?';
+        % zstr = input(prompt,'s');
+        % if strmatch(zstr,'y')==1
+        %     set(gca,'xlim',[min(A.x(vxf))-250 max(A.x(vxf))+250],'ylim',[min(A.y(vyf))-250 max(A.y(vyf))+250]);
+        % end
+        zoomin = questdlg('Widen the zoom window?',...
+            'Zoom check','1) Yes','2) No','2) No');
+        switch zoomin
+            case '1) Yes'
+                figure(figure1); set(gca,'xlim',[min(A.x(vxf))-250 max(A.x(vxf))+250],'ylim',[min(A.y(vyf))-250 max(A.y(vyf))+250]);
+                figure(figure2); set(gca,'xlim',[min(SL(i).final.x)-250 max(SL(i).final.x)+250],'ylim',[min(SL(i).final.y)-250 max(SL(i).final.y)+250]);
+            case '2) No'
+                figure(figure2); set(gca,'xlim',[min(SL(i).final.x)-150 max(SL(i).final.x)+150],'ylim',[min(SL(i).final.y)-150 max(SL(i).final.y)+150]);
+        end
         figure(figure2);
         set(gca,'ydir','normal','clim',[0 50]); hold on;
         if strmatch(zstr,'y')==1

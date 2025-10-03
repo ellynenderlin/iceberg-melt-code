@@ -110,47 +110,50 @@ if ~isempty(PScoord_files)
     
     %adjust coordinates if necessary
     disp('The iceberg of interest should be in the middle of the figures...');
-    prompt = 'Do the iceberg coordinates need to be modified (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        disp('Type new values for early_y, early_x, late_y, & late_x in the command window separated by semicolons & followed by "dbcont" (w/o quotes) then hit enter to resume');
-        keyboard
-        coords = [early_y early_x late_y late_x];
-        dlmwrite(['iceberg',iceberg_no,'_PScoords.txt'],coords,'\t');
-        
-        %replot images
-        close all;
-        xce = nearestneighbour(early_x,DEM1.x); yce = nearestneighbour(early_y,DEM1.y);
-        xc = nearestneighbour(late_x,DEM2.x); yc = nearestneighbour(late_y,DEM2.y);
-        xmine = xce-DEMhalo1; xmaxe = xce+DEMhalo1; ymine = yce-DEMhalo1; ymaxe = yce+DEMhalo1;
-        xmine(xmine<=1) = 1; xmaxe(xmaxe >= length(DEM1.x)) = length(DEM1.x);
-        ymine(ymine<=1) = 1; ymaxe(ymaxe >= length(DEM1.y)) = length(DEM1.y);
-        xmin = xc-DEMhalo2; xmax = xc+DEMhalo2; ymin = yc-DEMhalo2; ymax = yc+DEMhalo2;
-        xmin(xmin<=1) = 1; xmax(xmax >= length(DEM2.x)) = length(DEM2.x);
-        ymin(ymin<=1) = 1; ymax(ymax >= length(DEM2.y)) = length(DEM2.y);
-        
-        %find the location of the iceberg center in the images
-        xcie = nearestneighbour(early_x,IM1.x); ycie = nearestneighbour(early_y,IM1.y);
-        xminie = xcie-IMhalo1; xmaxie = xcie+IMhalo1; yminie = ycie-IMhalo1; ymaxie = ycie+IMhalo1;
-        xminie(xminie<=1) = 1; xmaxie(xmaxie >= length(IM1.x)) = length(IM1.x);
-        yminie(yminie<=1) = 1; ymaxie(ymaxie >= length(IM1.y)) = length(IM1.y);
-        xci = nearestneighbour(late_x,IM2.x); yci = nearestneighbour(late_y,IM2.y);
-        xmini = xci-IMhalo2; xmaxi = xci+IMhalo2; ymini = yci-IMhalo2; ymaxi = yci+IMhalo2;
-        xmini(xmini<=1) = 1; xmaxi(xmaxi >= length(IM2.x)) = length(IM2.x);
-        ymini(ymini<=1) = 1; ymaxi(ymaxi >= length(IM2.y)) = length(IM2.y);
-        
-        %plot the iceberg images & assess whether the center coordinates need to be adjusted
-        figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[50 250 800 700]);
-        imagesc(IM1.x(1,xminie:xmaxie),IM1.y(1,yminie:ymaxie),IM1.z_masked(yminie:ymaxie,xminie:xmaxie)); axis xy equal; colormap gray; hold on;
-        set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
-        set(gca,'fontsize',14);
-        title(['Early date: ',num2str(datestr(date_o,'yyyy/mm/dd'))],'fontsize',16);
-        figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 250 800 700]);
-        imagesc(IM2.x(1,xmini:xmaxi),IM2.y(1,ymini:ymaxi),IM2.z_masked(ymini:ymaxi,xmini:xmaxi)); axis xy equal; colormap gray; hold on;
-        set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
-        set(gca,'fontsize',14);
-        title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16);
-    end  
+    coord_shift = questdlg('Do the iceberg coordinates need to be modified?',...
+        'Prelim Coordinate Shift','Yes','No','No');
+    switch coord_shift
+        case 'Yes'
+            disp('Type new values for early_y, early_x, late_y, & late_x in the command window separated by semicolons & followed by "dbcont" (w/o quotes) then hit enter to resume');
+            keyboard
+            coords = [early_y early_x late_y late_x];
+            dlmwrite(['iceberg',iceberg_no,'_PScoords.txt'],coords,'\t');
+
+            %replot images
+            close all;
+            xce = nearestneighbour(early_x,DEM1.x); yce = nearestneighbour(early_y,DEM1.y);
+            xc = nearestneighbour(late_x,DEM2.x); yc = nearestneighbour(late_y,DEM2.y);
+            xmine = xce-DEMhalo1; xmaxe = xce+DEMhalo1; ymine = yce-DEMhalo1; ymaxe = yce+DEMhalo1;
+            xmine(xmine<=1) = 1; xmaxe(xmaxe >= length(DEM1.x)) = length(DEM1.x);
+            ymine(ymine<=1) = 1; ymaxe(ymaxe >= length(DEM1.y)) = length(DEM1.y);
+            xmin = xc-DEMhalo2; xmax = xc+DEMhalo2; ymin = yc-DEMhalo2; ymax = yc+DEMhalo2;
+            xmin(xmin<=1) = 1; xmax(xmax >= length(DEM2.x)) = length(DEM2.x);
+            ymin(ymin<=1) = 1; ymax(ymax >= length(DEM2.y)) = length(DEM2.y);
+
+            %find the location of the iceberg center in the images
+            xcie = nearestneighbour(early_x,IM1.x); ycie = nearestneighbour(early_y,IM1.y);
+            xminie = xcie-IMhalo1; xmaxie = xcie+IMhalo1; yminie = ycie-IMhalo1; ymaxie = ycie+IMhalo1;
+            xminie(xminie<=1) = 1; xmaxie(xmaxie >= length(IM1.x)) = length(IM1.x);
+            yminie(yminie<=1) = 1; ymaxie(ymaxie >= length(IM1.y)) = length(IM1.y);
+            xci = nearestneighbour(late_x,IM2.x); yci = nearestneighbour(late_y,IM2.y);
+            xmini = xci-IMhalo2; xmaxi = xci+IMhalo2; ymini = yci-IMhalo2; ymaxi = yci+IMhalo2;
+            xmini(xmini<=1) = 1; xmaxi(xmaxi >= length(IM2.x)) = length(IM2.x);
+            ymini(ymini<=1) = 1; ymaxi(ymaxi >= length(IM2.y)) = length(IM2.y);
+
+            %plot the iceberg images & assess whether the center coordinates need to be adjusted
+            figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[50 250 800 700]);
+            imagesc(IM1.x(1,xminie:xmaxie),IM1.y(1,yminie:ymaxie),IM1.z_masked(yminie:ymaxie,xminie:xmaxie)); axis xy equal; colormap gray; hold on;
+            set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
+            set(gca,'fontsize',14);
+            title(['Early date: ',num2str(datestr(date_o,'yyyy/mm/dd'))],'fontsize',16);
+            figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 250 800 700]);
+            imagesc(IM2.x(1,xmini:xmaxi),IM2.y(1,ymini:ymaxi),IM2.z_masked(ymini:ymaxi,xmini:xmaxi)); axis xy equal; colormap gray; hold on;
+            set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
+            set(gca,'fontsize',14);
+            title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16);
+        case 'No'
+            disp('Preliminary coordinates OK');
+    end
 else
     disp('No iceberg coordinate files found. Rerun previous step or check directory.');
 end
@@ -208,7 +211,7 @@ imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust-cmin_late); hold on; axis xy equal;
 set(gca,'clim',[0 zmax2],'fontsize',14);
 colormap(gca,elev_cmap); set(get(cbar,'ylabel'),'string', 'elevation (m)');
 set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
-plot(early_x,early_y,'*w','markersize',7,'linewidth',1);
+plot(late_x,late_y,'*w','markersize',7,'linewidth',1);
 title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16); 
 figure(figure1);
 
@@ -241,7 +244,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     set(gca,'xlim',[min(IM1.x(xref)) max(IM1.x(xref))],'ylim',[min(IM1.y(yref)) max(IM1.y(yref))]);
     clear xref yref;
     figure(figure1);
-    disp('When crosshairs appear on the early DEM, click on vertices just inside the iceberg edge to draw a polygon');
+    disp('When crosshairs appear on the early DEM, click on vertices just INSIDE OF THE ICEBERG EDGE to draw a polygon');
     disp('NOTE: white areas = DEM holes');
     [~,xm,ym] = roipoly;
     xmi = nearestneighbour(xm',DEM1.x); ymi = nearestneighbour(ym',DEM1.y);
@@ -276,12 +279,13 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     clear SL xm ym xmif ymif;
     
     %assign a quality flag to the ice-free polygon
-    prompt = 'Is open water or thin ice present (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        sl_early.quality = 1; %higher quality adjustments assigned a value = 1
-    else
-        sl_early.quality = 0; %lower quality adjustments assigned a value = 0
+    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+        'Local Sea Level Quality','Yes','No','Yes');
+    switch low_ice
+        case 'Yes'
+            sl_early.quality = 1; %higher quality adjustments assigned a value = 1
+        case 'No'
+            sl_early.quality = 0; %lower quality adjustments assigned a value = 0
     end
     
     %draw the icefree ROI in the later image
@@ -313,12 +317,13 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     clear SL xm ym xmif ymif;
     
     %assign a quality flag to the ice-free polygon
-    prompt = 'Is open water or thin ice present (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        sl_late.quality = 1; %higher quality adjustments assigned a value = 1
-    else
-        sl_late.quality = 0; %lower quality adjustments assigned a value = 0
+    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+        'Local Sea Level Quality','Yes','No','Yes');
+    switch low_ice
+        case 'Yes'
+            sl_late.quality = 1; %higher quality adjustments assigned a value = 1
+        case 'No'
+            sl_late.quality = 0; %lower quality adjustments assigned a value = 0
     end
     
 else
@@ -338,23 +343,25 @@ else
     sl_early = shaperead(icefree_early_file); 
     sl_early.X = sl_early.X(1:size(sl_early.X,2)-1); sl_early.Y = sl_early.Y(1:size(sl_early.Y,2)-1); %truncate last value (NaN)
     figure(figureA); set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
-    prompt = 'Is open water or thin ice present in the early image (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        sl_early.quality = 1; %higher quality adjustments assigned a value = 1
-    else
-        sl_early.quality = 0; %lower quality adjustments assigned a value = 0
+    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+        'Local Sea Level Quality','Yes','No','Yes');
+    switch low_ice
+        case 'Yes'
+            sl_early.quality = 1; %higher quality adjustments assigned a value = 1
+        case 'No'
+            sl_early.quality = 0; %lower quality adjustments assigned a value = 0
     end
     icefree_late_file = [region_abbrev,'_',num2str(DEM2.time),'_icefree',iceberg_no,'.shp'];
     sl_late = shaperead(icefree_late_file); cd ../iceberg_rois
     sl_late.X = sl_late.X(1:size(sl_late.X,2)-1); sl_late.Y = sl_late.Y(1:size(sl_late.Y,2)-1); %truncate last value (NaN)
     figure(figureB); set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
-    prompt = 'Is open water or thin ice present in the late image (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        sl_late.quality = 1; %higher quality adjustments assigned a value = 1
-    else
-        sl_late.quality = 0; %lower quality adjustments assigned a value = 0
+    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+        'Local Sea Level Quality','Yes','No','Yes');
+    switch low_ice
+        case 'Yes'
+            sl_late.quality = 1; %higher quality adjustments assigned a value = 1
+        case 'No'
+            sl_late.quality = 0; %lower quality adjustments assigned a value = 0
     end
     
     %if necessary, re-draw the iceberg polygon in the early DEM
@@ -373,17 +380,65 @@ else
     set(gca,'xlim',[min(IM1.x(xref)) max(IM1.x(xref))],'ylim',[min(IM1.y(yref)) max(IM1.y(yref))]);
     clear xref yref;
 
-    prompt = 'Look at the mask overlay on the DEM. Does it need to be modified (y/n)?';
-    str = input(prompt,'s');
-    if strmatch(str,'y')==1
-        clear S;
-        figure(figure1);
+    %check the mask
+    mask_check = questdlg('Look at the mask overlay on the DEM. Does it need to be modified?',...
+        'Mask Check','Yes','No','No');
+    switch mask_check
+        case 'Yes'
+            clear S;
+            figure(figure1);
+            disp('click on the early DEM to activate');
+            figure(figure1); ax = waitforbuttonpress; clear ax;
+            disp('When crosshairs appear, click on iceberg vertices to draw a polygon');
+            [~,xm,ym] = roipoly;
+            xmi = nearestneighbour(xm',DEM1.x); ymi = nearestneighbour(ym',DEM1.y);
+            plot(DEM1.x(xmi),DEM1.y(ymi),'-*k','linewidth',2,'markersize',4); hold on;
+
+            cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
+            S.Geometry = 'Polygon';
+            S.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
+            S.X = double(xm'); S.Y = double(ym');
+            S.Name = ['iceberg',iceberg_no];
+            shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
+            copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
+            cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
+        case 'No'
+            xmi = nearestneighbour(S.X,DEM1.x); ymi = nearestneighbour(S.Y,DEM1.y);
+    end
+end
+
+%use the image to tweek the iceberg mask if necessary
+figure(figure1); figure(figureA);
+plot(DEM1.x(xmi),DEM1.y(ymi),'-*r','linewidth',2,'markersize',4); hold on;
+IMmask_check = questdlg('Based on the mask overlay on the early IMAGE, does the iceberg mask need to be modified?',...
+    'Mask Check','Yes','No','No');
+switch IMmask_check
+    case 'Yes'
+        clear S; figure(figureA); set(figureA,'position',imo_pos); %set(figureA,'position',[450 50 1200 1100]);
+        clear xmi ymi;
         disp('click on the early DEM to activate');
         figure(figure1); ax = waitforbuttonpress; clear ax;
+        disp('Zoom in on the iceberg in the early DEM by clicking the UL & LR corners');
+        [a] = ginput(2); %get the UL & LR corner coordinates
+        xref = nearestneighbour(a(:,1)',DEM1.x); yref = nearestneighbour(a(:,2)',DEM1.y);
+        set(gca,'xlim',[min(DEM1.x(xref)) max(DEM1.x(xref))],'ylim',[min(DEM1.y(yref)) max(DEM1.y(yref))]);
+        clear xref yref;
+        figure(figureA);
+        xref = nearestneighbour(a(:,1)',IM1.x); yref = nearestneighbour(a(:,2)',IM1.y);
+        %     set(gca,'xlim',[min(im1.x(xref)) max(im1.x(xref))],'ylim',[min(im1.y(yref)) max(im1.y(yref))]);
+        set(gca,'xlim',[min(IM1.x(xref)) max(IM1.x(xref))],'ylim',[min(IM1.y(yref)) max(IM1.y(yref))]);
+        clear xref yref;
+        %     clear xref yref; clear a;
         disp('When crosshairs appear, click on iceberg vertices to draw a polygon');
         [~,xm,ym] = roipoly;
         xmi = nearestneighbour(xm',DEM1.x); ymi = nearestneighbour(ym',DEM1.y);
-        plot(DEM1.x(xmi),DEM1.y(ymi),'-*k','linewidth',2,'markersize',4); hold on;
+        plot(DEM1.x(xmi),DEM1.y(ymi),'--*','color',[0.5 0.5 0.5],'linewidth',2,'markersize',4); hold on;
+        set(figureA,'position',imo_pos); %set(figureA,'position',[850 800 800 700]);
+        set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
+        figure(figure1);
+        plot(DEM1.x(xmi),DEM1.y(ymi),'--*','color',[0.5 0.5 0.5],'linewidth',2,'markersize',4); hold on;
+        set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
+        drawnow;
 
         cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
         S.Geometry = 'Polygon';
@@ -391,54 +446,11 @@ else
         S.X = double(xm'); S.Y = double(ym');
         S.Name = ['iceberg',iceberg_no];
         shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
+        shapewrite(S,shapefile_name);
         copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
         cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
-    else
-        xmi = nearestneighbour(S.X,DEM1.x); ymi = nearestneighbour(S.Y,DEM1.y);
-    end
-end
-
-%use the image to tweek the iceberg mask if necessary
-figure(figure1); figure(figureA);
-plot(DEM1.x(xmi),DEM1.y(ymi),'-*r','linewidth',2,'markersize',4); hold on;
-prompt = 'Based on the mask overlay on the early IMAGE, does the iceberg mask need to be modified (y/n)?';
-str = input(prompt,'s');
-if strmatch(str,'y')==1
-    clear S; figure(figureA); set(figureA,'position',imo_pos); %set(figureA,'position',[450 50 1200 1100]);
-    clear xmi ymi;
-    disp('click on the early DEM to activate');
-    figure(figure1); ax = waitforbuttonpress; clear ax;
-    disp('Zoom in on the iceberg in the early DEM by clicking the UL & LR corners');
-    [a] = ginput(2); %get the UL & LR corner coordinates
-    xref = nearestneighbour(a(:,1)',DEM1.x); yref = nearestneighbour(a(:,2)',DEM1.y);
-    set(gca,'xlim',[min(DEM1.x(xref)) max(DEM1.x(xref))],'ylim',[min(DEM1.y(yref)) max(DEM1.y(yref))]);
-    clear xref yref;
-    figure(figureA);
-    xref = nearestneighbour(a(:,1)',IM1.x); yref = nearestneighbour(a(:,2)',IM1.y);
-%     set(gca,'xlim',[min(im1.x(xref)) max(im1.x(xref))],'ylim',[min(im1.y(yref)) max(im1.y(yref))]);
-    set(gca,'xlim',[min(IM1.x(xref)) max(IM1.x(xref))],'ylim',[min(IM1.y(yref)) max(IM1.y(yref))]);
-    clear xref yref;
-%     clear xref yref; clear a;
-    disp('When crosshairs appear, click on iceberg vertices to draw a polygon');
-    [~,xm,ym] = roipoly;
-    xmi = nearestneighbour(xm',DEM1.x); ymi = nearestneighbour(ym',DEM1.y);
-    plot(DEM1.x(xmi),DEM1.y(ymi),'--*','color',[0.5 0.5 0.5],'linewidth',2,'markersize',4); hold on;
-    set(figureA,'position',imo_pos); %set(figureA,'position',[850 800 800 700]);
-    set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
-    figure(figure1);
-    plot(DEM1.x(xmi),DEM1.y(ymi),'--*','color',[0.5 0.5 0.5],'linewidth',2,'markersize',4); hold on;
-    set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
-    drawnow;
-    
-    cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
-    S.Geometry = 'Polygon';
-    S.BoundingBox = [min(xm) min(ym); max(xm) max(ym)];
-    S.X = double(xm'); S.Y = double(ym');
-    S.Name = ['iceberg',iceberg_no];
-    shapefile_name = [region_abbrev,'_',num2str(DEM1.time),'_iceberg',iceberg_no];
-    shapewrite(S,shapefile_name);
-    copyfile([dir_code,PSprojfile],[dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/',shapefile_name,'.prj']);
-    cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_rois/']);
+    case 'No'
+        disp('Good mask!')
 end
 drawnow;
 disp('Done modifying iceberg polygon for elevation extraction');

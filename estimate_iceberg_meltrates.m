@@ -40,7 +40,7 @@ if option_no ~= 3
     iceberg_dz = dir([dir_iceberg,'iceberg*dz.mat']);
     if ~isempty(iceberg_dz)
         disp(['Already calculated elevation change for ',num2str(length(iceberg_dz)),' of ',num2str(length(icebergs)),' icebergs']);
-        answer = questdlg('Do you want/need to calculate elevation changes for more icebergs?',...
+        answer = questdlg('Do you want/need to calculate elevation changes for more icebergs or re-do old icebergs?',...
             'Elevation Change Estimation','1) Yes!','2) No','1) Yes!');
         switch answer
             case '1) Yes!'

@@ -176,7 +176,34 @@ for i = 1:length(iceberg_refs)
     else
         SL(berg_ref).flag = NaN;
     end
-    
+
+    %extract air temp (& firn density as needed) from model
+    density_z = [0:1:1000]; %thickness profile for density curve fitting
+    berg_x = nanmean([SL(berg_ref).initial.x SL(berg_ref).final.x]); berg_y = nanmean([SL(berg_ref).initial.y SL(berg_ref).final.y]);
+    if geography == 1 %surface air temp, runoff, and firn density for Antarctica
+        [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+        density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
+        clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
+        density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
+        density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
+        density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
+        %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
+        wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
+        wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
+        wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
+
+        %save the FAC & density data
+        if ~exist([dir_output,'firn_data/'],'dir')
+            mkdir([dir_output,'firn_data/']);
+        end
+        save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
+        close all; drawnow;
+    else %only surface air temp and runoff for Greenland
+        [dt,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+    end
+    SL(berg_ref).days = dt;
+    SL(berg_ref).SMB = -abs(surfmelt); SL(berg_ref).airtemp = iceberg_avgtemp;
+
     %plot the early DEM & image
     disp('Plotting the early image-DEM pair for the fjord');
     figure1 = figure;
@@ -260,33 +287,6 @@ for i = 1:length(iceberg_refs)
     SL(berg_ref).initial.radius = perimeter/(2*pi);
     clear iceberg_IMmask;
     
-    
-    %extract air temp (& firn density as needed) from model
-    density_z = [0:1:1000]; %thickness profile for density curve fitting
-    berg_x = nanmean([SL(berg_ref).initial.x SL(berg_ref).final.x]); berg_y = nanmean([SL(berg_ref).initial.y SL(berg_ref).final.y]);
-    if geography == 1 %surface air temp, runoff, and firn density for Antarctica
-        [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
-        density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
-        clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-        density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
-        density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
-        density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
-        %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
-        wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
-        wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
-        wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
-
-        %save the FAC & density data
-        if ~exist([dir_output,'firn_data/'],'dir')
-            mkdir([dir_output,'firn_data/']);
-        end
-        save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
-        close all; drawnow;
-    else %only surface air temp and runoff for Greenland
-        [dt,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
-    end
-    SL(berg_ref).days = dt;
-    SL(berg_ref).SMB = -abs(surfmelt); SL(berg_ref).airtemp = iceberg_avgtemp;
     
     %convert elevations over the iceberg area to a volume: iteratively converge on best-estimate for density accounting for water saturation as needed
     if geography == 1 
