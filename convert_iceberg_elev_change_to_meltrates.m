@@ -1,4 +1,4 @@
-function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_SMB)
+function [SL] = convert_iceberg_elev_change_to_meltrates(DEM1,DEM2,IM1,IM2,berg_numbers,geography,region_name,region_abbrev,dir_output,dir_code,dir_iceberg,dir_SMB,clims_o,clims_f)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Fall 2021
 %
@@ -84,10 +84,18 @@ if exist([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.ma
         case 'Load Existing'
             load([dir_output,region_abbrev,'_',DEM1.time,'-',DEM2.time,'_iceberg_melt.mat']);
             %decide what steps to repeat based on what data have been saved to the structure
-            if isfield(SL,'final_range')
-                entry_point = 3;
-            elseif isfield(SL,'initial_range')
-                entry_point = 2;
+            if isfield(SL,'final_range') 
+                if ~isempty(SL(length(SL)).final_range)
+                    entry_point = 3;
+                else
+                    entry_point = 2;
+                end
+            elseif isfield(SL,'initial_range') 
+                if ~isempty(SL(length(SL)).initial_range)
+                    entry_point = 2;
+                else
+                    entry_point = 1;
+                end
             elseif isfield(SL,'SMB')
                 entry_point = 1;
             end
@@ -187,7 +195,7 @@ if entry_point <= 1
     disp('Plotting the early image-DEM pair for the fjord');
     figure1 = figure;
     imagesc(A.x,A.y,A.z); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+    colormap gray; set(gca,'clim',clims_o);
     set(gca,'ydir','normal'); hold on;
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
@@ -213,7 +221,8 @@ if entry_point <= 1
         %zoom in
         disp(['...zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
         figure(figure2); set(gca,'ydir','normal','clim',[0 50]); hold on;
-        figure(figure1); colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+        figure(figure1); 
+        colormap gray; set(gca,'clim',clims_o);
         %     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
         vxi = nearestneighbour(SL(i).initial.x,A.x); vyi = nearestneighbour(SL(i).initial.y,A.y);
         set(gca,'xlim',[min(A.x(vxi))-150 max(A.x(vxi))+150],'ylim',[min(A.y(vyi))-150 max(A.y(vyi))+150]);
@@ -226,9 +235,9 @@ if entry_point <= 1
             case '2) No'
                 figure(figure2); set(gca,'xlim',[min(SL(i).initial.x)-150 max(SL(i).initial.x)+150],'ylim',[min(SL(i).initial.y)-150 max(SL(i).initial.y)+150]);
         end
-        figure(figure1); plot(A.x(vxi),A.y(vyi),'--r','linewidth',2);
-        plot(SL(i).initial.x,SL(i).initial.y,'-k','linewidth',2); hold on; plot(SL(i).initial.x,SL(i).initial.y,'--w','linewidth',2); hold on;
-        
+        figure(figure1); plot(A.x(vxi),A.y(vyi),'--b','linewidth',2);
+        figure(figure2); figure(figure1); plot(A.x(vxi),A.y(vyi),'--w','linewidth',2);
+
         %define the iceberg area & save its vertices to a shapefile
         disp('Draw a polygon following the iceberg edges in the WV image (used to estimate surface area).');
         figure(figure1);
@@ -259,8 +268,7 @@ if entry_point <= 1
         %     imagesc(DEM_x,DEM_y,DEM_z); colormap(gca,jet); colorbar;
         %     set(gca,'ydir','normal','clim',[0 50]); hold on;
         %     set(gca,'xlim',[min(SL(i).initial.x)-200 max(SL(i).initial.x)+200],'ylim',[min(SL(i).initial.y)-200 max(SL(i).initial.y)+200]);
-        plot(SL(i).initial.x,SL(i).initial.y,'-k','linewidth',2); hold on; plot(SL(i).initial.x,SL(i).initial.y,'--w','linewidth',2); hold on;
-        plot(SL(i).initial.x_perim,SL(i).initial.y_perim,'-w','linewidth',2); hold on; plot(SL(i).initial.x_perim,SL(i).initial.y_perim,'--m','linewidth',2); hold on;
+        % plot(SL(i).initial.x,SL(i).initial.y,'-k','linewidth',2); hold on; plot(SL(i).initial.x,SL(i).initial.y,'--w','linewidth',2); hold on;
         
         %use the mask to extract size & shape info
         disp('Pulling plan-view info');
@@ -414,11 +422,11 @@ if entry_point <= 2
         A.z = z_adjust; clear z_adjust;
     end
     
-    %plot the early image
+    %plot the later image
     disp('Plotting the later image-DEM pair for the fjord');
     figure1 = figure;
     imagesc(A.x,A.y,A.z); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+    colormap gray; set(gca,'clim',clims_f);
     set(gca,'ydir','normal'); hold on;
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
@@ -441,10 +449,10 @@ if entry_point <= 2
         %zoom in
         disp(['...zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(i)]);
         figure(figure1);
-        colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+        colormap gray; set(gca,'clim',clims_f);
         vxf = nearestneighbour(SL(i).final.x,A.x); vyf = nearestneighbour(SL(i).final.y,A.y);
         set(gca,'xlim',[min(A.x(vxf))-150 max(A.x(vxf))+150],'ylim',[min(A.y(vyf))-150 max(A.y(vyf))+150]);
-        plot(A.x(vxf),A.y(vyf),'--r','linewidth',2);
+        plot(A.x(vxf),A.y(vyf),'--b','linewidth',2);
         zoomin = questdlg('Widen the zoom window?',...
             'Zoom check','1) Yes','2) No','2) No');
         switch zoomin
@@ -456,12 +464,8 @@ if entry_point <= 2
         end
         figure(figure2);
         set(gca,'ydir','normal','clim',[0 50]); hold on;
-        if strmatch(zstr,'y')==1
-            set(gca,'xlim',[min(SL(i).final.x)-250 max(SL(i).final.x)+250],'ylim',[min(SL(i).final.y)-250 max(SL(i).final.y)+250]);
-        else
-            set(gca,'xlim',[min(SL(i).final.x)-150 max(SL(i).final.x)+150],'ylim',[min(SL(i).final.y)-150 max(SL(i).final.y)+150]);
-        end
-        plot(SL(i).final.x,SL(i).final.y,'-k','linewidth',2); hold on; plot(SL(i).final.x,SL(i).final.y,'--w','linewidth',2); hold on;
+        plot(A.x(vxf),A.y(vyf),'--w','linewidth',2);
+        
         
         %define the iceberg area & save its vertices to a shapefile
         disp('Draw a polygon following the iceberg edges in the WV image (used to estimate surface area).');
@@ -489,8 +493,7 @@ if entry_point <= 2
         SL(i).final.x_perim = x; SL(i).final.y_perim = y;
         DEM_z_masked = iceberg_DEMmask.*DEM_z;
         DEM_z_masked(iceberg_DEMmask == 0) = 0;
-        plot(SL(i).final.x,SL(i).final.y,'-k','linewidth',2); hold on; plot(SL(i).final.x,SL(i).final.y,'--w','linewidth',2); hold on;
-        plot(SL(i).final.x_perim,SL(i).final.y_perim,'-w','linewidth',2); hold on; plot(SL(i).final.x_perim,SL(i).final.y_perim,'--m','linewidth',2); hold on;
+        % plot(SL(i).final.x,SL(i).final.y,'-k','linewidth',2); hold on; plot(SL(i).final.x,SL(i).final.y,'--w','linewidth',2); hold on;
         
         %use the mask to extract size & shape info
         disp('Pulling plan-view info');

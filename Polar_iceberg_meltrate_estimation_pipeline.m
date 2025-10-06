@@ -39,7 +39,7 @@ dir_DEM = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % path to outputs folder (where you would like all outputs saved)
 dir_output = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20130330'; DEM2.time = '20130419';
+DEM1.time = '20160402'; DEM2.time = '20160509';
 
 %----------Specify Region------------
 %NOTE: Make sure the SMB data are not in a Github repo!!! You may need to
@@ -214,7 +214,10 @@ close all;
 %   1 = Estimate elevation change for each iceberg
 %   2 = UPDATE individual icebergs and/or remove icebergs with anomalous melt rate estimates
 answer = questdlg('Calculating melt rates the first time or updating/removing iceberg data?',...
-    'Melt Calculation Options','1) First time (i.e., no scatterplots)','2) Updating','3) Just checking plots','1) First time');
+    'Melt Calculation Options','1) First time (i.e., no scatterplots)',...
+    '2) Updating',...
+    '3) Just checking plots',...
+    '1) First time (i.e., no scatterplots)');
 switch answer
     case '1) First time (i.e., no scatterplots)'
         option_no = 1;

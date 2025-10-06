@@ -1,4 +1,4 @@
-function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code,dir_SMB)
+function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code,dir_SMB,clims_o,clims_f)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Spring 2022
 %
@@ -59,10 +59,16 @@ to = berg_dates(1,:); tf = berg_dates(2,:);
 DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel_area = abs(DEM2.x(1)-DEM2.x(2)).*abs(DEM2.y(1)-DEM2.y(2)); %square meters
 
 %set image bounds & crop
+icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
 %EARLIER DATE
 xo = []; yo = [];
-for i = berg_refs
-    xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
+% for i = berg_refs
+%     xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
+% end
+for p = 1:length(icebergs)
+    coords = cell2mat(textscan(fopen([dir_iceberg,icebergs(p).name]),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1));
+    xo = [xo coords(2)]; yo = [yo coords(1)];
+    clear coords;
 end
 dy = IM1.y(1)-IM1.y(2);
 if dy < 0
@@ -97,8 +103,13 @@ end
 clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax;
 %LATER DATE
 xf = []; yf = [];
-for i = berg_refs
-    xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
+% for i = berg_refs
+%     xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
+% end
+for p = 1:length(icebergs)
+    coords = cell2mat(textscan(fopen([dir_iceberg,icebergs(p).name]),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1));
+    xf = [xf coords(4)]; yf = [yf coords(3)];
+    clear coords;
 end
 dy = IM2.y(1)-IM2.y(2);
 if dy < 0
@@ -208,7 +219,7 @@ for i = 1:length(iceberg_refs)
     disp('Plotting the early image-DEM pair for the fjord');
     figure1 = figure;
     imagesc(A.x,A.y,A.z); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+    colormap gray; set(gca,'clim',clims_o);
     set(gca,'ydir','normal'); hold on;
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
@@ -226,7 +237,7 @@ for i = 1:length(iceberg_refs)
     disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(berg_ref)]);
     figure(figure1);
     %     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+    colormap gray; set(gca,'clim',clims_o);
     vxi = nearestneighbour(SL(berg_ref).initial.x,A.x); vyi = nearestneighbour(SL(berg_ref).initial.y,A.y);
     set(gca,'xlim',[min(A.x(vxi))-150 max(A.x(vxi))+150],'ylim',[min(A.y(vyi))-150 max(A.y(vyi))+150]);
     plot(A.x(vxi),A.y(vyi),'--r','linewidth',2);
@@ -378,7 +389,7 @@ for i = 1:length(iceberg_refs)
     disp('Plotting the later image-DEM pair for the fjord');
     figure1 = figure;
     imagesc(B.x,B.y,B.z); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(B.z(~isnan(B.z))) (0.95)*max(max(B.z))]);
+    colormap gray; set(gca,'clim',clims_f);
     set(gca,'ydir','normal'); hold on;
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
@@ -394,7 +405,7 @@ for i = 1:length(iceberg_refs)
     cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(berg_ref)]);
     figure(figure1);
-    colormap gray; set(gca,'clim',[1.05*min(B.z(~isnan(B.z))) (0.95)*max(max(B.z))]);
+    colormap gray; set(gca,'clim',clims_f);
     vxf = nearestneighbour(SL(berg_ref).final.x,B.x); vyf = nearestneighbour(SL(berg_ref).final.y,B.y);
     set(gca,'xlim',[min(SL(berg_ref).final.x)-150 max(SL(berg_ref).final.x)+150],'ylim',[min(SL(berg_ref).final.y)-150 max(SL(berg_ref).final.y)+150]);
     plot(B.x(vxf),B.y(vyf),'--r','linewidth',2);

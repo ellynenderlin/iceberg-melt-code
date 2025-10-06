@@ -1,4 +1,4 @@
-function [IB,dz] = extract_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,geography,region_abbrev)
+function [IB,dz] = extract_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_output,dir_code,geography,region_abbrev,clims_o,clims_f)
 % Function to estimate iceberg freshwater fluxes and melt rates
 % Ellyn Enderlin & Rainey Aberle, Fall 2021
 %
@@ -23,6 +23,10 @@ function [IB,dz] = extract_iceberg_elev_change(DEM1,DEM2,IM1,IM2,iceberg_no,dir_
 %   - sea_level_adjust.m
 %   - nearestneighbour.m
 elev_cmap = cmocean('thermal',10001); elev_cmap(1,:) = [1 1 1]; 
+
+%identify the iceberg files
+icebergs_dz = dir([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg*dz.mat']);
+PScoord_files = dir([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg*PScoords.txt']);
 
 close all; drawnow;
 %specify polar projection parameters
@@ -63,8 +67,8 @@ DEM1_dx = abs(DEM1.x(1)-DEM1.x(2)); DEM2_dx = abs(DEM2.x(1)-DEM2.x(2));
 I1_dx = abs(IM1.x(1)-IM1.x(2)); I2_dx = abs(IM2.x(1)-IM2.x(2));
 DEMhalo1 = round(3000/DEM1_dx); DEMhalo2 = round(3000/DEM2_dx);
 IMhalo1 = round(3000/I1_dx); IMhalo2 = round(3000/I2_dx);
-icebergs_dz = dir([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg*dz.mat']);
-PScoord_files = dir([dir_output,'/',DEM1.time,'-',DEM2.time,'/','iceberg*PScoords.txt']);
+
+%initial plots
 if ~isempty(PScoord_files)
     %read the coordinates for the iceberg
     iceberg_coords = [dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg',iceberg_no,'_PScoords.txt'];
@@ -95,14 +99,14 @@ if ~isempty(PScoord_files)
     %plot the iceberg images & assess whether the center coordinates need to be adjusted
     figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[50 250 800 700]);
     imagesc(IM1.x(1,xminie:xmaxie),IM1.y(1,yminie:ymaxie),IM1.z(yminie:ymaxie,xminie:xmaxie)); axis xy equal; colormap gray; hold on;
-    set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
+    set(gca,'clim',clims_o); hold on;
     % plot iceberg coordinates on early image
     hold on; plot(early_x,early_y,'*w','markersize',7,'linewidth',1);
     set(gca,'fontsize',14);
     title(['Early date: ',datestr(date_o,'yyyy/mm/dd')],'fontsize',16);
     figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 250 800 700]);
     imagesc(IM2.x(1,xmini:xmaxi),IM2.y(1,ymini:ymaxi),IM2.z(ymini:ymaxi,xmini:xmaxi)); axis xy equal; colormap gray; hold on;
-    set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
+    set(gca,'clim',clims_f); hold on;
     % plot iceberg coordinates on later image
     hold on; plot(late_x,late_y,'*w','markersize',7,'linewidth',1);
     set(gca,'fontsize',14);
@@ -143,12 +147,12 @@ if ~isempty(PScoord_files)
             %plot the iceberg images & assess whether the center coordinates need to be adjusted
             figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[50 250 800 700]);
             imagesc(IM1.x(1,xminie:xmaxie),IM1.y(1,yminie:ymaxie),IM1.z_masked(yminie:ymaxie,xminie:xmaxie)); axis xy equal; colormap gray; hold on;
-            set(gca,'clim',[median(min(IM1.z(IM1.z>0))) median(max(IM1.z))]); hold on;
+            set(gca,'clim',clims_o); hold on;
             set(gca,'fontsize',14);
             title(['Early date: ',num2str(datestr(date_o,'yyyy/mm/dd'))],'fontsize',16);
             figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[850 250 800 700]);
             imagesc(IM2.x(1,xmini:xmaxi),IM2.y(1,ymini:ymaxi),IM2.z_masked(ymini:ymaxi,xmini:xmaxi)); axis xy equal; colormap gray; hold on;
-            set(gca,'clim',[median(min(IM2.z(IM2.z>0))) median(max(IM2.z))]); hold on;
+            set(gca,'clim',clims_f); hold on;
             set(gca,'fontsize',14);
             title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16);
         case 'No'
@@ -279,7 +283,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     clear SL xm ym xmif ymif;
     
     %assign a quality flag to the ice-free polygon
-    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+    low_ice = questdlg('Is open water or thin ice present for the early date (say ''Yes'' unless sea level correction is terrible)?',...
         'Local Sea Level Quality','Yes','No','Yes');
     switch low_ice
         case 'Yes'
@@ -317,7 +321,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     clear SL xm ym xmif ymif;
     
     %assign a quality flag to the ice-free polygon
-    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+    low_ice = questdlg('Is open water or thin ice present for the later date (say ''Yes'' unless sea level correction is terrible)?',...
         'Local Sea Level Quality','Yes','No','Yes');
     switch low_ice
         case 'Yes'
@@ -343,7 +347,7 @@ else
     sl_early = shaperead(icefree_early_file); 
     sl_early.X = sl_early.X(1:size(sl_early.X,2)-1); sl_early.Y = sl_early.Y(1:size(sl_early.Y,2)-1); %truncate last value (NaN)
     figure(figureA); set(gca,'xlim',[min([DEM1.x(xmine);DEM1.x(xmaxe)]) max([DEM1.x(xmine);DEM1.x(xmaxe)])],'ylim',[min([DEM1.y(ymine);DEM1.y(ymaxe)]) max([DEM1.y(ymine);DEM1.y(ymaxe)])]);
-    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+    low_ice = questdlg('Is open water or thin ice present for the early date (say ''Yes'' unless sea level correction is terrible)?',...
         'Local Sea Level Quality','Yes','No','Yes');
     switch low_ice
         case 'Yes'
@@ -355,7 +359,7 @@ else
     sl_late = shaperead(icefree_late_file); cd ../iceberg_rois
     sl_late.X = sl_late.X(1:size(sl_late.X,2)-1); sl_late.Y = sl_late.Y(1:size(sl_late.Y,2)-1); %truncate last value (NaN)
     figure(figureB); set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
-    low_ice = questdlg('Is open water or thin ice present (say ''Yes'' unless sea level correction is terrible)?',...
+    low_ice = questdlg('Is open water or thin ice present for the later date (say ''Yes'' unless sea level correction is terrible)?',...
         'Local Sea Level Quality','Yes','No','Yes');
     switch low_ice
         case 'Yes'
@@ -707,7 +711,7 @@ while p
     end
     
     %determine iceberg translation and rotation between DEM acquisition dates
-    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.time,DEM2.time,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos);
+    [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1.time,DEM2.time,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos,clims_o,clims_f);
     
     %save new vertex coordinates
     disp('Extracting elevation change information from within the iceberg polygon');

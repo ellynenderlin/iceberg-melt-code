@@ -1,4 +1,4 @@
-function [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1_date,DEM2_date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos)
+function [b,c,vertex_dist,vertex_ang,berg_dist,berg_xoffset,berg_yoffset,k] = measure_iceberg_motion(DEM1_date,DEM2_date,IM1,IM2,A,B,S,cmin,cmax,DEMo_pos,DEMf_pos,imo_pos,imf_pos,clims_o,clims_f)
 % Function to estimate iceberg motion between DEM times
 % Ellyn Enderlin and Rainey Aberle
 % Last edit: 17 Feb. 2023
@@ -35,20 +35,20 @@ elev_cmap = cmocean('thermal',10001); elev_cmap(1,:) = [1 1 1];
 
 %plot DEMs & images to guide polygon rotation
 figure1 = figure; set(figure1,'position',DEMo_pos); %set(figure1,'position',[50 800 800 700]);
-imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
+imagesc(A.x,A.y,A.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',16);
 colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
-plot(S.X,S.Y,'-*k','linewidth',2,'markersize',4); hold on;
+plot(S.X,S.Y,'-.','color',[0.5 0.5 0.5],'linewidth',2,'markersize',4); hold on;
 [cont,conth] = contour(A.x,A.y,A.z_local_adjust,[0:1:round(cmax)]);
 conth.LineColor = 'k';
 title(['Early date: ',num2str(DEM1_date)],'fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 figureA = figure; set(figureA,'position',imo_pos); %set(figureA,'position',[250 50 400 300]);
 imagesc(IM1.x,IM1.y,IM1.z); axis xy equal; colormap gray; hold on;
-plot(S.X,S.Y,'-*r','linewidth',2,'markersize',4); hold on;
-set(gca,'xlim',xlims,'ylim',ylims);
+set(gca,'xlim',xlims,'ylim',ylims,'clim',clims_o);
+plot(S.X,S.Y,'-.r','linewidth',2,'markersize',4); hold on;
 title(['Early date: ',num2str(DEM1_date)],'fontsize',16);
 figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[850 800 800 700]);
-imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
+imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',16);
 colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
 [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
 conth.LineColor = 'k';
@@ -56,7 +56,7 @@ title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
 xlims = get(gca,'xlim'); ylims = get(gca,'ylim');
 figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[1050 50 400 300]);
 imagesc(IM2.x,IM2.y,IM2.z); axis xy equal; colormap gray; hold on;
-set(gca,'xlim',xlims,'ylim',ylims);
+set(gca,'xlim',xlims,'ylim',ylims,'clim',clims_f);
 title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
 figure(figure1); figure(figure2);
 
@@ -106,13 +106,13 @@ disp('Calculating iceberg rotation');
         Y_rot(j,:) = vertex_dist.*sind(new_ang(j,:))+c(1,2);
         plot(X_rot(j,:),Y_rot(j,:),'linewidth',1,...
             'color',[(abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]); hold on;
-        text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',14,...
+        text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',16,...
             'color',[(abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]);
     end
     plot(S.X+berg_xoffset,S.Y+berg_yoffset,'linewidth',2,...
         'color','w'); hold on;
     text(S.X(1)+berg_xoffset+20,S.Y(1)+berg_yoffset,'translated but not rotated',...
-        'color','w','fontsize',14);
+        'color','w','fontsize',16);
     clear new_ang X_rot Y_rot;
     %     disp('Take a first guess at how much the iceberg rotated: specify a rotation range by entering ''k = [min:increment:max]; dbcont'' ');
     %     keyboard
@@ -124,26 +124,33 @@ disp('Calculating iceberg rotation');
     while q
         rot_prompt = 'Iceberg rotation guess: ';
         k = input(rot_prompt);
-        close(figure2);
+        close(figure2); close(figureB);
         
-        figure2 = figure;
-        imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
+        figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[850 800 800 700]);
+        imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',16);
         colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
         [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
         conth.LineColor = 'k';
         title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
-        set(figure2,'position',DEMf_pos); %set(figure2,'position',[850 800 800 700]);
+        figureB = figure; set(figureB,'position',imf_pos); %set(figureB,'position',[1050 50 400 300]);
+        imagesc(IM2.x,IM2.y,IM2.z); axis xy equal; colormap gray; hold on;
+        set(gca,'xlim',xlims,'ylim',ylims,'clim',clims_f);
+        title(['Late date: ',num2str(DEM2_date)],'fontsize',16);
         %     set(gca,'xlim',[min(a(:,1)) max(a(:,1))],'ylim',[min(a(:,2)) max(a(:,2))]);
         for j = 1:length(k)
             new_ang(j,:) = vertex_ang' - k(j);
             X_rot(j,:) = vertex_dist.*cosd(new_ang(j,:))+c(1,1);
             Y_rot(j,:) = vertex_dist.*sind(new_ang(j,:))+c(1,2);
+            figure(figure2);
             plot(X_rot(j,:),Y_rot(j,:),'linewidth',2,...
                 'color',[0.5 0.5 0.5]); hold on;
             if j == 1 || j == length(k)
-                text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',14,...
+                text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',16,...
                     'color',[0.5 0.5 0.5]);
             end
+            figure(figureB);
+            plot(X_rot(j,:),Y_rot(j,:),'linewidth',2,...
+                'color','r'); hold on;
         end
         clear new_ang X_rot Y_rot;
         
@@ -166,7 +173,7 @@ disp('Calculating iceberg rotation');
     %
     %     %specify a narrower range of rotation by comparing rotated polygons
     %     figure2 = figure;
-    %     imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
+    %     imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',16);
     %     colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
     %     [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
     %     conth.LineColor = 'k';
@@ -180,7 +187,7 @@ disp('Calculating iceberg rotation');
     %         plot(X_rot(j,:),Y_rot(j,:),'linewidth',2,...
     %             'color',[(abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]); hold on;
     %         if j == 1 || j == length(k)
-    %             text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',14,...
+    %             text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',16,...
     %                 'color',[(abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]);
     %         end
     %     end
@@ -195,7 +202,7 @@ disp('Calculating iceberg rotation');
 % k = input(rot_prompt);
 % close(figure2);
 % figure2 = figure; set(figure2,'position',DEMf_pos); %set(figure2,'position',[850 800 800 700]);
-% imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
+% imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',16);
 % colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
 % [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
 % conth.LineColor = 'k';
@@ -209,14 +216,14 @@ disp('Calculating iceberg rotation');
 %     plot(X_rot(j,:),Y_rot(j,:),'linewidth',2,...
 %         'color',[(abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]); hold on;
 %     if j == 1 || j == length(k)
-%         text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',14,...
+%         text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',16,...
 %             'color',[(abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]);
 %     end
 %     figure(figureB);
 %     plot(X_rot(j,:),Y_rot(j,:),'linewidth',2,...
 %         'color',[1 (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]); hold on;
 %     if j == 1 || j == length(k)
-%         text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',14,...
+%         text(X_rot(j,1)+20,Y_rot(j,1),[num2str(k(j)),char(176)],'fontsize',16,...
 %             'color',[1 (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k)))) (abs(k(j))-(min(abs(k))))/((max(abs(k))-min(abs(k))) + round(0.25*max(abs(k))))]);
 %     end
 % end
