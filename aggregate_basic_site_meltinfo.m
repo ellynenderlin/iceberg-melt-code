@@ -1,10 +1,10 @@
 %append more data to iceberg melt csvs
-clear all; close all;
+clearvars; close all;
 
 %specify directories for input CSVs produced by the iceberg melt mapping
 %pipeline & for the site-concatenated CSVs
-input_dir = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/iceberg-melt-data/original-csvs/';
-output_dir = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/iceberg-melt-data/site-csvs/';
+input_dir = '/Users/ellynenderlin/Research/NSF_GrIS-Freshwater/iceberg-melt-data/original-csvs/';
+output_dir = '/Users/ellynenderlin/Research/NSF_GrIS-Freshwater/iceberg-melt-data/site-csvs/';
 
 %identify the meltrate csv files & extract site names
 csvs = dir([input_dir,'*iceberg_meltinfo.csv']);
@@ -30,7 +30,7 @@ for j = 1:length(ia)
         %make a new table with less info
         Td = table;
         
-        
+        Td.('Site Abbreviation') = repmat(unique_abbrevs(j,:),size(Ttemp.VolumeChangeRate));
         Td.('Date start (YYYYMMDD)') = repmat(csvs(site_refs(k)).name(5:12),size(Ttemp.VolumeChangeRate));
         Td.('Date end (YYYYMMDD)') = repmat(csvs(site_refs(k)).name(14:21),size(Ttemp.VolumeChangeRate));
         Td.('X (m)') = mean([Ttemp.X_i,Ttemp.X_f],2);
