@@ -179,7 +179,7 @@ if entry_point <= 1
     A.x = IM1.x(1,[xlims(1):xlims(2)]); A.y = IM1.y(1,ylims(1):ylims(2));
     A.z = double(IM1.z(ylims(1):ylims(2),xlims(1):xlims(2)));
     if mean(A.z(~isnan(A.z)),'omitnan') < (1/3)*255 %image is dark
-        z_adjust = imadjust(A.z./255,[],[],0.25);
+        z_adjust = imadjust(A.z./255,[],[],0.5);
         A.z = z_adjust; clear z_adjust;
     end
     
@@ -410,7 +410,7 @@ if entry_point <= 2
     A.x = IM2.x(1,[xlims(1):xlims(2)]); A.y = IM2.y(1,[ylims(1):ylims(2)]);
     A.z = double(IM2.z(ylims(1):ylims(2),xlims(1):xlims(2)));
     if mean(A.z(~isnan(A.z)),'omitnan') < (1/3)*255 %image is dark
-        z_adjust = imadjust(A.z./255,[],[],0.25);
+        z_adjust = imadjust(A.z./255,[],[],0.5);
         A.z = z_adjust; clear z_adjust;
     end
     

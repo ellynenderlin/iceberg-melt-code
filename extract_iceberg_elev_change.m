@@ -204,7 +204,7 @@ imagesc(DEM2.x,DEM2.y,DEM2.z_elpsd_adjust-cmin_late); hold on; axis xy equal;
 set(gca,'clim',[0 zmax2],'fontsize',14);
 colormap(gca,elev_cmap); set(get(cbar,'ylabel'),'string', 'elevation (m)');
 set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
-plot(early_x,early_y,'*w','markersize',7,'linewidth',1);
+plot(late_x,late_y,'*w','markersize',7,'linewidth',1);
 title(['Late date: ',num2str(datestr(date_f,'yyyy/mm/dd'))],'fontsize',16); 
 figure(figure1);
 
@@ -281,6 +281,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     end
     
     %draw the icefree ROI in the later image
+    clear a;
     figure(figure2);
     disp('Now zoom in on the iceberg (leaving a buffer containing thin ice or open water) in the later DEM by clicking the UL & LR corners');
     [a] = ginput(2); %get the UL & LR corner coordinates

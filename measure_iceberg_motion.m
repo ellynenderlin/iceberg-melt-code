@@ -127,7 +127,7 @@ disp('Calculating iceberg rotation');
         close(figure2);
         
         figure2 = figure;
-        imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[cmin cmax],'fontsize',14);
+        imagesc(B.x,B.y,B.z_local_adjust); hold on; axis xy equal; set(gca,'clim',[0 cmax],'fontsize',14);
         colormap(gca,elev_cmap); cbar = colorbar; set(get(cbar,'ylabel'),'string', 'elevation (m)');
         [cont,conth] = contour(B.x,B.y,B.z_local_adjust,[0:1:round(cmax)]);
         conth.LineColor = 'k';
