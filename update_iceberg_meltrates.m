@@ -1,4 +1,4 @@
-function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code,dir_SMB)
+function [SL] = update_iceberg_meltrates(DEM1,DEM2,IM1,IM2,geography,region_name,region_abbrev,iceberg_refs,dir_output,dir_iceberg,dir_code,dir_SMB,clims_o,clims_f)
 % Function to convert iceberg elevation change to melt rates in Antarctica
 % Ellyn Enderlin & Rainey Aberle, Spring 2022
 %
@@ -59,10 +59,16 @@ to = berg_dates(1,:); tf = berg_dates(2,:);
 DEM1_pixel_area = abs(DEM1.x(1)-DEM1.x(2)).*abs(DEM1.y(1)-DEM1.y(2)); DEM2_pixel_area = abs(DEM2.x(1)-DEM2.x(2)).*abs(DEM2.y(1)-DEM2.y(2)); %square meters
 
 %set image bounds & crop
+icebergs = dir([dir_iceberg,'iceberg*coords.txt']);
 %EARLIER DATE
 xo = []; yo = [];
-for i = berg_refs
-    xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
+% for i = berg_refs
+%     xo = [xo SL(i).initial.x]; yo = [yo SL(i).initial.y];
+% end
+for p = 1:length(icebergs)
+    coords = cell2mat(textscan(fopen([dir_iceberg,icebergs(p).name]),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1));
+    xo = [xo coords(2)]; yo = [yo coords(1)];
+    clear coords;
 end
 dy = IM1.y(1)-IM1.y(2);
 if dy < 0
@@ -97,8 +103,13 @@ end
 clear x1 x2 y1 y2 xlims ylims xmin xmax ymin ymax;
 %LATER DATE
 xf = []; yf = [];
-for i = berg_refs
-    xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
+% for i = berg_refs
+%     xf = [xf SL(i).final.x]; yf = [yf SL(i).final.y];
+% end
+for p = 1:length(icebergs)
+    coords = cell2mat(textscan(fopen([dir_iceberg,icebergs(p).name]),'%f64 %f64 %f64 %f64','Delimiter',',','headerlines',1));
+    xf = [xf coords(4)]; yf = [yf coords(3)];
+    clear coords;
 end
 dy = IM2.y(1)-IM2.y(2);
 if dy < 0
@@ -176,12 +187,39 @@ for i = 1:length(iceberg_refs)
     else
         SL(berg_ref).flag = NaN;
     end
-    
+
+    %extract air temp (& firn density as needed) from model
+    density_z = [0:1:1000]; %thickness profile for density curve fitting
+    berg_x = nanmean([SL(berg_ref).initial.x SL(berg_ref).final.x]); berg_y = nanmean([SL(berg_ref).initial.y SL(berg_ref).final.y]);
+    if geography == 1 %surface air temp, runoff, and firn density for Antarctica
+        [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+        density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
+        clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
+        density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
+        density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
+        density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
+        %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
+        wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
+        wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
+        wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
+
+        %save the FAC & density data
+        if ~exist([dir_output,'firn_data/'],'dir')
+            mkdir([dir_output,'firn_data/']);
+        end
+        save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
+        close all; drawnow;
+    else %only surface air temp and runoff for Greenland
+        [dt,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
+    end
+    SL(berg_ref).days = dt;
+    SL(berg_ref).SMB = -abs(surfmelt); SL(berg_ref).airtemp = iceberg_avgtemp;
+
     %plot the early DEM & image
     disp('Plotting the early image-DEM pair for the fjord');
     figure1 = figure;
     imagesc(A.x,A.y,A.z); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+    colormap gray; set(gca,'clim',clims_o);
     set(gca,'ydir','normal'); hold on;
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
@@ -199,7 +237,7 @@ for i = 1:length(iceberg_refs)
     disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(berg_ref)]);
     figure(figure1);
     %     imagesc(A.x,A.y,A.z); set(gca,'ydir','normal'); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(A.z(~isnan(A.z))) (0.95)*max(max(A.z))]);
+    colormap gray; set(gca,'clim',clims_o);
     vxi = nearestneighbour(SL(berg_ref).initial.x,A.x); vyi = nearestneighbour(SL(berg_ref).initial.y,A.y);
     set(gca,'xlim',[min(A.x(vxi))-150 max(A.x(vxi))+150],'ylim',[min(A.y(vyi))-150 max(A.y(vyi))+150]);
     plot(A.x(vxi),A.y(vyi),'--r','linewidth',2);
@@ -260,33 +298,6 @@ for i = 1:length(iceberg_refs)
     SL(berg_ref).initial.radius = perimeter/(2*pi);
     clear iceberg_IMmask;
     
-    
-    %extract air temp (& firn density as needed) from model
-    density_z = [0:1:1000]; %thickness profile for density curve fitting
-    berg_x = nanmean([SL(berg_ref).initial.x SL(berg_ref).final.x]); berg_y = nanmean([SL(berg_ref).initial.y SL(berg_ref).final.y]);
-    if geography == 1 %surface air temp, runoff, and firn density for Antarctica
-        [dt,iceberg_avgtemp,surfmelt,firnair,density,f,ci] = extract_RACMO_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
-        density.nineseventeen = -f.b*log(-(916.9-917)/(917-f.a)); %find depth where rho=916.9 (goes to infinity at 917)
-        clear FAC; FAC(1) = firnair.median; FAC(2) = firnair.median-firnair.uncert; FAC(3) = firnair.median+firnair.uncert; %estimate firn air content
-        density_profile(1,:) = rho_i-(rho_i-f.a)*exp(-density_z/f.b);
-        density_profile(2,:) = rho_i-(rho_i-ci(1,1))*exp(-density_z/ci(1,2)); %MINIMUM
-        density_profile(3,:) = rho_i-(rho_i-ci(2,1))*exp(-density_z/ci(2,2)); %MAXIMUM
-        %calculate wet density profile by flipping the shape of the exponential curve & compressing the range from (830-0) to (1026-830)
-        wetdensity_profile(1,:) = 830+((830-density_profile)./830).*(rho_sw-830); wetdensity_profile(1,ceil(density.eightthir)+1:end) = density_profile(1,ceil(density.eightthir)+1:end);
-        wetdensity_profile(2,:) = 830+((830-density_profile(2,:))./830).*(rho_sw-830); wetdensity_profile(2,ceil(density.eightthir)+1:end) = density_profile(2,ceil(density.eightthir)+1:end);
-        wetdensity_profile(3,:) = 830+((830-density_profile(3,:))./830).*(rho_sw-830); wetdensity_profile(3,ceil(density.eightthir)+1:end) = density_profile(3,ceil(density.eightthir)+1:end);
-
-        %save the FAC & density data
-        if ~exist([dir_output,'firn_data/'],'dir')
-            mkdir([dir_output,'firn_data/']);
-        end
-        save([dir_output,'firn_data/',region_name,'_density_data.mat'],'firnair','density');
-        close all; drawnow;
-    else %only surface air temp and runoff for Greenland
-        [dt,iceberg_avgtemp,surfmelt] = extract_MAR_params(dir_SMB,geography,berg_x,berg_y,berg_dates);
-    end
-    SL(berg_ref).days = dt;
-    SL(berg_ref).SMB = -abs(surfmelt); SL(berg_ref).airtemp = iceberg_avgtemp;
     
     %convert elevations over the iceberg area to a volume: iteratively converge on best-estimate for density accounting for water saturation as needed
     if geography == 1 
@@ -378,7 +389,7 @@ for i = 1:length(iceberg_refs)
     disp('Plotting the later image-DEM pair for the fjord');
     figure1 = figure;
     imagesc(B.x,B.y,B.z); hold on;
-    colormap gray; set(gca,'clim',[1.05*min(B.z(~isnan(B.z))) (0.95)*max(max(B.z))]);
+    colormap gray; set(gca,'clim',clims_f);
     set(gca,'ydir','normal'); hold on;
     set(gcf,'position',[50 100 600 600]);
     figure2 = figure;
@@ -394,7 +405,7 @@ for i = 1:length(iceberg_refs)
     cd([dir_output,'/',DEM1.time,'-',DEM2.time,'/iceberg_shapes/']);
     disp(['Zooming-in & plotting the DEM ROI in the image and DEM for iceberg #',num2str(berg_ref)]);
     figure(figure1);
-    colormap gray; set(gca,'clim',[1.05*min(B.z(~isnan(B.z))) (0.95)*max(max(B.z))]);
+    colormap gray; set(gca,'clim',clims_f);
     vxf = nearestneighbour(SL(berg_ref).final.x,B.x); vyf = nearestneighbour(SL(berg_ref).final.y,B.y);
     set(gca,'xlim',[min(SL(berg_ref).final.x)-150 max(SL(berg_ref).final.x)+150],'ylim',[min(SL(berg_ref).final.y)-150 max(SL(berg_ref).final.y)+150]);
     plot(B.x(vxf),B.y(vyf),'--r','linewidth',2);

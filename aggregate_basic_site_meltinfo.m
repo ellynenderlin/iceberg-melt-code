@@ -1,10 +1,10 @@
 %append more data to iceberg melt csvs
-clear all; close all;
+clearvars; close all;
 
 %specify directories for input CSVs produced by the iceberg melt mapping
 %pipeline & for the site-concatenated CSVs
-input_dir = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/iceberg-melt-data/original-csvs/';
-output_dir = '/Users/ellynenderlin/Research/NSF_GreenlandFreshwater/iceberg-melt-data/site-csvs/';
+input_dir = '/Users/ellynenderlin/Research/NSF_GrIS-Freshwater/iceberg-melt-data/original-csvs/';
+output_dir = '/Users/ellynenderlin/Research/NSF_GrIS-Freshwater/iceberg-melt-data/site-csvs/';
 
 %identify the meltrate csv files & extract site names
 csvs = dir([input_dir,'*iceberg_meltinfo.csv']);
@@ -24,14 +24,15 @@ for j = 1:length(ia)
     %loop through all the dated CSVs for the site
     for k = 1:length(site_refs)
         %read the table
-        Ttemp = readtable([input_dir,csvs(ix(k)).name]);
+        disp(csvs(site_refs(k)).name);
+        Ttemp = readtable([input_dir,csvs(site_refs(k)).name]);
         
         %make a new table with less info
         Td = table;
         
-        
-        Td.('Date start (YYYYMMDD)') = repmat(csvs(ix(k)).name(5:12),size(Ttemp.VolumeChangeRate));
-        Td.('Date end (YYYYMMDD)') = repmat(csvs(ix(k)).name(14:21),size(Ttemp.VolumeChangeRate));
+        Td.('Site Abbreviation') = repmat(unique_abbrevs(j,:),size(Ttemp.VolumeChangeRate));
+        Td.('Date start (YYYYMMDD)') = repmat(csvs(site_refs(k)).name(5:12),size(Ttemp.VolumeChangeRate));
+        Td.('Date end (YYYYMMDD)') = repmat(csvs(site_refs(k)).name(14:21),size(Ttemp.VolumeChangeRate));
         Td.('X (m)') = mean([Ttemp.X_i,Ttemp.X_f],2);
         Td.('Y (m)') = mean([Ttemp.Y_i,Ttemp.Y_f],2);
         Td.('Z (m)') = mean([Ttemp.MedianZ_i,Ttemp.MedianZ_f],2);
@@ -65,6 +66,6 @@ for j = 1:length(ia)
     writetable(T,[output_dir,unique_abbrevs(j,:),'_basic_iceberg_meltinfo.csv']);
     clear T;
 end
-
+disp('Done creating site-specific iceberg melt files!');
 
 
