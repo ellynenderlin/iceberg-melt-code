@@ -293,6 +293,7 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     end
     
     %draw the icefree ROI in the later image
+    clear a;
     figure(figure2);
     disp('Now zoom in on the iceberg (leaving a buffer containing thin ice or open water) in the later DEM by clicking the UL & LR corners');
     [a] = ginput(2); %get the UL & LR corner coordinates
