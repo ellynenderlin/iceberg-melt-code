@@ -235,9 +235,11 @@ else
     iceberg_list = 'XX';
 end
 if isempty(strmatch(iceberg_no,iceberg_list))
-    %draw the iceberg ROI
+    %zoom in on the iceberg in the early DEM & image
     figure(figure1);
     disp('Zoom in on the iceberg (leaving a buffer containing thin ice or open water) in the early DEM by clicking the UL & LR corners');
+    disp('click on the early DEM to activate');
+    figure(figure1); ax = waitforbuttonpress; clear ax;
     [a] = ginput(2); %get the UL & LR corner coordinates
     xref = nearestneighbour(a(:,1)',DEM1.x); yref = nearestneighbour(a(:,2)',DEM1.y);
     set(gca,'xlim',[min(DEM1.x(xref)) max(DEM1.x(xref))],'ylim',[min(DEM1.y(yref)) max(DEM1.y(yref))]);
@@ -247,6 +249,24 @@ if isempty(strmatch(iceberg_no,iceberg_list))
 %     set(gca,'xlim',[min(im1.x(xref)) max(im1.x(xref))],'ylim',[min(im1.y(yref)) max(im1.y(yref))]);
     set(gca,'xlim',[min(IM1.x(xref)) max(IM1.x(xref))],'ylim',[min(IM1.y(yref)) max(IM1.y(yref))]);
     clear xref yref;
+
+    %zoom in on the iceberg in the later DEM & image
+    clear a;
+    disp('Now zoom in on the iceberg (leaving a buffer containing thin ice or open water) in the later DEM by clicking the UL & LR corners');
+    disp('click on the later DEM to activate');
+    figure(figure2); ax = waitforbuttonpress; clear ax;
+    [a] = ginput(2); %get the UL & LR corner coordinates
+    xref = nearestneighbour(a(:,1)',DEM2.x); yref = nearestneighbour(a(:,2)',DEM2.y);
+    set(gca,'xlim',[min(DEM2.x(xref)) max(DEM2.x(xref))],'ylim',[min(DEM2.y(yref)) max(DEM2.y(yref))]);
+    clear xref yref;
+    figure(figureB);
+    xref = nearestneighbour(a(:,1)',IM2.x); yref = nearestneighbour(a(:,2)',IM2.y);
+%     set(gca,'xlim',[min(im1.x(xref)) max(im1.x(xref))],'ylim',[min(im1.y(yref)) max(im1.y(yref))]);
+    set(gca,'xlim',[min(IM2.x(xref)) max(IM2.x(xref))],'ylim',[min(IM2.y(yref)) max(IM2.y(yref))]);
+    clear xref yref; clear a;
+%     figure(figureB); set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
+
+    %delineate the iceberg
     figure(figure1);
     disp('When crosshairs appear on the early DEM, click on vertices just INSIDE OF THE ICEBERG EDGE to draw a polygon');
     disp('NOTE: white areas = DEM holes');
@@ -293,19 +313,6 @@ if isempty(strmatch(iceberg_no,iceberg_list))
     end
     
     %draw the icefree ROI in the later image
-    clear a;
-    figure(figure2);
-    disp('Now zoom in on the iceberg (leaving a buffer containing thin ice or open water) in the later DEM by clicking the UL & LR corners');
-    [a] = ginput(2); %get the UL & LR corner coordinates
-    xref = nearestneighbour(a(:,1)',DEM2.x); yref = nearestneighbour(a(:,2)',DEM2.y);
-    set(gca,'xlim',[min(DEM2.x(xref)) max(DEM2.x(xref))],'ylim',[min(DEM2.y(yref)) max(DEM2.y(yref))]);
-    clear xref yref;
-    figure(figureB);
-    xref = nearestneighbour(a(:,1)',IM2.x); yref = nearestneighbour(a(:,2)',IM2.y);
-%     set(gca,'xlim',[min(im1.x(xref)) max(im1.x(xref))],'ylim',[min(im1.y(yref)) max(im1.y(yref))]);
-    set(gca,'xlim',[min(IM2.x(xref)) max(IM2.x(xref))],'ylim',[min(IM2.y(yref)) max(IM2.y(yref))]);
-    clear xref yref;
-%     figure(figureB); set(gca,'xlim',[min([DEM2.x(xmin);DEM2.x(xmax)]) max([DEM2.x(xmin);DEM2.x(xmax)])],'ylim',[min([DEM2.y(ymin);DEM2.y(ymax)]) max([DEM2.y(ymin);DEM2.y(ymax)])]);
     figure(figure2);
     disp('When crosshairs appear on the later DEM, click on vertices of a nearby low elevation region to draw an initial guess for an ice-free polygon');
     [~,xm,ym] = roipoly;
