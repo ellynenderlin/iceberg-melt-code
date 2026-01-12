@@ -29,7 +29,7 @@ clearvars; close all;
 
 % ----------MODIFY VARIABLES BELOW----------
 % site name and region abbreviation used for file names
-region_name = 'CIG'; 
+region_name = 'RIG'; 
 region_abbrev = region_name;
 % path to codes
 dir_repo = '/Users/ellynenderlin/Research/iceberg-melt/iceberg-melt-code'; %Github repo containing custom iceberg melt code
@@ -39,7 +39,7 @@ dir_DEM = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % path to outputs folder (where you would like all outputs saved)
 dir_output = ['/Users/Shared/Greenland/melange/',region_name,'/'];
 % DEM time stamps (DEM1 = earlier, DEM2 = later) used in file names (YYYYMMDDhhmmss)
-DEM1.time = '20160402'; DEM2.time = '20160509';
+DEM1.time = '20170610'; DEM2.time = '20170716';
 
 %----------Specify Region------------
 %NOTE: Make sure the SMB data are not in a Github repo!!! You may need to
