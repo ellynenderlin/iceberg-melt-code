@@ -24,8 +24,9 @@ for p = 1:length(sites)
                 if ~isempty(shps)
                     for j = 1:length(shps)
                         Stemp = readgeotable(shps(j).name);
+                        Stemp.SiteID = sites(p).name; %add the 3-letter site id
                         Stemp.Date = shps(j).name(4:11); %add the observation date
-                        Stemp.id = shps(j).name(end-5:end-4); %add the iceberg id
+                        Stemp.IcebergID = shps(j).name(end-5:end-4); %add the iceberg id
                         Stemp.Name = []; %remove the Name field ("iceberg##")
                         S = [S; Stemp]; % Append the temporary table to the main table
 
